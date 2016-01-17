@@ -220,7 +220,7 @@ var command = function (user, {{ parameters }}) {
 	var {{toLowerCase type.name}} = repository.find('{{type.name}}', id);
 
 	if({{toLowerCase type.name}}){
-		eventsource.raise('{{raises}}', [user, {{parameters}}]);
+		eventsource.raise('{{raises}}', l[user, {{parameters}}]);
 	}
 }
 ```
