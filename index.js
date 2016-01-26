@@ -3,6 +3,7 @@
 var util = require('util');
 var commander = require('commander');
 var generator = require('./src/generator')
+var files = require('./src/file-system');
 
 //TODO: views and commands should be handled the same. ie, dirs in the templates dir
 //      just like the way views is handled. Generation should be done with subdir and optional type
@@ -11,9 +12,15 @@ var generator = require('./src/generator')
 
 commander
   .version('0.0.1')
-  .option('-m, --models_path [path]', 'the path to the model yaml file', generator.set_models_path)
-  .option('-v, --views_path [path]', 'the path to the views yaml file', generator.set_views_path)
-  .option('-g, --generators_path [path]', 'the path to the generators folder', generator.set_generators_path)
+  .option('-m, --models_path [path]', 'the path to the model yaml file', function (path) {
+    files.models_path = path;
+  })
+  .option('-v, --views_path [path]', 'the path to the views yaml file', function (path) {
+    files.views_path = path;
+  } )
+  .option('-g, --generators_path [path]', 'the path to the generators folder', function (path) {
+    files.generators_path = path;
+  })
   .command('*')
   .action(generator.generate_template).description('Generates the specifed generator');
 
