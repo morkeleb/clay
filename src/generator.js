@@ -4,7 +4,7 @@ var files = require('./file-system');
 var path = require('path');
 var handlebars = require('./template-engine');
 
-
+var revert = false;
 
 function loadTypeData() {
 
@@ -25,7 +25,11 @@ function template(generator_data, type) {
 	return {
 		write: function (data) {
 			var file = file_loc(data);
-			files.write(file, template(data));
+			if(revert){
+				files.del(file);
+			} else {
+				files.write(file, template(data));
+			}
 		}
 	}
 }
@@ -101,7 +105,11 @@ function generate_views() {
 			var template = handlebars.compile(fs.readFileSync(path.join(files.generators_path, 'views',view.layout+'/'+view_template.template), 'utf8'));
 			var file_loc = handlebars.compile(view_template.file);
 			var file = file_loc(view);
-			files.write(file, template(view));
+			if(revert){
+				files.del(file);
+			} else {
+				files.write(file, template(view));
+			}
 		});
 
 	});
@@ -112,5 +120,11 @@ function generate_views() {
 module.exports = {
 	list_templates: list_templates,
 	generate_template: generate_type,
-	generate_views: generate_views
+	generate_views: generate_views,
+	set revert(bool) {
+		revert = bool;
+		if(revert){
+			console.log("reverting all write operations");
+		}
+	}
 }

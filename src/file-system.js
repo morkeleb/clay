@@ -23,6 +23,12 @@ function write(file, data) {
 	console.log('writing: '+file);
 	fs.writeFileSync(file, data, 'utf8');
 }
+function del(file) {
+	console.log('deleting: '+file);
+	if(fs.existsSync(file)) {
+		fs.unlinkSync(file);
+	}
+}
 
 function read_yaml_file(file) {
 	try {
@@ -63,6 +69,7 @@ if(defaults.views_path) {
 
 module.exports = {
 	write: write,
+	del: del,
 	read_yaml_file: read_yaml_file,
 	set models_path(path) {
 		console.log('models set:'+path);

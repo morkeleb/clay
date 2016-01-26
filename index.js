@@ -8,8 +8,6 @@ var files = require('./src/file-system');
 //TODO: views and commands should be handled the same. ie, dirs in the templates dir
 //      just like the way views is handled. Generation should be done with subdir and optional type
 
-//TODO: add option to revert generation, ie. delete the files that would be generated
-
 commander
   .version('0.0.1')
   .option('-m, --models_path [path]', 'the path to the model yaml file', function (path) {
@@ -20,6 +18,9 @@ commander
   } )
   .option('-g, --generators_path [path]', 'the path to the generators folder', function (path) {
     files.generators_path = path;
+  })
+  .option('-r, --revert', 'revert writing operation', function () {
+    generator.revert = true;
   })
   .command('*')
   .action(generator.generate_template).description('Generates the specifed generator');
