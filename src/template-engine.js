@@ -24,17 +24,19 @@ handlebars.load_partials = function () {
 			}
 			});
 
-			var views = fs.readdirSync(files.generators_path+'/views');
-			views.forEach(function (view) {
-				var partials = files.generators_path+'/views/'+view+'/partials';
-				if(fs.existsSync(partials)){
-					fs.readdirSync(partials)
-					.map(function (f) {
-						return partials+'/'+f;
-					})
-					.forEach(registerPartial);
-				}
-		});
+		if(fs.existsSync(files.generators_path+'/views')){
+				var views = fs.readdirSync(files.generators_path+'/views');
+				views.forEach(function (view) {
+					var partials = files.generators_path+'/views/'+view+'/partials';
+					if(fs.existsSync(partials)){
+						fs.readdirSync(partials)
+						.map(function (f) {
+							return partials+'/'+f;
+						})
+						.forEach(registerPartial);
+					}
+			});
+		}
 	}
 }
 
