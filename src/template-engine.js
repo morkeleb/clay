@@ -5,6 +5,10 @@ var files = require('./file-system');
 var fs = require('fs');
 var path_module = require('path');
 
+var groupBy = require('handlebars-group-by');
+
+groupBy.register(handlebars);
+
 function registerPartial(file) {
 	var name = path_module.basename(file).split('.')[0];
 	handlebars.registerPartial(name, fs.readFileSync(file, 'utf8'));
