@@ -261,3 +261,105 @@ Options:
   -g, --generators_path [path]  the path to the generators folder
 
 ```
+
+
+### Gen 2 clay
+
+1. Partial/mixnis inside the model
+  ```
+- name: Order
+  mixin: has_created
+  mixin: has_errorstate
+  ```
+
+  mixins are defined in the same yaml file?
+  because they are inherent to the model
+2. include inside the model
+  parts that have already been described should be includable
+  ```
+    include: Order
+  ``` 
+2. generators should be able to
+  1. Run commands
+  2. clone repositories
+  This enables the use of jhipster to create more complex solutions quickly
+
+  This also means that a generator needs to have an order in which it does things
+  
+  Can AllTypes/WithTypes be expressed using a query language?
+3. plugins should be using the module
+
+
+use json instead of yaml. Yaml did not achieve the desired effect of making it
+easier to work with models. An editor might be needed to work with models.
+
+
+
+model.json
+```
+{
+  name: 'mymodel'
+  generators: [
+    'documentation',
+    'backend.json'
+  ]
+  mixins: [
+    'has_created.js',
+    'has_error.js'
+  ]
+  model: {
+    events: [
+      {include: 'standardevents.json'}
+    ],
+    types:[
+      {
+        name: 'order',
+        mixin: [has_created, has_errors],
+        commands: [
+          {
+            name: 'finish_order',
+            raise: 'order_finished',
+            parameters: [
+              {
+                name: 'finished'
+              }
+            ]
+          }
+        ],
+        fields: [
+          {
+            name: 'test'
+          }
+        ]
+
+      }
+    ]
+  }
+}
+
+```
+
+generator.json
+```
+[
+  {
+    runCommand: 'jhipster microservice'
+  },
+  {
+    generate: 'templates/jdl-files',
+    select: 'jsoniq statement'
+   },
+  {
+    runCommand: 'jhipster import-jdl {{service.name}}',
+    select: 'jsoniq statement'
+  },
+  {
+    copyFoundation: 'git+morkeleb/foundation',
+    select: 'jsoniq statement',
+    target: '{{microservice}}'
+  }
+]
+
+```
+
+we need validation of models and queries using this approach
