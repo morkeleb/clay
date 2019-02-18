@@ -31,7 +31,6 @@ describe("the model module", ()=>{
                 "types":[
                   {
                     "name": "order",
-                    "mixin": ["has_created"],
                     "commands": [
                       {
                         "name": "finish_order",
@@ -43,7 +42,7 @@ describe("the model module", ()=>{
                         ]
                       }
                     ],
-                    "events": [],
+                    "events": [{"name": "ordercreated"}],
                     "fields": [
                       {
                         "name": "test"
@@ -53,6 +52,19 @@ describe("the model module", ()=>{
                   }
                 ]
               });
+        })
+    })
+    describe('mixins', ()=>{
+        var result = null;
+        beforeEach(()=>{
+            result = model.load('./test/samples/example.json');
+
+        })
+        it("will be able to add function to an entity", ()=>{
+            expect(result.model.types[0].events).to.deep.equal([{name: 'ordercreated'}])
+        })
+        it("wont show in the resulting model", ()=>{
+            expect(result.model.types[0].mixins).to.equal(undefined)
         })
     })
 });
