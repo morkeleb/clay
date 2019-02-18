@@ -58,13 +58,26 @@ describe("the model module", ()=>{
         var result = null;
         beforeEach(()=>{
             result = model.load('./test/samples/example.json');
-
         })
         it("will be able to add function to an entity", ()=>{
             expect(result.model.types[0].events).to.deep.equal([{name: 'ordercreated'}])
         })
         it("wont show in the resulting model", ()=>{
             expect(result.model.types[0].mixins).to.equal(undefined)
+        })
+    })
+
+    describe('include',()=>{
+        var result = null;
+        beforeEach(()=>{
+            result = model.load('./test/samples/include-example.json');
+        })
+
+        it('will include a file instead of its current object', ()=>{
+            expect(result.model.types[0].events).to.deep.equal([{name: 'ordercreated'}])
+        })
+        it('wont show in the resulting model', ()=>{
+            expect(result.model.types[0].include).to.equal(undefined)
         })
     })
 });

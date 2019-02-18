@@ -1,0 +1,22 @@
+{
+    "name": "order",
+    "mixin": ["has_created"],
+    "commands": [
+      {
+        "name": "finish_order",
+        "raise": "order_finished",
+        "parameters": [
+          {
+            "name": "finished"
+          }
+        ]
+      }
+    ],
+    "events": [],
+    "fields": [
+      {
+        "name": "test"
+      }
+    ]
+
+  }
