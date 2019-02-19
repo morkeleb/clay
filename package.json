@@ -15,7 +15,7 @@
     "commander": "^2.9.0",
     "handlebars": "^4.0.5",
     "handlebars-group-by": "^1.0.1",
-    "jsoniq": "0.0.8",
+    "jsonpath": "^1.0.0",
     "marked": "^0.3.5"
   },
   "devDependencies": {

@@ -1,7 +1,14 @@
 const generator = require('../src/generator')
 const {expect} = require('chai')
 
+const model = require('../src/model')
+const fs = require('fs')
+
 describe("a generator", ()=>{
+    afterEach(()=>{
+        if(fs.existsSync('./tmp'))
+            fs.rmdirSync('./tmp')
+    })
     describe("basic initialization", ()=>{
         it('will read a json array with instructions', ()=>{
             var result = generator.load('./test/samples/generator.json')
@@ -27,7 +34,17 @@ describe("a generator", ()=>{
     })
     describe('generate with template', ()=>{
         describe('with jsoniq statement', ()=>{
-            it('will generate the templates using jsoniq selection')
+            it('will generate the templates using jsoniq selection', ()=>{
+                var g = generator.load('./test/samples/just-template-example.json');
+                
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+
+                expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.be.true()
+            })
+        })
+
+        describe('partials', ()=>{
+            it('will use generator partials')
         })
 
         describe('without jsoniq statement', ()=>{

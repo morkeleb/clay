@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var handlebars = require('./template-engine');
+var jp = require('jsonpath');
 
 var revert = false;
 
@@ -114,6 +115,54 @@ function generate_views() {
 
 }
 
+function ensure_directory(path) {
+	var parts = path.split(path_module.sep);
+	if(parts.length !== 1) {
+		parts.pop();
+		ensure_directory(parts.join(path_module.sep));
+	}
+	if (!fs.existsSync(path)){
+    fs.mkdirSync(path);
+	}
+}
+
+function write(file, data) {
+	var dir = path_module.dirname(file);
+	ensure_directory(dir);
+	console.log('writing: '+file);
+	fs.writeFileSync(file, data, 'utf8');
+}
+
+function select(model, jsonpath) {
+	return jp.query(model, jsonpath);
+}
+
+function generate_directory(model_partial, directory, output) {
+	const templates = fs.readdirSync(directory);
+
+	templates.forEach(file => {
+		var template = handlebars.compile(fs.readFileSync(file, 'utf8'));
+		var file_name = handlebars.compile(path.file_name(file))
+		model_partial.forEach((m)=>{
+			write(path.join(output, file_name(m)), template(m));
+		})
+
+	});
+}
+
+function decorate_generator(g, p) {
+	g.generate = (model, output) => {
+		//handlebars.load_partials();
+		for (let index = 0; index < g.length; index++) {
+			const element = g[index];
+			if(element.generate !== undefined){
+				generate_directory(select(model, element.select), path.join(path.dirname(p), element.generate), output)
+			}
+		}
+
+	}
+	return g;
+}
 
 module.exports = {
 	list_templates: list_templates,
@@ -128,6 +177,6 @@ module.exports = {
 	load: (path)=>{
 		var generator = JSON.parse(fs.readFileSync(path, 'utf8'));
 		
-		return generator;
+		return decorate_generator(generator, path);
 	}
 }

@@ -1,0 +1,6 @@
+[
+    {
+      "generate": "templates/simple",
+      "select": "$.entities"
+     }
+  ]
