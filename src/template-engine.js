@@ -1,6 +1,5 @@
 var marked = require('marked');
 var handlebars = require('handlebars');
-var files = require('./file-system');
 
 var fs = require('fs');
 var path_module = require('path');

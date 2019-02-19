@@ -1,6 +1,4 @@
 var fs = require('fs');
-var util = require('util');
-var files = require('./file-system');
 var path = require('path');
 var handlebars = require('./template-engine');
 
@@ -126,5 +124,10 @@ module.exports = {
 		if(revert){
 			console.log("reverting all write operations");
 		}
+	},
+	load: (path)=>{
+		var generator = JSON.parse(fs.readFileSync(path, 'utf8'));
+		
+		return generator;
 	}
 }

@@ -1,0 +1,18 @@
+[
+    {
+      "runCommand": "jhipster microservice"
+    },
+    {
+      "generate": "templates/jdl-files",
+      "select": "jsoniq statement"
+     },
+    {
+      "runCommand": "jhipster import-jdl {{service.name}}",
+      "select": "jsoniq statement"
+    },
+    {
+      "copyFoundation": "git+morkeleb/foundation",
+      "select": "jsoniq statement",
+      "target": "{{microservice}}"
+    }
+  ]
