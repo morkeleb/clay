@@ -12,29 +12,29 @@ describe("a generator", ()=>{
     describe("basic initialization", ()=>{
         it('will read a json array with instructions', ()=>{
             var result = generator.load('./test/samples/generator.json')
-            expect(result).to.deep.equal([
+            expect(result.steps).to.deep.equal([
                   {
                     "runCommand": "jhipster microservice"
                   },
                   {
                     "generate": "templates/jdl-files",
-                    "select": "jsoniq statement"
+                    "select": "jsonpath statement"
                    },
                   {
                     "runCommand": "jhipster import-jdl {{service.name}}",
-                    "select": "jsoniq statement"
+                    "select": "jsonpath statement"
                   },
                   {
                     "copyFoundation": "git+morkeleb/foundation",
-                    "select": "jsoniq statement",
+                    "select": "jsonpath statement",
                     "target": "{{microservice}}"
                   }
             ])
         })
     })
     describe('generate with template', ()=>{
-        describe('with jsoniq statement', ()=>{
-            it('will generate the templates using jsoniq selection', ()=>{
+        describe('with jsonpath statement', ()=>{
+            it('will generate the templates using jsonpath selection', ()=>{
                 var g = generator.load('./test/samples/just-template-example.json');
                 
                 g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
@@ -44,30 +44,38 @@ describe("a generator", ()=>{
         })
 
         describe('partials', ()=>{
-            it('will use generator partials')
+            it('will use generator partials', ()=>{
+
+                var g = generator.load('./test/samples/just-template-example.json');
+                
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+                var result = fs.readFileSync('./tmp/test-output/order.txt', 'utf8')
+
+                expect(result).to.equal('hello\norder')
+            })
         })
 
-        describe('without jsoniq statement', ()=>{
+        describe('without jsonpath statement', ()=>{
             //todo: this isn't a thing right?
         })
     })
     describe('run command', ()=>{
-        describe('with jsoniq statement', ()=>{
-            it('will run the command templated with input from jsoniq')
+        describe('with jsonpath statement', ()=>{
+            it('will run the command templated with input from jsonpath')
             it('will run the command for each entry')
         })
 
-        describe('without jsoniq statement', ()=>{
+        describe('without jsonpath statement', ()=>{
             it('will run the command once')
         })
     })
     describe('copy foundation', ()=>{
-        describe('with jsoniq statement', ()=>{
-            it('will copy to a templated path with input from jsoniq')
+        describe('with jsonpath statement', ()=>{
+            it('will copy to a templated path with input from jsonpath')
             it('will copy for each entry')
         })
 
-        describe('without jsoniq statement', ()=>{
+        describe('without jsonpath statement', ()=>{
             it('will copy once')
         })
         describe('from git', ()=>{

@@ -1,18 +1,21 @@
-[
+{
+  "partials":[],
+  "steps":[
     {
       "runCommand": "jhipster microservice"
     },
     {
       "generate": "templates/jdl-files",
-      "select": "jsoniq statement"
+      "select": "jsonpath statement"
      },
     {
       "runCommand": "jhipster import-jdl {{service.name}}",
-      "select": "jsoniq statement"
+      "select": "jsonpath statement"
     },
     {
       "copyFoundation": "git+morkeleb/foundation",
-      "select": "jsoniq statement",
+      "select": "jsonpath statement",
       "target": "{{microservice}}"
     }
   ]
+}
