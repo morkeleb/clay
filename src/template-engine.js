@@ -13,34 +13,11 @@ function registerPartial(file) {
 	handlebars.registerPartial(name, fs.readFileSync(file, 'utf8'));
 }
 
-handlebars.load_partials = function () {
-	if(fs.existsSync(files.generators_path)){
-		var templates = fs.readdirSync(files.generators_path);
-		templates.forEach(function (template) {
-			var partials = files.generators_path+'/'+template+'/partials';
-			if(fs.existsSync(partials)){
-				fs.readdirSync(partials)
-				.map(function (f) {
-					return partials+'/'+f;
-				})
-				.forEach(registerPartial);
-			}
-			});
-
-		if(fs.existsSync(files.generators_path+'/views')){
-				var views = fs.readdirSync(files.generators_path+'/views');
-				views.forEach(function (view) {
-					var partials = files.generators_path+'/views/'+view+'/partials';
-					if(fs.existsSync(partials)){
-						fs.readdirSync(partials)
-						.map(function (f) {
-							return partials+'/'+f;
-						})
-						.forEach(registerPartial);
-					}
-			});
-		}
-	}
+handlebars.load_partials = function (templates, directory) {
+	templates.forEach(function (template) {
+		var name = path_module.basename(template).split('.')[0];
+		handlebars.registerPartial(name, fs.readFileSync(path_module.join(directory, template), 'utf8'));
+	});
 }
 
 

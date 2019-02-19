@@ -152,11 +152,12 @@ function generate_directory(model_partial, directory, output) {
 
 function decorate_generator(g, p) {
 	g.generate = (model, output) => {
-		//handlebars.load_partials();
-		for (let index = 0; index < g.length; index++) {
-			const element = g[index];
+		const dirname = path.dirname(p);
+		handlebars.load_partials(g.partials, dirname);
+		for (let index = 0; index < g.steps.length; index++) {
+			const element = g.steps[index];
 			if(element.generate !== undefined){
-				generate_directory(select(model, element.select), path.join(path.dirname(p), element.generate), output)
+				generate_directory(select(model, element.select), path.join(dirname, element.generate), output)
 			}
 		}
 
