@@ -157,23 +157,23 @@ function decorate_generator(g, p) {
 		const dirname = path.dirname(p);
 		handlebars.load_partials(g.partials, dirname);
 		for (let index = 0; index < g.steps.length; index++) {
-			const element = g.steps[index];
-			if(element.generate !== undefined){
-				generate_directory(select(model, element.select), path.join(dirname, element.generate), output)
+			const step = g.steps[index];
+			if(step.generate !== undefined){
+				generate_directory(select(model, step.select), path.join(dirname, step.generate), output)
 			}
-			else if (element.runCommand !== undefined){
-				//todo: run command
+			else if (step.runCommand !== undefined){
 				const output_dir = path.resolve(output)
 				ensure_directory(output_dir)
-				if(element.select == undefined) {
-					execSync(element.runCommand, {cwd: output_dir})	
+				if(step.select == undefined) {
+					execSync(step.runCommand, {cwd: output_dir})	
 				} else {
-					var command = handlebars.compile(element.runCommand)
-					select(model, element.select).forEach((m)=>{
+					var command = handlebars.compile(step.runCommand)
+					select(model, step.select).forEach((m)=>{
 						execSync(command(m), {cwd: output_dir})
 					})
 				}
-				
+			} else if (step.copy !== undefined){
+				//todo: do the copying here
 			}
 		}
 

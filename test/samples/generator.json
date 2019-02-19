@@ -13,7 +13,7 @@
       "select": "jsonpath statement"
     },
     {
-      "copyFoundation": "git+morkeleb/foundation",
+      "copy": "git+morkeleb/foundation",
       "select": "jsonpath statement",
       "target": "{{microservice}}"
     }

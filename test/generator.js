@@ -25,7 +25,7 @@ describe("a generator", ()=>{
                     "select": "jsonpath statement"
                   },
                   {
-                    "copyFoundation": "git+morkeleb/foundation",
+                    "copy": "git+morkeleb/foundation",
                     "select": "jsonpath statement",
                     "target": "{{microservice}}"
                   }
@@ -61,7 +61,7 @@ describe("a generator", ()=>{
     })
     describe('run command', ()=>{
         describe('with jsonpath statement', ()=>{
-            it('will run the command for each entry', ()=>{
+            it('will run the command for each result from jsonpath', ()=>{
                 var g = generator.load('./test/samples/just-command-example.json');
                 
                 g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
