@@ -1,6 +1,6 @@
 [
     {
-      "generate": "templates/simple",
-      "select": "$.entities"
-     }
-  ]
+        "generate": "templates/simple",
+        "select": "$.model.types.*"
+    }
+]

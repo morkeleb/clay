@@ -3,11 +3,11 @@ const {expect} = require('chai')
 
 const model = require('../src/model')
 const fs = require('fs')
+const rimraf = require('rimraf')
 
 describe("a generator", ()=>{
-    afterEach(()=>{
-        if(fs.existsSync('./tmp'))
-            fs.rmdirSync('./tmp')
+    afterEach((done)=>{
+        rimraf('./tmp', done)
     })
     describe("basic initialization", ()=>{
         it('will read a json array with instructions', ()=>{
@@ -39,7 +39,7 @@ describe("a generator", ()=>{
                 
                 g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
 
-                expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.be.true()
+                expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.equal(true)
             })
         })
 

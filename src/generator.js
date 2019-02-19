@@ -115,19 +115,19 @@ function generate_views() {
 
 }
 
-function ensure_directory(path) {
-	var parts = path.split(path_module.sep);
+function ensure_directory(p) {
+	var parts = p.split(path.sep);
 	if(parts.length !== 1) {
 		parts.pop();
-		ensure_directory(parts.join(path_module.sep));
+		ensure_directory(parts.join(path.sep));
 	}
-	if (!fs.existsSync(path)){
-    fs.mkdirSync(path);
+	if (!fs.existsSync(p)){
+    fs.mkdirSync(p);
 	}
 }
 
 function write(file, data) {
-	var dir = path_module.dirname(file);
+	var dir = path.dirname(file);
 	ensure_directory(dir);
 	console.log('writing: '+file);
 	fs.writeFileSync(file, data, 'utf8');
@@ -141,8 +141,8 @@ function generate_directory(model_partial, directory, output) {
 	const templates = fs.readdirSync(directory);
 
 	templates.forEach(file => {
-		var template = handlebars.compile(fs.readFileSync(file, 'utf8'));
-		var file_name = handlebars.compile(path.file_name(file))
+		var template = handlebars.compile(fs.readFileSync(path.join(directory,file), 'utf8'));
+		var file_name = handlebars.compile(file)	
 		model_partial.forEach((m)=>{
 			write(path.join(output, file_name(m)), template(m));
 		})
