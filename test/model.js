@@ -49,6 +49,10 @@ describe("the model module", ()=>{
                       }
                     ]
             
+                  },
+                  {
+                    "name":"product",
+                    "events":[{"name": "productcreated"}]
                   }
                 ]
               });

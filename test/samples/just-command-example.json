@@ -1,0 +1,12 @@
+{
+    "partials":[],
+    "steps":[
+        {
+            "runCommand": "touch once"
+        },
+        {
+            "runCommand": "touch {{name}}",
+            "select": "$.model.types.*"
+        }
+    ]
+}

@@ -33,6 +33,11 @@
             }
           ]
   
+        },
+        {
+          "name": "product",
+          "mixin": ["has_created"],
+          "events": []
         }
       ]
     }

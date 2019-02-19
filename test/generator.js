@@ -61,12 +61,24 @@ describe("a generator", ()=>{
     })
     describe('run command', ()=>{
         describe('with jsonpath statement', ()=>{
-            it('will run the command templated with input from jsonpath')
-            it('will run the command for each entry')
+            it('will run the command for each entry', ()=>{
+                var g = generator.load('./test/samples/just-command-example.json');
+                
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+
+                expect(fs.existsSync('./tmp/test-output/order'), 'command not run for order').to.equal(true)
+                expect(fs.existsSync('./tmp/test-output/product'), 'command not run for product').to.equal(true)
+            })
         })
 
         describe('without jsonpath statement', ()=>{
-            it('will run the command once')
+            it('will run the command once', ()=>{
+                var g = generator.load('./test/samples/just-command-example.json');
+                
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+
+                expect(fs.existsSync('./tmp/test-output/once'), 'template file not generated').to.equal(true)
+            })
         })
     })
     describe('copy foundation', ()=>{

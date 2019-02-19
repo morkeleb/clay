@@ -2,6 +2,8 @@ var fs = require('fs');
 var path = require('path');
 var handlebars = require('./template-engine');
 var jp = require('jsonpath');
+const { execSync } = require('child_process');
+
 
 var revert = false;
 
@@ -121,8 +123,8 @@ function ensure_directory(p) {
 		parts.pop();
 		ensure_directory(parts.join(path.sep));
 	}
-	if (!fs.existsSync(p)){
-    fs.mkdirSync(p);
+	if (!fs.existsSync(p) && p !== ''){
+    	fs.mkdirSync(p);
 	}
 }
 
@@ -158,6 +160,20 @@ function decorate_generator(g, p) {
 			const element = g.steps[index];
 			if(element.generate !== undefined){
 				generate_directory(select(model, element.select), path.join(dirname, element.generate), output)
+			}
+			else if (element.runCommand !== undefined){
+				//todo: run command
+				const output_dir = path.resolve(output)
+				ensure_directory(output_dir)
+				if(element.select == undefined) {
+					execSync(element.runCommand, {cwd: output_dir})	
+				} else {
+					var command = handlebars.compile(element.runCommand)
+					select(model, element.select).forEach((m)=>{
+						execSync(command(m), {cwd: output_dir})
+					})
+				}
+				
 			}
 		}
 
