@@ -88,7 +88,15 @@ describe("a generator", ()=>{
         })
 
         describe('without jsonpath statement', ()=>{
-            it('will copy once')
+            it('will copy once', ()=>{
+
+                var g = generator.load('./test/samples/just-copy-example.json');
+                
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+
+                expect(fs.existsSync('./tmp/test-output/copy'), 'file not copied').to.equal(true)
+            })
+            it('will copy overwrite existing files')
         })
         describe('from git', ()=>{
            it('will clone a repo as source before copying')

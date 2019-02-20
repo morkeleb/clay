@@ -1,4 +1,4 @@
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
 var handlebars = require('./template-engine');
 var jp = require('jsonpath');
@@ -117,20 +117,9 @@ function generate_views() {
 
 }
 
-function ensure_directory(p) {
-	var parts = p.split(path.sep);
-	if(parts.length !== 1) {
-		parts.pop();
-		ensure_directory(parts.join(path.sep));
-	}
-	if (!fs.existsSync(p) && p !== ''){
-    	fs.mkdirSync(p);
-	}
-}
-
 function write(file, data) {
 	var dir = path.dirname(file);
-	ensure_directory(dir);
+	fs.ensureDirSync(dir);
 	console.log('writing: '+file);
 	fs.writeFileSync(file, data, 'utf8');
 }
@@ -163,7 +152,7 @@ function decorate_generator(g, p) {
 			}
 			else if (step.runCommand !== undefined){
 				const output_dir = path.resolve(output)
-				ensure_directory(output_dir)
+				fs.ensureDirSync(output_dir)
 				if(step.select == undefined) {
 					execSync(step.runCommand, {cwd: output_dir})	
 				} else {
@@ -173,7 +162,15 @@ function decorate_generator(g, p) {
 					})
 				}
 			} else if (step.copy !== undefined){
-				//todo: do the copying here
+				const output_dir = path.resolve(output)
+				
+				if(step.select == undefined) {
+					var out = path.join(output_dir, step.target || path.basename(step.copy))
+					fs.ensureDirSync(output_dir)
+					fs.copySync(path.resolve(path.join(dirname, step.copy)), out)
+				} else {
+					//todo: do the copying here
+				}
 			}
 		}
 

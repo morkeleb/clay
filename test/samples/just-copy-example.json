@@ -1,0 +1,17 @@
+{
+    "partials":[],
+    "steps":[
+        {
+            "copy": "foundation/simple",
+            "target": "copies"
+        },
+        {
+            "copy": "foundation/once"
+        },
+        {
+            "copy": "foundation/itterate",
+            "target": "copies/{{name}}",
+            "select": "$.model.types.*"
+        }
+    ]
+}
