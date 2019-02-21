@@ -3,7 +3,7 @@
     "steps":[
         {
             "copy": "foundation/simple",
-            "target": "copies"
+            "target": "copies/"
         },
         {
             "copy": "foundation/once"

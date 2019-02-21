@@ -52,9 +52,18 @@ function decorate_generator(g, p) {
 				const output_dir = path.resolve(output)
 				
 				if(step.select == undefined) {
-					var out = path.join(output_dir, step.target || path.basename(step.copy))
+					let out = null;
+					if(step.target) {
+						out = path.join(output_dir, step.target)
+					} else {
+						out = output_dir
+					}
+					let source = path.resolve(path.join(dirname, step.copy))
+					if(fs.lstatSync(source).isFile()){
+						out = path.join(out, path.basename(step.copy))
+					}
 					fs.ensureDirSync(output_dir)
-					fs.copySync(path.resolve(path.join(dirname, step.copy)), out)
+					fs.copySync(source, out)
 				} else {
 					//todo: do the copying here
 				}

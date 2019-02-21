@@ -2,12 +2,12 @@ const generator = require('../src/generator')
 const {expect} = require('chai')
 
 const model = require('../src/model')
-const fs = require('fs')
-const rimraf = require('rimraf')
+const fs = require('fs-extra')
+const path = require('path')
 
 describe("a generator", ()=>{
-    afterEach((done)=>{
-        rimraf('./tmp', done)
+    afterEach(()=>{
+        fs.removeSync('./tmp')
     })
     describe("basic initialization", ()=>{
         it('will read a json array with instructions', ()=>{
@@ -94,9 +94,18 @@ describe("a generator", ()=>{
                 
                 g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
 
-                expect(fs.existsSync('./tmp/test-output/copy'), 'file not copied').to.equal(true)
+                expect(fs.existsSync('./tmp/test-output/once'), 'file not copied').to.equal(true)
             })
-            it('will copy overwrite existing files')
+            it('will copy overwrite existing files', ()=>{
+
+                var g = generator.load('./test/samples/just-copy-example.json');
+                fs.ensureDirSync(path.resolve('./tmp/test-output/'))
+                fs.writeFileSync(path.resolve('./tmp/test-output/once'), 'hi!');
+                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+
+                expect(fs.readFileSync('./tmp/test-output/once', 'utf8'), 'file not copied').to.equal('once')
+            })
+            it('will copy directories')
         })
         describe('from git', ()=>{
            it('will clone a repo as source before copying')
