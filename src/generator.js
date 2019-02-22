@@ -67,15 +67,11 @@ function decorate_generator(g, p) {
 				} else {
 					select(model, step.select).forEach((m)=>{
 						let out = null;
-						let target = handlebars.compile(step.target)
 						if(step.target) {
+							let target = handlebars.compile(step.target)
 							out = path.join(output_dir, target(m))
 						} else {
 							out = output_dir
-						}
-						let s = handlebars.compile(step.copy)
-						if(fs.lstatSync(source).isFile()){
-							out = path.join(out, path.basename(s(m)))
 						}
 						fs.ensureDirSync(output_dir)
 						fs.copySync(source, out)
