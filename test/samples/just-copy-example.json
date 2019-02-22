@@ -10,7 +10,7 @@
         },
         {
             "copy": "foundation/itterate",
-            "target": "copies/{{name}}",
+            "target": "copies/{{name}}/{{name}}",
             "select": "$.model.types.*"
         }
     ]
