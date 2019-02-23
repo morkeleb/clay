@@ -5,7 +5,7 @@ const path = require('path')
 const fs = require('fs')
 
 commander
-  .version(process.env.npm_package_version);
+  .version(require('../package.json').version);
 
 
 function resolve_generator(name, model_path) {
