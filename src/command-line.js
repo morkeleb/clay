@@ -18,7 +18,7 @@ function resolve_generator(name, model_path) {
   ].filter(fs.existsSync)
   
   
-  if(generator_path.length != 1){
+  if(generator_path.length < 1){
     throw 'generator not found for: '+name
   }
   return require('./generator').load(generator_path[0])

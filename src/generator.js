@@ -18,7 +18,7 @@ function select(model, jsonpath) {
 function generate_directory(model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
   
-  templates.forEach(file => {
+  templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
     var template = handlebars.compile(fs.readFileSync(path.join(directory,file), 'utf8'));
     var file_name = handlebars.compile(file)	
     model_partial.forEach((m)=>{

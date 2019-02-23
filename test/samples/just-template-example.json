@@ -4,6 +4,11 @@
     {
       "generate": "templates/simple",
       "select": "$.model.types.*"
+    },
+    {
+      "generate": "templates/simple",
+      "select": "$.model.types.*",
+      "target": "t1/{{name}}"
     }
   ]
 }
