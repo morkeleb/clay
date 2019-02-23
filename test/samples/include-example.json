@@ -1,18 +1,18 @@
 {
-    "name": "mymodel",
-    "generators": [
-      "documentation"
-    ],
-    "mixins": [
-      {
-          "type":"function",
-          "name":"has_created",
-          "function":"(piece)=>piece.events.push({'name': piece.name+'created'})"
-      }
-    ],
-    "model": {
-      "types":[
-        {"include":"entities/order.json"}
-      ]
+  "name": "mymodel",
+  "generators": [
+    "documentation"
+  ],
+  "mixins": [
+    {
+      "type":"function",
+      "name":"has_created",
+      "function":"(piece)=>piece.events.push({'name': piece.name+'created'})"
     }
+  ],
+  "model": {
+    "types":[
+      {"include":"entities/order.json"}
+    ]
   }
+}

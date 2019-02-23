@@ -6,123 +6,123 @@ const fs = require('fs-extra')
 const path = require('path')
 
 describe("a generator", ()=>{
-    afterEach(()=>{
-        fs.removeSync('./tmp')
+  afterEach(()=>{
+    fs.removeSync('./tmp')
+  })
+  describe("basic initialization", ()=>{
+    it('will read a json array with instructions', ()=>{
+      var result = generator.load('./test/samples/generator.json')
+      expect(result.steps).to.deep.equal([
+        {
+          "runCommand": "jhipster microservice"
+        },
+        {
+          "generate": "templates/jdl-files",
+          "select": "jsonpath statement"
+        },
+        {
+          "runCommand": "jhipster import-jdl {{service.name}}",
+          "select": "jsonpath statement"
+        },
+        {
+          "copy": "git+morkeleb/foundation",
+          "select": "jsonpath statement",
+          "target": "{{microservice}}"
+        }
+      ])
     })
-    describe("basic initialization", ()=>{
-        it('will read a json array with instructions', ()=>{
-            var result = generator.load('./test/samples/generator.json')
-            expect(result.steps).to.deep.equal([
-                  {
-                    "runCommand": "jhipster microservice"
-                  },
-                  {
-                    "generate": "templates/jdl-files",
-                    "select": "jsonpath statement"
-                   },
-                  {
-                    "runCommand": "jhipster import-jdl {{service.name}}",
-                    "select": "jsonpath statement"
-                  },
-                  {
-                    "copy": "git+morkeleb/foundation",
-                    "select": "jsonpath statement",
-                    "target": "{{microservice}}"
-                  }
-            ])
-        })
+  })
+  describe('generate with template', ()=>{
+    describe('with jsonpath statement', ()=>{
+      it('will generate the templates using jsonpath selection', ()=>{
+        var g = generator.load('./test/samples/just-template-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.equal(true)
+      })
     })
-    describe('generate with template', ()=>{
-        describe('with jsonpath statement', ()=>{
-            it('will generate the templates using jsonpath selection', ()=>{
-                var g = generator.load('./test/samples/just-template-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.equal(true)
-            })
-        })
-
-        describe('partials', ()=>{
-            it('will use generator partials', ()=>{
-
-                var g = generator.load('./test/samples/just-template-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-                var result = fs.readFileSync('./tmp/test-output/order.txt', 'utf8')
-
-                expect(result).to.equal('hello\norder')
-            })
-        })
-
-        describe('without jsonpath statement', ()=>{
-            //todo: this isn't a thing right?
-        })
+    
+    describe('partials', ()=>{
+      it('will use generator partials', ()=>{
+        
+        var g = generator.load('./test/samples/just-template-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        var result = fs.readFileSync('./tmp/test-output/order.txt', 'utf8')
+        
+        expect(result).to.equal('hello\norder')
+      })
     })
-    describe('run command', ()=>{
-        describe('with jsonpath statement', ()=>{
-            it('will run the command for each result from jsonpath', ()=>{
-                var g = generator.load('./test/samples/just-command-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/order'), 'command not run for order').to.equal(true)
-                expect(fs.existsSync('./tmp/test-output/product'), 'command not run for product').to.equal(true)
-            })
-        })
-
-        describe('without jsonpath statement', ()=>{
-            it('will run the command once', ()=>{
-                var g = generator.load('./test/samples/just-command-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/once'), 'template file not generated').to.equal(true)
-            })
-        })
+    
+    describe('without jsonpath statement', ()=>{
+      //todo: this isn't a thing right?
     })
-    describe('copy foundation', ()=>{
-        describe('with jsonpath statement', ()=>{
-            it('will copy to a templated path with input from jsonpath', ()=>{
-                var g = generator.load('./test/samples/just-copy-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/copies/product/product/product/hi'), 'file not copied').to.equal(true)
-                expect(fs.existsSync('./tmp/test-output/copies/order/order/order/hi'), 'file not copied').to.equal(true)
-                expect(fs.existsSync('./tmp/test-output/order/hi'), 'file not copied').to.equal(true)
-            })
-        })
-
-        describe('without jsonpath statement', ()=>{
-            it('will copy once', ()=>{
-
-                var g = generator.load('./test/samples/just-copy-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/once'), 'file not copied').to.equal(true)
-            })
-            it('will copy overwrite existing files', ()=>{
-
-                var g = generator.load('./test/samples/just-copy-example.json');
-                fs.ensureDirSync(path.resolve('./tmp/test-output/'))
-                fs.writeFileSync(path.resolve('./tmp/test-output/once'), 'hi!');
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.readFileSync('./tmp/test-output/once', 'utf8'), 'file not copied').to.equal('once')
-            })
-            it('will copy directories', ()=>{
-
-                var g = generator.load('./test/samples/just-copy-example.json');
-                
-                g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
-
-                expect(fs.existsSync('./tmp/test-output/level1/static'), 'file not copied').to.equal(true)
-            })
-        })
-        describe('from git', ()=>{
-           it('will clone a repo as source before copying')
-        })
+  })
+  describe('run command', ()=>{
+    describe('with jsonpath statement', ()=>{
+      it('will run the command for each result from jsonpath', ()=>{
+        var g = generator.load('./test/samples/just-command-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/order'), 'command not run for order').to.equal(true)
+        expect(fs.existsSync('./tmp/test-output/product'), 'command not run for product').to.equal(true)
+      })
     })
+    
+    describe('without jsonpath statement', ()=>{
+      it('will run the command once', ()=>{
+        var g = generator.load('./test/samples/just-command-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/once'), 'template file not generated').to.equal(true)
+      })
+    })
+  })
+  describe('copy foundation', ()=>{
+    describe('with jsonpath statement', ()=>{
+      it('will copy to a templated path with input from jsonpath', ()=>{
+        var g = generator.load('./test/samples/just-copy-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/copies/product/product/product/hi'), 'file not copied').to.equal(true)
+        expect(fs.existsSync('./tmp/test-output/copies/order/order/order/hi'), 'file not copied').to.equal(true)
+        expect(fs.existsSync('./tmp/test-output/order/hi'), 'file not copied').to.equal(true)
+      })
+    })
+    
+    describe('without jsonpath statement', ()=>{
+      it('will copy once', ()=>{
+        
+        var g = generator.load('./test/samples/just-copy-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/once'), 'file not copied').to.equal(true)
+      })
+      it('will copy overwrite existing files', ()=>{
+        
+        var g = generator.load('./test/samples/just-copy-example.json');
+        fs.ensureDirSync(path.resolve('./tmp/test-output/'))
+        fs.writeFileSync(path.resolve('./tmp/test-output/once'), 'hi!');
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.readFileSync('./tmp/test-output/once', 'utf8'), 'file not copied').to.equal('once')
+      })
+      it('will copy directories', ()=>{
+        
+        var g = generator.load('./test/samples/just-copy-example.json');
+        
+        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/level1/static'), 'file not copied').to.equal(true)
+      })
+    })
+    describe('from git', ()=>{
+      it('will clone a repo as source before copying')
+    })
+  })
 })

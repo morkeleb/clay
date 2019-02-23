@@ -28,23 +28,23 @@ commander
 commander
 .command('list').description('Lists all available generators')
 .action(function () {
-		console.log('available generators');
-		files = generator.list_templates();
-		files.forEach(function (file) {
-			console.log(file);
-		});
+    console.log('available generators');
+    files = generator.list_templates();
+    files.forEach(function (file) {
+      console.log(file);
+    });
 }
 )
 
 commander
 .command('all').description('Generates all available generators and views')
 .action(function () {
-		files = generator.list_templates();
-		files.filter(function (file) {
-		  return file != 'views';
-		}).forEach(function (file) {
-			generator.generate_template(file);
-		});
+    files = generator.list_templates();
+    files.filter(function (file) {
+      return file != 'views';
+    }).forEach(function (file) {
+      generator.generate_template(file);
+    });
     generator.generate_views();
 }
 )

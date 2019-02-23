@@ -1,9 +1,9 @@
 {
-    "partials":["partials/hello"],
-    "steps":[
-        {
-            "generate": "templates/simple",
-            "select": "$.model.types.*"
-        }
-    ]
+  "partials":["partials/hello"],
+  "steps":[
+    {
+      "generate": "templates/simple",
+      "select": "$.model.types.*"
+    }
+  ]
 }

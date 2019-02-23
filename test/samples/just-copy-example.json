@@ -1,23 +1,24 @@
 {
-    "partials":[],
-    "steps":[
-        {
-            "copy": "foundation/simple",
-            "target": "copies/"
-        },
-        {
-            "copy": "foundation/once"
-        }, {
-            "copy": "foundation/nojsonpath"
-        },
-        {
-            "copy": "foundation/itterate",
-            "target": "copies/{{name}}/{{name}}",
-            "select": "$.model.types.*"
-        },
-        {
-            "copy": "foundation/itterate",
-            "select": "$.model.types.*"
-        }
-    ]
+  "partials":[],
+  "steps":[
+    {
+      "copy": "foundation/simple",
+      "target": "copies/"
+    },
+    {
+      "copy": "foundation/once"
+    },
+    {
+      "copy": "foundation/nojsonpath"
+    },
+    {
+      "copy": "foundation/itterate",
+      "target": "copies/{{name}}/{{name}}",
+      "select": "$.model.types.*"
+    },
+    {
+      "copy": "foundation/itterate",
+      "select": "$.model.types.*"
+    }
+  ]
 }

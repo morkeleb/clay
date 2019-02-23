@@ -7,7 +7,7 @@
     {
       "generate": "templates/jdl-files",
       "select": "jsonpath statement"
-     },
+    },
     {
       "runCommand": "jhipster import-jdl {{service.name}}",
       "select": "jsonpath statement"
