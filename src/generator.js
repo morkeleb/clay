@@ -24,7 +24,6 @@ function generate_directory(model_partial, directory, output) {
 		model_partial.forEach((m)=>{
 			write(path.join(output, file_name(m)), template(m));
 		})
-
 	});
 }
 
@@ -50,7 +49,6 @@ function decorate_generator(g, p) {
 				}
 			} else if (step.copy !== undefined){
 				const output_dir = path.resolve(output)
-		
 				let source = path.resolve(path.join(dirname, step.copy))
 				if(step.select == undefined) {
 					let out = null;
