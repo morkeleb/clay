@@ -1,0 +1,44 @@
+{
+  "name": "mymodel",
+  "generators": [
+    "just-template-example"
+  ],
+  "mixins": [
+    {
+      "type":"function",
+      "name":"has_created",
+      "function":"(piece)=>piece.events.push({'name': piece.name+'created'})"
+    }
+  ],
+  "model": {
+    "types":[
+      {
+        "name": "order",
+        "mixin": ["has_created"],
+        "commands": [
+          {
+            "name": "finish_order",
+            "raise": "order_finished",
+            "parameters": [
+              {
+                "name": "finished"
+              }
+            ]
+          }
+        ],
+        "events": [],
+        "fields": [
+          {
+            "name": "test"
+          }
+        ]
+        
+      },
+      {
+        "name": "product",
+        "mixin": ["has_created"],
+        "events": []
+      }
+    ]
+  }
+}

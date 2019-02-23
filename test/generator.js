@@ -121,8 +121,5 @@ describe("a generator", ()=>{
         expect(fs.existsSync('./tmp/test-output/level1/static'), 'file not copied').to.equal(true)
       })
     })
-    describe('from git', ()=>{
-      it('will clone a repo as source before copying')
-    })
   })
 })

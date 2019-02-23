@@ -12,7 +12,7 @@
   "author": "Morten Nielsen",
   "license": "ISC",
   "dependencies": {
-    "commander": "^2.9.0",
+    "commander": "^2.19.0",
     "fs-extra": "^7.0.1",
     "handlebars": "^4.0.5",
     "handlebars-group-by": "^1.0.1",
