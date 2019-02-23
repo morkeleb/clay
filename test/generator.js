@@ -46,14 +46,14 @@ describe("a generator", ()=>{
         
         g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
         
-        expect(fs.existsSync('./tmp/test-output/types/order.txt'), 'template file not generated').to.equal(true)    
+        expect(fs.existsSync('./tmp/test-output/types/order.tx'), 'template file not generated').to.equal(true)    
       })
       it('will respect targets', ()=>{
         var g = generator.load('./test/samples/just-template-example.json');
         
         g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
         
-        expect(fs.existsSync('./tmp/test-output/t1/order/order.txt'), 'template file not generated').to.equal(true)    
+        expect(fs.existsSync('./tmp/test-output/t1/order.txt'), 'template file not generated').to.equal(true)    
       })
     })
     

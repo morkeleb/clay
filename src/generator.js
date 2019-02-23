@@ -17,7 +17,6 @@ function select(model, jsonpath) {
 
 function generate_directory(model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
-  console.log(templates);
 
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isDirectory())
   .forEach((file)=>{
@@ -40,7 +39,7 @@ function decorate_generator(g, p) {
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        generate_directory(select(model, step.select), path.join(dirname, step.generate), output)
+        generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
       }
       else if (step.runCommand !== undefined){
         const output_dir = path.resolve(output)
