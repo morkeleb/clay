@@ -1,13 +1,14 @@
-var fs = require('fs-extra');
-var path = require('path');
-var handlebars = require('./template-engine');
-var jp = require('jsonpath');
+const fs = require('fs-extra');
+const path = require('path');
+const handlebars = require('./template-engine');
+const jp = require('jsonpath');
 const { execSync } = require('child_process');
+const debug = require('debug')('generator')
 
 function write(file, data) {
-  var dir = path.dirname(file);
+  const dir = path.dirname(file);
   fs.ensureDirSync(dir);
-  console.log('writing: '+file);
+  debug('writing: '+file);
   fs.writeFileSync(file, data, 'utf8');
 }
 
@@ -45,10 +46,12 @@ function decorate_generator(g, p) {
         const output_dir = path.resolve(output)
         fs.ensureDirSync(output_dir)
         if(step.select == undefined) {
+          debug('executing: ', step.runCommand);
           execSync(step.runCommand, {cwd: output_dir})	
         } else {
           var command = handlebars.compile(step.runCommand)
           select(model, step.select).forEach((m)=>{
+            debug('executing: ', command(m));
             execSync(command(m), {cwd: output_dir})
           })
         }
@@ -66,6 +69,7 @@ function decorate_generator(g, p) {
             out = path.join(out, path.basename(step.copy))
           }
           fs.ensureDirSync(output_dir)
+          debug('copying: ', source, '->', out);
           fs.copySync(source, out)
         } else {
           select(model, step.select).forEach((m)=>{
@@ -77,6 +81,7 @@ function decorate_generator(g, p) {
               out = output_dir
             }
             fs.ensureDirSync(output_dir)
+            debug('copying: ', source, '->', out);
             fs.copySync(source, out)
             const recusiveHandlebars = (p)=>{
               fs.readdirSync(p).forEach((f)=>{
@@ -85,6 +90,7 @@ function decorate_generator(g, p) {
                   recusiveHandlebars(file)
                 } else {
                   const template = handlebars.compile(file)
+                  debug('moving: ', file, '->', template(m));
                   fs.moveSync(file, template(m))
                 }
                 
