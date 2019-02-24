@@ -197,6 +197,4 @@ var command = function (user, {{ parameters }}) {
 
 
 - [ ] validations on models and generators
-- [ ] can the copy step simple be removed and use the template step instead?
 - [ ] add usage instructions to readme
-- [ ] update generator and allow loading of node modules as generators
