@@ -26,9 +26,9 @@ function generate_directory(model_partial, directory, output) {
   
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
     var template = handlebars.compile(fs.readFileSync(path.join(directory,file), 'utf8'));
-    var file_name = handlebars.compile(file)	
+    var file_name = handlebars.compile(path.join(output,file))	
     model_partial.forEach((m)=>{
-      write(path.join(output, file_name(m)), template(m));
+      write( file_name(m), template(m));
     })
   });
 }
