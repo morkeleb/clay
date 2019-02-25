@@ -36,6 +36,12 @@ function generate_directory(model_partial, directory, output) {
   });
 }
 
+function execute(commandline, output_dir){
+
+  console.log('executing: ', commandline);
+  execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
+}
+
 function decorate_generator(g, p) {
   g.generate = (model, output) => {
     const dirname = path.dirname(p);
@@ -49,13 +55,11 @@ function decorate_generator(g, p) {
         const output_dir = path.resolve(output)
         fs.ensureDirSync(output_dir)
         if(step.select == undefined) {
-          console.log('executing: ', step.runCommand);
-          execSync(step.runCommand, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
+          execute(step.runCommand, output_dir)
         } else {
           var command = handlebars.compile(step.runCommand)
           select(model, step.select).forEach((m)=>{
-            console.log('executing: ', command(m));
-            execSync(command(m), {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})
+            execute(command(m), output_dir)
           })
         }
       } else if (step.copy !== undefined){
