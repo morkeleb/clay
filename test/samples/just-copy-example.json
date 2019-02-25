@@ -19,6 +19,10 @@
     {
       "copy": "foundation/itterate",
       "select": "$.model.types.*"
+    },
+    {
+      "copy": "foundation/itterate",
+      "select": "$.this.will.never.copy.but.give.100.percent.code.coverage"
     }
   ]
 }
