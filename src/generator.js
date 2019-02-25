@@ -12,7 +12,11 @@ function write(file, data) {
 }
 
 function select(model, jsonpath) {
-  return jp.query(model, jsonpath);
+  var result =  jp.query(model, jsonpath);
+  if(result.length == 0){
+    console.warn('Warning! No entires found for jsonpath ', jsonpath)
+  }
+  return result;
 }
 
 function generate_directory(model_partial, directory, output) {
