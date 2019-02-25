@@ -37,7 +37,6 @@ function generate_directory(model_partial, directory, output) {
 }
 
 function execute(commandline, output_dir){
-
   console.log('executing: ', commandline);
   execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
 }
