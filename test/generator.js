@@ -34,7 +34,7 @@ describe("a generator", ()=>{
   })
   describe('generate with template', ()=>{
     describe('with jsonpath statement', ()=>{
-      it('will generate the templates using jsonpath selection', ()=>{
+      it('will generate the templates using jsonpath selection',  ()=>{
         var g = generator.load('./test/samples/just-template-example.json');
         
         g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
@@ -97,10 +97,10 @@ describe("a generator", ()=>{
   })
   describe('copy foundation', ()=>{
     describe('with jsonpath statement', ()=>{
-      it('will copy to a templated path with input from jsonpath', ()=>{
+      it('will copy to a templated path with input from jsonpath', async ()=>{
         var g = generator.load('./test/samples/just-copy-example.json');
         
-        g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
+        await g.generate(model.load('./test/samples/example.json'), './tmp/test-output')
         
         expect(fs.existsSync('./tmp/test-output/copies/product/product/product/hi'), 'file not copied').to.equal(true)
         expect(fs.existsSync('./tmp/test-output/copies/order/order/order/hi'), 'file not copied').to.equal(true)

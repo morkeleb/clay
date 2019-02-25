@@ -4,7 +4,6 @@ const commander = new Command();
 const path = require('path')
 const fs = require('fs')
 const resolveGlobal = require('resolve-global')
-const debug = require('debug')
 
 commander
   .version(require('../package.json').version);
@@ -12,7 +11,6 @@ commander
 commander.option('-v, --verbose', 'ignore test hook');
 commander.on('option:verbose', function () {
   process.env.VERBOSE = this.verbose;
-  debug.enable('generator, commands')
 });
 
 // error on unknown commands
@@ -35,7 +33,7 @@ function resolve_generator(name, model_path) {
     throw 'generator not found for: '+name
   }
 
-  debug('commands')('loading generator: ', generator_path[0]);
+  console.log('loading generator: ', generator_path[0]);
   
   return require('./generator').load(generator_path[0])
 }
