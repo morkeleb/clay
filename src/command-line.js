@@ -3,6 +3,7 @@ const {Command} = require('commander');
 const commander = new Command();
 const path = require('path')
 const fs = require('fs')
+const ui = require('./output')
 const resolveGlobal = require('resolve-global')
 
 commander
@@ -33,7 +34,7 @@ function resolve_generator(name, model_path) {
     throw 'generator not found for: '+name
   }
 
-  console.log('loading generator: ', generator_path[0]);
+  ui.log('loading generator: ', generator_path[0]);
   
   return require('./generator').load(generator_path[0])
 }

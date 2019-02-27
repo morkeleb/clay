@@ -198,4 +198,3 @@ var command = function (user, {{ parameters }}) {
 
 - [ ] validations on models and generators
 - [ ] add usage instructions to readme
-- [ ] use chalk to make pretty output... pretty output is... pretty
