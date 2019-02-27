@@ -9,6 +9,11 @@
       "generate": "templates/simple",
       "select": "$.model.types.*",
       "target": "t1/{{name}}"
+    },
+    {
+      "generate": "templates/justfile{{name}}.txt",
+      "select": "$.model.types.*",
+      "target":"/"
     }
   ]
 }

@@ -1,6 +1,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const handlebars = require('./template-engine');
+const output = require('./output');
 const jp = require('jsonpath');
 const { execSync } = require('child_process');
 
@@ -12,11 +13,25 @@ function write(file, data) {
 }
 
 function select(model, jsonpath) {
+  try {
   var result =  jp.query(model, jsonpath);
+  } catch(e){
+    output.critical('Jsonpath not parseable ', jsonpath)
+
+    return []
+  }
   if(result.length == 0){
-    console.warn('Warning! No entires found for jsonpath ', jsonpath)
+    output.warn('No entires found for jsonpath ', jsonpath)
   }
   return result;
+}
+
+function generate_file(model_partial, directory, output, file) {
+  var template = handlebars.compile(fs.readFileSync(path.join(directory, file), 'utf8'));
+  var file_name = handlebars.compile(path.join(output,file))	
+  model_partial.forEach((m)=>{
+    write( file_name(m), template(m));
+  })
 }
 
 function generate_directory(model_partial, directory, output) {
@@ -28,11 +43,7 @@ function generate_directory(model_partial, directory, output) {
   })
   
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
-    var template = handlebars.compile(fs.readFileSync(path.join(directory,file), 'utf8'));
-    var file_name = handlebars.compile(path.join(output,file))	
-    model_partial.forEach((m)=>{
-      write( file_name(m), template(m));
-    })
+    generate_file(model_partial, directory, output, file)
   });
 }
 
@@ -48,7 +59,11 @@ function decorate_generator(g, p) {
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+        if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
+          generate_file(select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
+        } else {
+          generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+        }
       }
       else if (step.runCommand !== undefined){
         const output_dir = path.resolve(output)
