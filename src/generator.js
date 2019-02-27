@@ -1,14 +1,14 @@
 const fs = require('fs-extra');
 const path = require('path');
 const handlebars = require('./template-engine');
-const output = require('./output');
+const ui = require('./output');
 const jp = require('jsonpath');
 const { execSync } = require('child_process');
 
 function write(file, data) {
   const dir = path.dirname(file);
   fs.ensureDirSync(dir);
-  console.log('writing: '+file);
+  ui.write(file)
   fs.writeFileSync(file, data, 'utf8');
 }
 
@@ -16,12 +16,12 @@ function select(model, jsonpath) {
   try {
   var result =  jp.query(model, jsonpath);
   } catch(e){
-    output.critical('Jsonpath not parseable ', jsonpath)
+    ui.critical('Jsonpath not parseable ', jsonpath)
 
     return []
   }
   if(result.length == 0){
-    output.warn('No entires found for jsonpath ', jsonpath)
+    ui.warn('No entires found for jsonpath ', jsonpath)
   }
   return result;
 }
@@ -48,7 +48,7 @@ function generate_directory(model_partial, directory, output) {
 }
 
 function execute(commandline, output_dir){
-  console.log('executing: ', commandline);
+  ui.execute(commandline);
   execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
 }
 
@@ -90,7 +90,7 @@ function decorate_generator(g, p) {
             out = path.join(out, path.basename(step.copy))
           }
           fs.ensureDirSync(output_dir)
-          console.log('copying: ', source, '->', out);
+          ui.copy(source, out)
           fs.copySync(source, out)
         } else {
           select(model, step.select).forEach((m)=>{
@@ -102,7 +102,7 @@ function decorate_generator(g, p) {
               out = output_dir
             }
             fs.ensureDirSync(output_dir)
-            console.log('copying: ', source, '->', out);
+            ui.copy(source, out)
             fs.copySync(source, out)
             const recusiveHandlebars = (p)=>{
               fs.readdirSync(p).forEach((f)=>{
@@ -111,7 +111,7 @@ function decorate_generator(g, p) {
                   recusiveHandlebars(file)
                 } else {
                   const template = handlebars.compile(file)
-                  console.log('moving: ', file, '->', template(m));
+                  ui.move(source, out)
                   fs.moveSync(file, template(m))
                 }
                 
