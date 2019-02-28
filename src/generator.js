@@ -52,6 +52,73 @@ function execute(commandline, output_dir){
   execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
 }
 
+function generate_template(step, model, output, dirname) {
+  if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
+    generate_file(select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
+  } else {
+    generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+  }
+}
+
+function run_command(step, model, output, dirname) {
+  const output_dir = path.resolve(output)
+  fs.ensureDirSync(output_dir)
+  if(step.select == undefined) {
+    execute(step.runCommand, output_dir)
+  } else {
+    var command = handlebars.compile(step.runCommand)
+    select(model, step.select).forEach((m)=>{
+      execute(command(m), output_dir)
+    })
+  }
+}
+
+function copy(step, model, output, dirname){
+  const output_dir = path.resolve(output)
+  let source = path.resolve(path.join(dirname, step.copy))
+  if(step.select == undefined) {
+    let out = null;
+    if(step.target) {
+      out = path.join(output_dir, step.target)
+    } else {
+      out = output_dir
+    }
+    if(fs.lstatSync(source).isFile()){
+      out = path.join(out, path.basename(step.copy))
+    }
+    fs.ensureDirSync(output_dir)
+    ui.copy(source, out)
+    fs.copySync(source, out)
+  } else {
+    select(model, step.select).forEach((m)=>{
+      let out = null;
+      if(step.target) {
+        let target = handlebars.compile(step.target)
+        out = path.join(output_dir, target(m))
+      } else {
+        out = output_dir
+      }
+      fs.ensureDirSync(output_dir)
+      ui.copy(source, out)
+      fs.copySync(source, out)
+      const recusiveHandlebars = (p)=>{
+        fs.readdirSync(p).forEach((f)=>{
+          let file = path.join(p, f)
+          if(fs.lstatSync(file).isDirectory()){
+            recusiveHandlebars(file)
+          } else {
+            const template = handlebars.compile(file)
+            ui.move(source, out)
+            fs.moveSync(file, template(m))
+          }
+          
+        })
+      }
+      recusiveHandlebars(out);
+    })
+  }
+}
+
 function decorate_generator(g, p) {
   g.generate = (model, output) => {
     const dirname = path.dirname(p);
@@ -59,70 +126,14 @@ function decorate_generator(g, p) {
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-          generate_file(select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
-        } else {
-          generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
-        }
+        generate_template(step, model, output, dirname)
       }
       else if (step.runCommand !== undefined){
-        const output_dir = path.resolve(output)
-        fs.ensureDirSync(output_dir)
-        if(step.select == undefined) {
-          execute(step.runCommand, output_dir)
-        } else {
-          var command = handlebars.compile(step.runCommand)
-          select(model, step.select).forEach((m)=>{
-            execute(command(m), output_dir)
-          })
-        }
+        run_command(step, model, output, dirname)
       } else if (step.copy !== undefined){
-        const output_dir = path.resolve(output)
-        let source = path.resolve(path.join(dirname, step.copy))
-        if(step.select == undefined) {
-          let out = null;
-          if(step.target) {
-            out = path.join(output_dir, step.target)
-          } else {
-            out = output_dir
-          }
-          if(fs.lstatSync(source).isFile()){
-            out = path.join(out, path.basename(step.copy))
-          }
-          fs.ensureDirSync(output_dir)
-          ui.copy(source, out)
-          fs.copySync(source, out)
-        } else {
-          select(model, step.select).forEach((m)=>{
-            let out = null;
-            if(step.target) {
-              let target = handlebars.compile(step.target)
-              out = path.join(output_dir, target(m))
-            } else {
-              out = output_dir
-            }
-            fs.ensureDirSync(output_dir)
-            ui.copy(source, out)
-            fs.copySync(source, out)
-            const recusiveHandlebars = (p)=>{
-              fs.readdirSync(p).forEach((f)=>{
-                let file = path.join(p, f)
-                if(fs.lstatSync(file).isDirectory()){
-                  recusiveHandlebars(file)
-                } else {
-                  const template = handlebars.compile(file)
-                  ui.move(source, out)
-                  fs.moveSync(file, template(m))
-                }
-                
-              })
-            }
-            recusiveHandlebars(out);
-          })
-        }
+        copy(step, model, output, dirname)
       }
     }
-    
   }
   return g;
 }
