@@ -198,3 +198,4 @@ var command = function (user, {{ parameters }}) {
 
 - [ ] validations on models and generators
 - [ ] add usage instructions to readme
+- [ ] add an option to make dry runs
