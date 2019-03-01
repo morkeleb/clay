@@ -3,11 +3,11 @@ const chalk = require('chalk')
 module.exports = {
   move: (target, dest)=>{
     if(!process.isCLI) return;
-    console.log(chalk.green('moving '), target, chalk.green(' -> '), dest)
+    console.log(chalk.green('moving: '), target, chalk.green(' -> '), dest)
   },
   copy: (target, dest)=>{
     if(!process.isCLI) return;
-    console.log(chalk.magenta('copying '), target, chalk.magenta(' -> '), dest)
+    console.log(chalk.magenta('copying: '), target, chalk.magenta(' -> '), dest)
   },
   log: (...text)=>{
     if(!process.isCLI) return;
@@ -29,7 +29,7 @@ module.exports = {
     text.unshift(chalk.red('Warning! '))
     console.warn.apply(console, text)
   },
-  critical: (text)=>{
+  critical: (...text)=>{
     if(!process.isCLI) return;
     text.unshift(chalk.red('CRITICAL! '))
     console.warn.apply(console, text)
