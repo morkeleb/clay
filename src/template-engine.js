@@ -18,15 +18,6 @@ handlebars.load_partials = function (templates, directory) {
   });
 }
 
-
-handlebars.registerHelper('toLowerCase', function(value) {
-  if(value) {
-    return new handlebars.SafeString(value.toLowerCase());
-  } else {
-    return '';
-  }
-});
-
 handlebars.registerHelper('markdown', function(value) {
   if(value) {
     return new handlebars.SafeString(marked(value));

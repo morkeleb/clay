@@ -147,9 +147,9 @@ Example of a template:
 
 ```
 var command = function (user, {{ parameters }}) {
-	var {{toLowerCase type.name}} = repository.find('{{type.name}}', id);
+	var {{lowerCase type.name}} = repository.find('{{type.name}}', id);
 
-	if({{toLowerCase type.name}}){
+	if({{lowerCase type.name}}){
 		eventsource.raise('{{raises}}', [user, {{parameters}}]);
 	}
 }
@@ -178,15 +178,16 @@ The markdown helper method shown in the following example.
 </p>
 ```
 
-#### toLowerCase
+#### lobars
 
-Sometimes it makes sense to write fields and names with capitalized first letters. But when generating code for these names we need a lower case representation of the name.
+lobars and lodash string manipulation as helpers to the handlebar templating system.
+
 
 ```
 var command = function (user, {{ parameters }}) {
-	var {{toLowerCase type.name}} = repository.find('{{type.name}}', id);
+	var {{lowerCase type.name}} = repository.find('{{type.name}}', id);
 
-	if({{toLowerCase type.name}}){
+	if({{lowerCase type.name}}){
 		eventsource.raise('{{raises}}', l[user, {{parameters}}]);
 	}
 }
