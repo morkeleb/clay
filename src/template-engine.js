@@ -5,6 +5,9 @@ var fs = require('fs');
 var path_module = require('path');
 
 var groupBy = require('handlebars-group-by');
+const lobars = require('lobars')
+
+handlebars.registerHelper(lobars)
 
 groupBy.register(handlebars);
 
@@ -30,6 +33,10 @@ handlebars.registerHelper('markdown', function(value) {
   } else {
     return '';
   }
+});
+handlebars.registerHelper("inc", function(value, options)
+{
+    return parseInt(value) + 1;
 });
 
 module.exports = handlebars;
