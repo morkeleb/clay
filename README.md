@@ -192,12 +192,15 @@ var command = function (user, {{ parameters }}) {
 }
 ```
 
+### Changes
+
+- [X] support casing help in helpers
+- [X] inc one helper for indexes plus 1
+- [X] use chalk to make pretty output... pretty output is... pretty
+- [X] update generator and allow loading of node modules as generators	
 
 ### Future
-
 
 - [ ] validations on models and generators
 - [ ] add usage instructions to readme
 - [ ] add an option to make dry runs
-- [X] support casing help in helpers
-- [X] inc one helper for indexes plus 1
