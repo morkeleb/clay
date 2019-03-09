@@ -206,3 +206,4 @@ var command = function (user, {{ parameters }}) {
 - [ ] add usage instructions to readme
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
+- [ ] built in watch support
