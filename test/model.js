@@ -6,7 +6,7 @@ describe("the model module", ()=>{
   describe('basic initailization',()=>{
     var result = null;
     beforeEach(()=>{
-      result = model.load('./test/samples/example.json');
+      result = model.load('./test/samples/example-unknown-generator.json');
       
     })
     it('will load a model from a path', ()=>{
@@ -14,7 +14,7 @@ describe("the model module", ()=>{
     })
     
     it('will have a generators section acording to the file', ()=>{
-      expect(result.generators).to.deep.equal(['documentation'])
+      expect(result.generators).to.deep.equal(['unknown'])
     });
     it('will have a mixin according to the sample', ()=>{
       expect(result.mixins).to.deep.equal([
@@ -61,7 +61,7 @@ describe("the model module", ()=>{
   describe('mixins', ()=>{
     var result = null;
     beforeEach(()=>{
-      result = model.load('./test/samples/example.json');
+      result = model.load('./test/samples/example-unknown-generator.json');
     })
     it("will be able to add function to an entity", ()=>{
       expect(result.model.types[0].events).to.deep.equal([{name: 'ordercreated'}])
