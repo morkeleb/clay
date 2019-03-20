@@ -119,8 +119,9 @@ function copy(step, model, output, dirname){
   }
 }
 
-function decorate_generator(g, p) {
+function decorate_generator(g, p, extra_output) {
   g.generate = (model, output) => {
+    output = path.join(output, extra_output || '')
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials, dirname);
     for (let index = 0; index < g.steps.length; index++) {
@@ -139,9 +140,9 @@ function decorate_generator(g, p) {
 }
 
 module.exports = {
-  load: (path)=>{
+  load: (path, extra_output)=>{
     var generator = JSON.parse(fs.readFileSync(path, 'utf8'));
     
-    return decorate_generator(generator, path);
+    return decorate_generator(generator, path, extra_output);
   }
 }

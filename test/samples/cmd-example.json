@@ -1,7 +1,11 @@
 {
   "name": "mymodel",
   "generators": [
-    "just-template-example"
+    "just-template-example",
+    {
+      "generator": "just-template-example",
+      "output": "otheroutput"
+    }
   ],
   "mixins": [
     {

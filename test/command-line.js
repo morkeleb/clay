@@ -17,9 +17,17 @@ describe('the command line interface', ()=>{
     it('will throw exceptions if generator not found', ()=>{
       const cmdln = require('../src/command-line')
 
-      const args = ['node', 'clay', 'generate', 'test/samples/example.json', 'tmp/output'] 
+      const args = ['node', 'clay', 'generate', 'test/samples/example-unknown-generator.json', 'tmp/output'] 
       
       expect(()=>cmdln.parse(args)).to.throw(/.*generator not found.*/g)
+    })
+
+    it('will supply the generator with a specified output if specified', ()=>{
+      const cmdln = require('../src/command-line')
+
+      cmdln.parse(['node', 'clay', 'generate', 'test/samples/cmd-example.json', 'tmp/output'])
+
+      expect(fs.existsSync('./tmp/output/otheroutput/order.txt'), 'template file not generated').to.equal(true)
     })
   })
 })

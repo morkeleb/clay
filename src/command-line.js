@@ -21,22 +21,24 @@ commander.on('command:*', function () {
 });
 
 function resolve_generator(name, model_path) {
+  const { generator, output} = name;
+  const generator_name = generator || name;
   var generator_path = [
-    (path.dirname(resolveGlobal.silent(name)||''))+'/generator.json',
-    name, name+'.json',
-    path.resolve(name), path.resolve(name+'.json'),
-    path.resolve(path.join(model_path, name)),
-    path.resolve(path.join(model_path, name + '.json'))
+    (path.dirname(resolveGlobal.silent(generator_name)||''))+'/generator.json',
+    generator_name, generator_name+'.json',
+    path.resolve(generator_name), path.resolve(generator_name+'.json'),
+    path.resolve(path.join(model_path, generator_name)),
+    path.resolve(path.join(model_path, generator_name + '.json'))
   ].filter(fs.existsSync)
   
   
   if(generator_path.length < 1){
-    throw 'generator not found for: '+name
+    throw 'generator not found for: '+generator_name
   }
 
   ui.log('loading generator: ', generator_path[0]);
   
-  return require('./generator').load(generator_path[0])
+  return require('./generator').load(generator_path[0], output)
 }
 
 commander.command('generate <model_path> <output_path>')
@@ -44,7 +46,7 @@ commander.command('generate <model_path> <output_path>')
 .action((model_path, output_path)=>{
   const model = require('./model').load(model_path);
   model.generators.forEach(
-    (g)=>resolve_generator(g, path.dirname(model_path)).generate(model, output_path)
+    g=>resolve_generator(g, path.dirname(model_path)).generate(model, output_path)
   )
 })
 
