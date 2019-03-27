@@ -5,7 +5,8 @@ var fs = require('fs');
 var path_module = require('path');
 
 var groupBy = require('handlebars-group-by');
-const lobars = require('lobars')
+const lobars = require('lobars');
+const lodash = require('lodash');
 
 handlebars.registerHelper(lobars)
 
@@ -25,6 +26,15 @@ handlebars.registerHelper('markdown', function(value) {
     return '';
   }
 });
+
+handlebars.registerHelper('pascalCase', function(value) {
+  if(value) {
+    return lodash.chain(value).camelCase().startCase().replace(/\s/g, '');
+  } else {
+    return '';
+  }
+});
+
 handlebars.registerHelper("inc", function(value, options)
 {
     return parseInt(value) + 1;
