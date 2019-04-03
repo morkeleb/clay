@@ -43,7 +43,7 @@ handlebars.registerHelper("inc", function(value, options)
 
 handlebars.registerHelper("pluralize", function(value, options)
 {
-    return _.pluralize(value);
+    return lodash.pluralize(value);
 });
 
 handlebars.__switch_stack__ = [];
