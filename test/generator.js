@@ -69,6 +69,17 @@ describe("a generator", ()=>{
         
         expect(fs.existsSync('./tmp/test-output/order.txt'), 'template file not generated').to.equal(true)
       })
+      it('context for handlebars is decorated with parents',  ()=>{
+        var g = generator.load('./test/samples/just-template-example.json');
+        
+        g.generate(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+        
+        expect(fs.existsSync('./tmp/test-output/complex/finish_order/commands/finish_order.tx'), 'template file not generated').to.equal(true)
+
+        var result = fs.readFileSync('./tmp/test-output/complex/finish_order/commands/finish_order.tx', 'utf8')
+        
+        expect(result).to.equal('finish_order\n$.model.types[0]\norder\n$.model\n2\n$\nmymodel\n')
+      })
       it('will respect subdirectories', ()=>{
         var g = generator.load('./test/samples/just-template-example.json');
         

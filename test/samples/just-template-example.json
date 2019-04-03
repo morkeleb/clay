@@ -11,6 +11,11 @@
       "target": "t1/{{name}}"
     },
     {
+      "generate": "templates/complex",
+      "select": "$.model.types[*].commands.*",
+      "target": "complex/{{name}}"
+    },
+    {
       "generate": "templates/justfile{{name}}.txt",
       "select": "$.model.types.*",
       "target":"/"

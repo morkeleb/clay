@@ -1,0 +1,7 @@
+{{name}}
+{{clay_parent.json_path}}
+{{clay_parent.name}}
+{{clay_parent.clay_parent.json_path}}
+{{clay_parent.clay_parent.types.length}}
+{{clay_parent.clay_parent.clay_parent.json_path}}
+{{clay_parent.clay_parent.clay_parent.name}}
