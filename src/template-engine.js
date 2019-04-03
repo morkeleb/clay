@@ -7,6 +7,7 @@ var path_module = require('path');
 var groupBy = require('handlebars-group-by');
 const lobars = require('lobars');
 const lodash = require('lodash');
+lodash.mixin(require("lodash-inflection"));
 
 handlebars.registerHelper(lobars)
 
@@ -38,6 +39,11 @@ handlebars.registerHelper('pascalCase', function(value) {
 handlebars.registerHelper("inc", function(value, options)
 {
     return parseInt(value) + 1;
+});
+
+handlebars.registerHelper("pluralize", function(value, options)
+{
+    return _.pluralize(value);
 });
 
 handlebars.__switch_stack__ = [];
