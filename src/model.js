@@ -3,7 +3,12 @@ const path = require('path')
 
 function executeMixins(model) {
   const mixins = model.mixins.reduce(function(map, obj) {
-    map[obj.name] = eval(obj.function);
+        
+    if(typeof obj.function === 'string') {
+      map[obj.name] = eval(obj.function);
+    } else {
+      map[obj.name] = obj.function
+    }
     return map;
   }, {});
   const check = m => {
@@ -47,8 +52,8 @@ function executeMixins(model) {
 function executeIncludes(model, p) {
   const check = m => {
     if(m.hasOwnProperty('include')) {
-      const include_path = path.join(path.dirname(p), m.include)
-      var include = JSON.parse(fs.readFileSync(include_path,'utf8'))
+      const include_path = path.resolve(path.join(path.dirname(p), m.include))
+      var include = require(include_path)
       for (const key in include) {
         if (include.hasOwnProperty(key)) {
           m[key] = include[key];
@@ -65,7 +70,6 @@ function executeIncludes(model, p) {
           check(element);
         }
       }
-      return;
     }
     for (const property in m) {
       if (m.hasOwnProperty(property)) {
@@ -77,9 +81,9 @@ function executeIncludes(model, p) {
       }
     }
   }
-  for (const modelproperty in model.model) {
-    if (model.model.hasOwnProperty(modelproperty)) {
-      const element = model.model[modelproperty];
+  for (const modelproperty in model) {
+    if (model.hasOwnProperty(modelproperty)) {
+      const element = model[modelproperty];
       
       check(element)
     }
