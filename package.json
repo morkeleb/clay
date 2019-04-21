@@ -16,7 +16,7 @@
     "commander": "^2.19.0",
     "fs-extra": "^7.0.1",
     "handlebars": "^4.0.5",
-    "handlebars-group-by": "^1.0.1",
+    "handlebars-group-by": "file:handlebars-group-by-1.0.1.tgz",
     "jsonpath": "^1.0.0",
     "lobars": "^1.2.0",
     "lodash-inflection": "^1.5.0",
