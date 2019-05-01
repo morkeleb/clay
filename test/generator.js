@@ -183,4 +183,42 @@ describe("a generator", ()=>{
       })
     })
   })
+  describe('cleaning up', () => {
+    describe('the templates', () => {
+        it('will remove files', ()=>{
+          var g = generator.load('./test/samples/just-template-example.json');
+          g.generate(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+          g.clean(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+          expect(fs.existsSync('./tmp/test-output/order.txt'), 'generated file not removed').to.equal(false)
+        })
+    })
+    describe('the copies', () => {
+      describe('a single file copy', () => {
+        
+        it('will remove the file',()=>{
+          var g = generator.load('./test/samples/just-copy-example.json');
+          
+          g.generate(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+          g.clean(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+                  
+          expect(fs.existsSync('./tmp/test-output/once'), 'file not removed').to.equal(false)
+        })
+      })
+      describe('a directory copy', () => {
+        it('will remove the directory', ()=>{
+          var g = generator.load('./test/samples/just-copy-example.json');
+          
+          g.generate(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+          g.clean(model.load('./test/samples/example-unknown-generator.json'), './tmp/test-output')
+          
+          expect(fs.existsSync('./tmp/test-output/level1/static'), 'directory not removed').to.equal(false)
+        })
+      })
+      
+      
+    })
+    
+    
+  })
+  
 })

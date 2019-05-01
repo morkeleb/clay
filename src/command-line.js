@@ -49,6 +49,17 @@ const generate = (model_path, output_path) =>{
   )
 }
 
+const clean = (model_path, output_path) =>{
+  const model = require('./model').load(model_path);
+  model.generators.forEach(
+    g=>resolve_generator(g, path.dirname(model_path)).clean(model, output_path)
+  )
+}
+
+commander.command('clean <model_path> <output_path>')
+.description('cleans up the output of the generators')
+.action(clean)
+
 commander.command('generate <model_path> <output_path>')
 .description('runs the generators')
 .action(generate)

@@ -54,6 +54,14 @@ function generate_file(model_partial, directory, output, file) {
   })
 }
 
+function remove_file(model_partial, output, file) {
+  var file_name = handlebars.compile(path.join(output,file))	
+  model_partial.forEach((m)=>{
+    ui.warn('removing ', file_name(m))
+    fs.removeSync(file_name(m));
+  })
+}
+
 function generate_directory(model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
 
@@ -64,6 +72,18 @@ function generate_directory(model_partial, directory, output) {
   
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
     generate_file(model_partial, directory, output, file)
+  });
+}
+function remove_directory(model_partial, directory, output) {
+  const templates = fs.readdirSync(directory);
+
+  templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isDirectory())
+  .forEach((file)=>{
+    remove_directory(model_partial, path.join(directory, file), path.join(output, file))
+  })
+  
+  templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
+    remove_file(model_partial, output, file)
   });
 }
 
@@ -77,6 +97,14 @@ function generate_template(step, model, output, dirname) {
     generate_file(select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
   } else {
     generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+  }
+}
+
+function clean_template(step, model, output, dirname) {
+  if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
+    remove_file(select(model, step.select), path.join(output, step.target || ''), path.basename(step.generate))
+  } else {
+    remove_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
   }
 }
 
@@ -139,6 +167,36 @@ function copy(step, model, output, dirname){
   }
 }
 
+function clean_copy(step, model, output, dirname){
+  const output_dir = path.resolve(output)
+  let source = path.resolve(path.join(dirname, step.copy))
+  if(step.select == undefined) {
+    let out = null;
+    if(step.target) {
+      out = path.join(output_dir, step.target)
+    } else {
+      out = output_dir
+    }
+    if(fs.lstatSync(source).isFile()){
+      out = path.join(out, path.basename(step.copy))
+    }
+    ui.warn('Removing ', out)
+    fs.removeSync(out)
+  } else {
+    select(model, step.select).forEach((m)=>{
+      let out = null;
+      if(step.target) {
+        let target = handlebars.compile(step.target)
+        out = path.join(output_dir, target(m))
+      } else {
+        out = output_dir
+      }
+      ui.warn('Removing ', out)
+      fs.removeSync(out)
+    })
+  }
+}
+
 function decorate_generator(g, p, extra_output) {
   g.generate = (model, output) => {
     output = path.join(output, extra_output || '')
@@ -153,6 +211,19 @@ function decorate_generator(g, p, extra_output) {
         run_command(step, _.cloneDeep(model), output, dirname)
       } else if (step.copy !== undefined){
         copy(step, _.cloneDeep(model), output, dirname)
+      }
+    }
+  }
+  g.clean = (model, output)=>{
+    output = path.join(output, extra_output || '')
+    const dirname = path.dirname(p);
+    handlebars.load_partials(g.partials, dirname);
+    for (let index = 0; index < g.steps.length; index++) {
+      const step = g.steps[index];
+      if(step.generate !== undefined){
+        clean_template(step, _.cloneDeep(model), output, dirname)
+      } else if (step.copy !== undefined){
+        clean_copy(step, _.cloneDeep(model), output, dirname)
       }
     }
   }
