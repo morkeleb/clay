@@ -3,6 +3,7 @@ const path = require('path');
 const handlebars = require('./template-engine');
 const ui = require('./output');
 const jp = require('jsonpath');
+const _ = require('lodash');
 const { execSync } = require('child_process');
 
 function write(file, data) {
@@ -146,12 +147,12 @@ function decorate_generator(g, p, extra_output) {
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        generate_template(step, model, output, dirname)
+        generate_template(step, _.cloneDeep(model), output, dirname)
       }
       else if (step.runCommand !== undefined){
-        run_command(step, model, output, dirname)
+        run_command(step, _.cloneDeep(model), output, dirname)
       } else if (step.copy !== undefined){
-        copy(step, model, output, dirname)
+        copy(step, _.cloneDeep(model), output, dirname)
       }
     }
   }
