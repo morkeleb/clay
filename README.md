@@ -2,6 +2,66 @@
 
 > The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander
 
+# Usage
+
+
+## Installation
+
+I use clay as a globally installed commandline tool.
+
+```
+  npm install -g clay
+```
+
+## Generate
+
+The first command to know in clay is the `generate` command.
+
+```
+clay generate <model_path> <output_path>
+```
+
+It takes the model to generate as the first input and the second input is where the model should
+be generated too.
+
+## Watch
+
+If you start using clay extensivly you will notice that you want to rerun clay as soon as you make
+changes to the model or any of the custom generators you might be using.
+
+For this there is a built in watch command that follows the same structure as the generate command.
+
+```
+clay  <model_path> <output_path>
+```
+
+Using this will make clay listen for changes under the directory specified in the model.
+
+### Recommended directory layout for the model and custom generators
+
+We have a directory called clay where we keep our model and our custom generators.
+```
+.
+├── dataaccess
+│   ├── generator.json
+│   └── template
+│       └── db.js
+├── frontend
+│   ├── components
+│   │   ├── {{pascalCase\ name}}Components.js
+│   ├── generator.json
+│   ├── partials
+│   │   └── form-fields.js
+│   └── reducers
+│       └── {{kebabCase\ name}}.reducer.js
+├── mixins
+│   └── default_actions.mixin.js
+└── model.json
+```
+
+This makes it simple to run clay watch on the "clay directory" and work continously on the
+generators and the model.
+
 
 # Domain model
 
@@ -198,12 +258,14 @@ var command = function (user, {{ parameters }}) {
 - [X] support casing help in helpers
 - [X] inc one helper for indexes plus 1
 - [X] use chalk to make pretty output... pretty output is... pretty
-- [X] update generator and allow loading of node modules as generators	
+- [X] update generator and allow loading of node modules as generators
+- [X] built in watch support
+- [X] add usage instructions to readme
 
 ### Future
 
 - [ ] validations on models and generators
-- [ ] add usage instructions to readme
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
-- [ ] built in watch support
+- [ ] clean up command that will remove files instead of writing them - option to clear directories
+
