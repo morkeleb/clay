@@ -13,20 +13,21 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^2.4.2",
-    "commander": "^2.19.0",
+    "chokidar": "^3.0.0",
+    "commander": "^2.20.0",
     "fs-extra": "^7.0.1",
-    "handlebars": "^4.0.5",
+    "handlebars": "^4.1.2",
     "handlebars-group-by": "^1.0.1",
-    "jsonpath": "^1.0.0",
+    "jsonpath": "^1.0.1",
     "lobars": "^1.2.0",
     "lodash": "^4.17.11",
     "lodash-inflection": "^1.5.0",
-    "marked": "^0.3.5",
-    "resolve-global": "^0.1.0"
+    "marked": "^0.6.2",
+    "resolve-global": "^1.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
-    "mocha": "^5.2.0",
-    "sinon": "^7.2.4"
+    "mocha": "^6.1.4",
+    "sinon": "^7.3.2"
   }
 }
