@@ -10,7 +10,25 @@
 I use clay as a globally installed commandline tool.
 
 ```
-  npm install -g clay
+>  npm install -g clay
+```
+
+Running `clay` will display its available commands.
+
+```
+> clay
+
+Usage: clay [options] [command]
+
+Options:
+  -V, --version                        output the version number
+  -v, --verbose                        ignore test hook
+  -h, --help                           output usage information
+
+Commands:
+  clean <model_path> <output_path>     cleans up the output of the generators
+  generate <model_path> <output_path>  runs the generators
+  watch <model_path> <output_path>     runs the generators on filechanges in the models directory
 ```
 
 ## Generate
@@ -18,11 +36,23 @@ I use clay as a globally installed commandline tool.
 The first command to know in clay is the `generate` command.
 
 ```
-clay generate <model_path> <output_path>
+> clay generate <model_path> <output_path>
 ```
 
 It takes the model to generate as the first input and the second input is where the model should
 be generated too.
+
+## Clean
+
+The `clean` command will clear up all generated code based on the generators specified in the
+model.
+
+It will not undo any commandline executions that has ben run by a generator.
+
+```
+> clay clean <model_path> <output_path>
+```
+
 
 ## Watch
 
@@ -32,7 +62,7 @@ changes to the model or any of the custom generators you might be using.
 For this there is a built in watch command that follows the same structure as the generate command.
 
 ```
-clay  <model_path> <output_path>
+> clay  <model_path> <output_path>
 ```
 
 Using this will make clay listen for changes under the directory specified in the model.
@@ -261,11 +291,12 @@ var command = function (user, {{ parameters }}) {
 - [X] update generator and allow loading of node modules as generators
 - [X] built in watch support
 - [X] add usage instructions to readme
+- [X] clean up command that will remove files instead of writing them
 
 ### Future
 
 - [ ] validations on models and generators
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
-- [ ] clean up command that will remove files instead of writing them - option to clear directories
+- [ ] option to clear directories
 
