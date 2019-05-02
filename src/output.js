@@ -1,6 +1,10 @@
 const chalk = require('chalk')
 
 module.exports = {
+  watch: (target)=>{
+    if(!process.isCLI) return;
+    console.log(chalk.cyan('watching: '), target)
+  },
   move: (target, dest)=>{
     if(!process.isCLI) return;
     console.log(chalk.green('moving: '), target, chalk.green(' -> '), dest)

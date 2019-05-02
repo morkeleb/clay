@@ -5,6 +5,7 @@ const path = require('path')
 const fs = require('fs')
 const ui = require('./output')
 const resolveGlobal = require('resolve-global')
+const chokidar = require('chokidar')
 
 commander
   .version(require('../package.json').version);
@@ -41,13 +42,40 @@ function resolve_generator(name, model_path) {
   return require('./generator').load(generator_path[0], output)
 }
 
-commander.command('generate <model_path> <output_path>')
-.description('runs the generators')
-.action((model_path, output_path)=>{
+const generate = (model_path, output_path) =>{
   const model = require('./model').load(model_path);
   model.generators.forEach(
     g=>resolve_generator(g, path.dirname(model_path)).generate(model, output_path)
   )
+}
+
+const clean = (model_path, output_path) =>{
+  const model = require('./model').load(model_path);
+  model.generators.forEach(
+    g=>resolve_generator(g, path.dirname(model_path)).clean(model, output_path)
+  )
+}
+
+commander.command('clean <model_path> <output_path>')
+.description('cleans up the output of the generators')
+.action(clean)
+
+commander.command('generate <model_path> <output_path>')
+.description('runs the generators')
+.action(generate)
+
+commander.command('watch <model_path> <output_path>')
+.description('runs the generators on filechanges in the models directory')
+.action((model_path, output_path)=>{
+  const model_directory = path.dirname(path.resolve(model_path))
+  ui.watch(model_directory);
+  
+  chokidar.watch(model_directory, {ignored: /(^|[\/\\])\../, ignoreInitial:true}).on('all', (event, path) => {
+
+    generate(model_path, output_path)
+
+    ui.watch(model_directory);
+  });
 })
 
 module.exports = commander;
