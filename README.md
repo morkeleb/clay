@@ -2,6 +2,16 @@
 
 > The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander
 
+# What is Clay
+
+Clay is a template focused code generator. Used to take a model represented in JSON and konvert it to actual code matching the model through a set of generators using handlebar templates, shell commands and file operations.
+
+The goal is to have a consistent implementation of all model related operations in a system. Similar to how Ruby On Rails scaffolds work but backed using files, so you can with confident change the model and have all files updated.
+
+## Talks
+
+* [A short concept overview in Swedish @ Agila sverige 2019](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)
+
 # Usage
 
 
