@@ -20,7 +20,7 @@ The goal is to have a consistent implementation of all model related operations 
 I use clay as a globally installed commandline tool.
 
 ```
->  npm install -g clay
+>  npm install -g clay-generator
 ```
 
 Running `clay` will display its available commands.

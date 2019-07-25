@@ -1,5 +1,5 @@
 {
-  "name": "clay",
+  "name": "clay-generator",
   "version": "0.0.2",
   "description": "a model and convention based source code generator",
   "main": "index.js",
