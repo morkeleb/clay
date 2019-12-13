@@ -14,10 +14,8 @@ function recursive_parents(model, jsonpath, element){
     if(jsonpath.length != 1)
     recursive_parents(model, parent[0].path, parent[0])
     have_result.json_path = parent_path;
-    try {
-      have_result.clay_key = parent_path.split('.').pop();
-    }catch{ ui.warn('could not parse parent_key', parent_path)}
     element.value.clay_parent = have_result;
+    element.value.clay_key = jsonpath[jsonpath.length-1]
   }
 }
 
