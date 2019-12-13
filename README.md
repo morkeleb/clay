@@ -36,6 +36,7 @@ Options:
   -h, --help                           output usage information
 
 Commands:
+  test-path <model_path> <json_path>   test a json-path selector using your model
   clean <model_path> <output_path>     cleans up the output of the generators
   generate <model_path> <output_path>  runs the generators
   watch <model_path> <output_path>     runs the generators on filechanges in the models directory
@@ -51,6 +52,19 @@ The first command to know in clay is the `generate` command.
 
 It takes the model to generate as the first input and the second input is where the model should
 be generated too.
+
+## Test-path
+
+The test path command will allow you to test jsonpath against your specified model.
+This is usefull when you are creating generators and templates.
+To see what you will get from a model given a specific path.
+
+The command will simply print the resulting model objects your path returns.
+
+```
+> clay test-path <model_path> $.model.types[*].actions[*].parameters[?\(@.type==\"array\"\)]
+```
+
 
 ## Clean
 
@@ -269,6 +283,19 @@ in the domain-documentation.html template I use the header partial as shown:
 
 ### Template helpers
 
+#### json
+
+This helper is very usefull when creating templates.
+It will pretty print the json input given to it.
+Allowing you to check what objects you have received to the template as you were generating.
+
+```
+<p>
+  {{{json this}}}
+</p>
+```
+
+
 #### markdown
 
 The markdown helper method shown in the following example.
@@ -309,4 +336,5 @@ var command = function (user, {{ parameters }}) {
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
 - [ ] option to clear directories
+- [ ] add a .clay file that keeps inventory of what has been generated to make clean more precise
 

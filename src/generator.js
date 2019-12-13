@@ -2,48 +2,15 @@ const fs = require('fs-extra');
 const path = require('path');
 const handlebars = require('./template-engine');
 const ui = require('./output');
-const jp = require('jsonpath');
 const _ = require('lodash');
 const { execSync } = require('child_process');
+const jph = require('./jsonpath-helper')
 
 function write(file, data) {
   const dir = path.dirname(file);
   fs.ensureDirSync(dir);
   ui.write(file)
   fs.writeFileSync(file, data, 'utf8');
-}
-
-function recursive_parents(model, jsonpath, element){
-  if(!element) return;
-  var parent_path, parent, have_result;
-  do {
-    jsonpath.pop()
-    parent_path = jp.stringify(jsonpath)
-    parent = jp.nodes(model, parent_path);
-    have_result = parent.length != 0 && !Array.isArray(parent[0].value) && parent[0].value
-  } while(!have_result)
-  if(parent[0]) {
-    if(jsonpath.length != 1)
-    recursive_parents(model, parent[0].path, parent[0])
-    have_result.json_path = parent_path;
-    element.value.clay_parent = have_result;
-  }
-}
-
-function select(model, jsonpath) {
-  try {
-  var result =  jp.nodes(model, jsonpath);
-  result.forEach(r=>recursive_parents(model, r.path, r))
-
-  } catch(e){
-    ui.critical('Jsonpath not parseable ', jsonpath)
-
-    return []
-  }
-  if(result.length == 0){
-    ui.warn('No entires found for jsonpath ', jsonpath)
-  }
-  return result.map(f=>f.value);
 }
 
 function generate_file(model_partial, directory, output, file) {
@@ -94,17 +61,17 @@ function execute(commandline, output_dir){
 
 function generate_template(step, model, output, dirname) {
   if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    generate_file(select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
+    generate_file(jph.select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
   } else {
-    generate_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+    generate_directory(jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
   }
 }
 
 function clean_template(step, model, output, dirname) {
   if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    remove_file(select(model, step.select), path.join(output, step.target || ''), path.basename(step.generate))
+    remove_file(jph.select(model, step.select), path.join(output, step.target || ''), path.basename(step.generate))
   } else {
-    remove_directory(select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+    remove_directory(jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
   }
 }
 
@@ -115,7 +82,7 @@ function run_command(step, model, output, dirname) {
     execute(step.runCommand, output_dir)
   } else {
     var command = handlebars.compile(step.runCommand)
-    select(model, step.select).forEach((m)=>{
+    jph.select(model, step.select).forEach((m)=>{
       execute(command(m), output_dir)
     })
   }
@@ -138,7 +105,7 @@ function copy(step, model, output, dirname){
     ui.copy(source, out)
     fs.copySync(source, out)
   } else {
-    select(model, step.select).forEach((m)=>{
+    jph.select(model, step.select).forEach((m)=>{
       let out = null;
       if(step.target) {
         let target = handlebars.compile(step.target)
@@ -183,7 +150,7 @@ function clean_copy(step, model, output, dirname){
     ui.warn('Removing ', out)
     fs.removeSync(out)
   } else {
-    select(model, step.select).forEach((m)=>{
+    jph.select(model, step.select).forEach((m)=>{
       let out = null;
       if(step.target) {
         let target = handlebars.compile(step.target)

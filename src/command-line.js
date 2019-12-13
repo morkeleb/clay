@@ -55,6 +55,17 @@ const clean = (model_path, output_path) =>{
     g=>resolve_generator(g, path.dirname(model_path)).clean(model, output_path)
   )
 }
+const test = (model_path, json_path) =>{
+  const model = require('./model').load(model_path);
+  const jph = require('./jsonpath-helper');
+
+  console.log(jph.select(model, json_path));
+  
+}
+
+commander.command('test-path <model_path> <json_path>')
+.description('test a json-path selector using your model')
+.action(test)
 
 commander.command('clean <model_path> <output_path>')
 .description('cleans up the output of the generators')

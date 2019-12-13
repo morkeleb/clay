@@ -1,6 +1,6 @@
 {
   "name": "clay-generator",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "a model and convention based source code generator",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
     "fs-extra": "^7.0.1",
     "handlebars": "^4.1.2",
     "handlebars-group-by": "https://github.com/jonasalfthan/handlebars-group-by",
-    "jsonpath": "^1.0.1",
+    "jsonpath": "^1.0.2",
     "lobars": "^1.2.0",
     "lodash": "^4.17.11",
     "lodash-inflection": "^1.5.0",
