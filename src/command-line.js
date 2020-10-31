@@ -1,5 +1,6 @@
 
 const {Command} = require('commander');
+const requireNew = require('./require-helper');
 const commander = new Command();
 const path = require('path')
 const fs = require('fs')
@@ -39,24 +40,24 @@ function resolve_generator(name, model_path) {
 
   ui.log('loading generator: ', generator_path[0]);
   
-  return require('./generator').load(generator_path[0], output)
+  return requireNew('./generator').load(generator_path[0], output)
 }
 
 const generate = (model_path, output_path) =>{
-  const model = require('./model').load(model_path);
+  const model = requireNew('./model').load(model_path);
   model.generators.forEach(
     g=>resolve_generator(g, path.dirname(model_path)).generate(model, output_path)
   )
 }
 
 const clean = (model_path, output_path) =>{
-  const model = require('./model').load(model_path);
+  const model = requireNew('./model').load(model_path);
   model.generators.forEach(
     g=>resolve_generator(g, path.dirname(model_path)).clean(model, output_path)
   )
 }
 const test = (model_path, json_path) =>{
-  const model = require('./model').load(model_path);
+  const model = requireNew('./model').load(model_path);
   const jph = require('./jsonpath-helper');
 
   console.log(jph.select(model, json_path));

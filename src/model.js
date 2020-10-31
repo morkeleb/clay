@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path')
+const requireNew = require('./require-helper');
 
 function executeMixins(model) {
   const mixins = model.mixins.reduce(function(map, obj) {
@@ -92,9 +93,9 @@ function executeIncludes(model, p) {
 
 
 module.exports = {
-  load: (path)=>{
-    var model = JSON.parse(fs.readFileSync(path, 'utf8'));
-    executeIncludes(model, path);
+  load: (p)=>{
+    var model = requireNew(path.resolve(p));
+    executeIncludes(model, p);
     executeMixins(model);
     
     return model;

@@ -5,6 +5,7 @@ const ui = require('./output');
 const _ = require('lodash');
 const { execSync } = require('child_process');
 const jph = require('./jsonpath-helper')
+const requireNew = require('./require-helper');
 
 function write(file, data) {
   const dir = path.dirname(file);
@@ -198,9 +199,8 @@ function decorate_generator(g, p, extra_output) {
 }
 
 module.exports = {
-  load: (path, extra_output)=>{
-    var generator = JSON.parse(fs.readFileSync(path, 'utf8'));
-    
-    return decorate_generator(generator, path, extra_output);
+  load: (p, extra_output)=>{
+    var generator = requireNew(path.resolve(p));
+    return decorate_generator(generator, p, extra_output);
   }
 }
