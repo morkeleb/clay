@@ -22,7 +22,7 @@
     "lobars": "^1.2.0",
     "lodash": "^4.17.11",
     "lodash-inflection": "^1.5.0",
-    "marked": "^0.6.2",
+    "marked": "^0.7.0",
     "minimatch": "^3.0.4",
     "resolve-global": "^1.0.0"
   },
