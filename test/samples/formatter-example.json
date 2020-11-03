@@ -1,0 +1,16 @@
+{
+  "partials":["partials/hello"],
+  "formatters":["clay-generator-formatter-prettify"],
+  "steps":[
+    {
+      "generate": "templates/justfile{{name}}.txt",
+      "select": "$.model.types.*",
+      "target":"/"
+    },
+    {
+      "generate": "templates/java{{name}}.js",
+      "select": "$.model.types.*",
+      "target":"/"
+    }
+  ]
+}

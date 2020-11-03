@@ -7,7 +7,7 @@
     {
       "type":"function",
       "name":"has_created",
-      "function":"(piece)=>piece.events.push({'name': piece.name+'created'})"
+      "function":"(piece)=> { if(piece.events.length !== 1) piece.events.push({'name': piece.name+'created'}) }"
     }
   ],
   "model": {

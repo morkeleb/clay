@@ -43,6 +43,7 @@ describe("a generator", ()=>{
       sinon.stub(output, 'warn')
 
       sinon.stub(output, 'critical')
+ 
     })
     it('will warn if no selection is found', ()=>{
       var g = generator.load('./test/samples/just-copy-example.json');
@@ -61,6 +62,46 @@ describe("a generator", ()=>{
     })
   })
   describe('generate with template', ()=>{
+
+    describe('formatters', ()=>{      
+      let formatter_fake = null;
+      afterEach(()=>{
+        delete require.cache['clay-generator-formatter-prettify'];
+      })
+      beforeEach(()=>{
+        formatter_fake = sinon.fake();
+        require.cache['clay-generator-formatter-prettify']={
+          id:'clay-generator-formatter-prettify',
+          exports: {
+          extensions: ['**/*.js', '**/*.jsx'],
+          apply: formatter_fake
+          }
+        };
+        var Module = require('module');
+        var realResolve = Module._resolveFilename;
+        Module._resolveFilename = function fakeResolve(request, parent) {
+            if (request === 'clay-generator-formatter-prettify') {
+                return 'clay-generator-formatter-prettify'; // pretend 'bar.js' really exists
+            }
+            return realResolve(request, parent);
+        };
+      })
+      it('will apply the formatters where the extensions match', ()=>{
+        const m =  model.load('./test/samples/include-example.json');
+        var g = generator.load('./test/samples/formatter-example.json');
+        
+        g.generate(m, './tmp/test-output')
+        sinon.assert.calledWith(formatter_fake, 'content of javascript file\n');
+      })
+      it('wont apply the formatters where the extensions dont match', ()=>{
+        const m =  model.load('./test/samples/include-example.json');
+        var g = generator.load('./test/samples/formatter-example.json');
+        
+
+        g.generate(m, './tmp/test-output')
+        sinon.assert.neverCalledWith(formatter_fake, 'content of just file txt\n');
+      })
+    })
     describe('with jsonpath statement', ()=>{
       it('will generate the templates using jsonpath selection',  ()=>{
         var g = generator.load('./test/samples/just-template-example.json');

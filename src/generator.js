@@ -6,6 +6,21 @@ const _ = require('lodash');
 const { execSync } = require('child_process');
 const jph = require('./jsonpath-helper')
 const requireNew = require('./require-helper');
+const minimatch = require("minimatch");
+
+function applyFormatters(generator, file_name, data) {
+  const formatters = generator.formatters || [];
+  let result = data;
+
+  formatters.map(require).forEach(formatter=>{
+    const applyFormatter = formatter.extensions.some(ext=>minimatch(file_name, ext));
+    if(applyFormatter){
+      result = formatter.apply(result)
+    }
+  });
+  return result;
+}
+
 
 function write(file, data) {
   const dir = path.dirname(file);
@@ -14,11 +29,12 @@ function write(file, data) {
   fs.writeFileSync(file, data, 'utf8');
 }
 
-function generate_file(model_partial, directory, output, file) {
+function generate_file(generator, model_partial, directory, output, file) {
   var template = handlebars.compile(fs.readFileSync(path.join(directory, file), 'utf8'));
   var file_name = handlebars.compile(path.join(output,file))	
   model_partial.forEach((m)=>{
-    write( file_name(m), template(m));
+    const filename=file_name(m);
+    write( filename, applyFormatters(generator, filename, template(m)));
   })
 }
 
@@ -30,16 +46,16 @@ function remove_file(model_partial, output, file) {
   })
 }
 
-function generate_directory(model_partial, directory, output) {
+function generate_directory(generator, model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
 
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isDirectory())
   .forEach((file)=>{
-    generate_directory(model_partial, path.join(directory, file), path.join(output, file))
+    generate_directory(generator, model_partial, path.join(directory, file), path.join(output, file))
   })
   
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
-    generate_file(model_partial, directory, output, file)
+    generate_file(generator, model_partial, directory, output, file)
   });
 }
 function remove_directory(model_partial, directory, output) {
@@ -60,11 +76,11 @@ function execute(commandline, output_dir){
   execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
 }
 
-function generate_template(step, model, output, dirname) {
+function generate_template(generator, step, model, output, dirname) {
   if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    generate_file(jph.select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
+    generate_file(generator,jph.select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
   } else {
-    generate_directory(jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+    generate_directory(generator,jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
   }
 }
 
@@ -173,7 +189,7 @@ function decorate_generator(g, p, extra_output) {
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        generate_template(step, _.cloneDeep(model), output, dirname)
+        generate_template(g, step, _.cloneDeep(model), output, dirname)
       }
       else if (step.runCommand !== undefined){
         run_command(step, _.cloneDeep(model), output, dirname)
