@@ -213,9 +213,14 @@ as input.
 a generator contains:
 * a list of steps
 * a list of partials
+* a list of formatters
+
+### Partials
 
 The partials are handlebar partials that can be used in the templates within
 the generator. These are usefull for header and footer like operations.
+
+### Steps
 
 The steps describe what the generator does and in which order.
 Steps can be one of:
@@ -223,13 +228,23 @@ Steps can be one of:
 * generate handlebar template
 * run a command
 
-They all use jsonpath to filter out what part of the model that is interesting
+Steps use jsonpath to filter out what part of the model that is interesting
 for a particular step.
+
+### Formatters
+
+To ensure the generated files are as pretty as possible, Clay has support for external formatters.
+
+Formatters are used to format the output before it is written to disk.
+For example it could be to ensure propper indentation before writing the file.
+Formatters are installed globally and the generator will require the specified formatter.
+
 
 Example:
 ```
 {
   "partials":[],
+  "formatters:["clay-generator-formatter-prettier"],
   "steps":[
     {
       "runCommand": "yo newservice"

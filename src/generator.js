@@ -8,16 +8,22 @@ const jph = require('./jsonpath-helper')
 const requireNew = require('./require-helper');
 const minimatch = require("minimatch");
 
-function applyFormatters(generator, file_name, data) {
+async function applyFormatters(generator, file_name, data) {
+
+  const resolveGlobal = require('resolve-global');
   const formatters = generator.formatters || [];
+  const loaded_formatters = formatters.map(name=>require(resolveGlobal(name)));
   let result = data;
 
-  formatters.map(require).forEach(formatter=>{
-    const applyFormatter = formatter.extensions.some(ext=>minimatch(file_name, ext));
+  for (let i = 0; i < loaded_formatters.length; i++) {  
+    const formatter = loaded_formatters[i]; 
+    const applyFormatter = _.get(formatter, 'extensions', []).some(ext=>minimatch(file_name, ext));
+
     if(applyFormatter){
-      result = formatter.apply(result)
-    }
-  });
+      result = await formatter.apply(file_name,result)
+    } 
+  }
+
   return result;
 }
 
@@ -29,12 +35,13 @@ function write(file, data) {
   fs.writeFileSync(file, data, 'utf8');
 }
 
-function generate_file(generator, model_partial, directory, output, file) {
+async function generate_file(generator, model_partial, directory, output, file) {
   var template = handlebars.compile(fs.readFileSync(path.join(directory, file), 'utf8'));
   var file_name = handlebars.compile(path.join(output,file))	
-  model_partial.forEach((m)=>{
+  model_partial.forEach(async (m)=>{
     const filename=file_name(m);
-    write( filename, applyFormatters(generator, filename, template(m)));
+    const content = await applyFormatters(generator, filename, template(m));
+    write( filename, content);
   })
 }
 
@@ -46,16 +53,16 @@ function remove_file(model_partial, output, file) {
   })
 }
 
-function generate_directory(generator, model_partial, directory, output) {
+async function generate_directory(generator, model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
 
   templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isDirectory())
-  .forEach((file)=>{
-    generate_directory(generator, model_partial, path.join(directory, file), path.join(output, file))
+  .forEach(async (file)=>{
+    await generate_directory(generator, model_partial, path.join(directory, file), path.join(output, file))
   })
   
-  templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(file => {
-    generate_file(generator, model_partial, directory, output, file)
+  templates.filter((file)=>fs.lstatSync(path.join(directory,file)).isFile()).forEach(async file => {
+    await generate_file(generator, model_partial, directory, output, file)
   });
 }
 function remove_directory(model_partial, directory, output) {
@@ -76,11 +83,11 @@ function execute(commandline, output_dir){
   execSync(commandline, {cwd: output_dir, stdio: process.env.VERBOSE ? 'inherit' : 'pipe'})	
 }
 
-function generate_template(generator, step, model, output, dirname) {
+async function generate_template(generator, step, model, output, dirname) {
   if(fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    generate_file(generator,jph.select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
+    await generate_file(generator,jph.select(model, step.select),path.join(dirname, path.dirname(step.generate)), path.join(output, step.target || ''), path.basename(step.generate))
   } else {
-    generate_directory(generator,jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
+    await generate_directory(generator,jph.select(model, step.select), path.join(dirname, step.generate), path.join(output, step.target || ''))
   }
 }
 
@@ -182,14 +189,14 @@ function clean_copy(step, model, output, dirname){
 }
 
 function decorate_generator(g, p, extra_output) {
-  g.generate = (model, output) => {
+  g.generate = async (model, output) => {
     output = path.join(output, extra_output || '')
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials, dirname);
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if(step.generate !== undefined){
-        generate_template(g, step, _.cloneDeep(model), output, dirname)
+        await generate_template(g, step, _.cloneDeep(model), output, dirname)
       }
       else if (step.runCommand !== undefined){
         run_command(step, _.cloneDeep(model), output, dirname)
