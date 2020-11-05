@@ -148,7 +148,10 @@ function copy(step, model, output, dirname){
           } else {
             const template = handlebars.compile(file)
             ui.move(source, out)
-            fs.moveSync(file, template(m))
+            const template_path = template(m);
+            if(file !== template_path) {
+              fs.moveSync(file, template_path)
+            }
           }
           
         })
