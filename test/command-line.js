@@ -14,7 +14,7 @@ describe('the command line interface', ()=>{
       const cmdln = require('../src/command-line')
 
       cmdln.parse(['node', 'clay', 'generate', 'test/samples/cmd-example.json', 'tmp/output'])
-      await sleep(50);
+      await sleep(1);
       expect(fs.existsSync('./tmp/output/order.txt'), 'template file not generated').to.equal(true)
     })
 
@@ -30,7 +30,7 @@ describe('the command line interface', ()=>{
       const cmdln = require('../src/command-line')
 
       cmdln.parse(['node', 'clay', 'generate', 'test/samples/cmd-example.json', 'tmp/output'])
-      await sleep(50);
+      await sleep(1);
       expect(fs.existsSync('./tmp/output/otheroutput/order.txt'), 'template file not generated').to.equal(true)
     })
   })
