@@ -208,12 +208,17 @@ Example of a models.json file:
 ## Generators
 
 Generators describe a sequence of steps that will be taken with the model
-as input.
+as input. Generators are generally installed globaly so they can be used by clay.
 
 a generator contains:
 * a list of steps
 * a list of partials
 * a list of formatters
+
+Currently available generators:
+
+* (Clay Model Generator)[https://github.com/morkeleb/clay-model-documentation]
+
 
 ### Partials
 
