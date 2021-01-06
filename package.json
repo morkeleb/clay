@@ -10,8 +10,8 @@
     "clay": "index.js"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/morkeleb/clay.git"
+    "type": "git",
+    "url": "https://github.com/morkeleb/clay.git"
   },
   "author": "Morten Nielsen",
   "license": "ISC",
