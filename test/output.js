@@ -13,6 +13,7 @@ describe('the output module', ()=>{
   after(()=>{
     console.log.restore()    
     console.warn.restore()
+    process.exit.restore();
   })
   it('will print to the log for logging', ()=>{
     output.log('test')

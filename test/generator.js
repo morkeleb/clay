@@ -69,6 +69,7 @@ describe("a generator", ()=>{
       let formatter_fake = null;
       afterEach(()=>{
         delete require.cache['clay-generator-formatter-prettify'];
+        mock.stop("resolve-global");
       })
       beforeEach(()=>{
         mock('resolve-global', x=>x);
