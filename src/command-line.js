@@ -46,16 +46,18 @@ function resolve_generator(name, model_path, indexFile) {
   return requireNew("./generator").load(generator_path[0], output, indexFile);
 }
 
-const generate = (model_path, output_path) => {
+const generate = async (model_path, output_path) => {
   const indexFile = require("./clay_file").load(".");
 
   const modelIndex = indexFile.getModelIndex(model_path, output_path);
 
   const model = requireNew("./model").load(model_path);
-  model.generators.forEach((g) =>
-    resolve_generator(g, path.dirname(model_path), modelIndex).generate(
-      model,
-      output_path
+  await Promise.all(
+    model.generators.map((g) =>
+      resolve_generator(g, path.dirname(model_path), modelIndex).generate(
+        model,
+        output_path
+      )
     )
   );
   indexFile.save();

@@ -97,7 +97,10 @@ describe("a generator", () => {
         formatter_fake = sinon.fake();
         mock("clay-generator-formatter-prettify", {
           extensions: ["**/*.js", "**/*.jsx"],
-          apply: formatter_fake,
+          apply: (filename, data) => {
+            formatter_fake(filename, data);
+            return data;
+          },
         });
       });
       it("will apply the formatters where the extensions match", async () => {

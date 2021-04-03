@@ -6,6 +6,7 @@ const emptyIndex = { models: [] };
 const newModelEntry = (path, output) => ({
   path,
   output,
+  generated_files: {},
 });
 
 module.exports = {
@@ -35,20 +36,16 @@ module.exports = {
         _.set(model, "generated_files['" + filePath + "'].date", date);
         model.last_generated = date;
       }
-      return {
-        ...model,
-        getFileCheckSum,
-        setFileCheckSum,
-      };
+      model.setFileCheckSum = setFileCheckSum;
+      model.getFileCheckSum = getFileCheckSum;
+      return model;
     }
 
     function save() {
       fs.writeFileSync(filePath, JSON.stringify(data));
     }
-    return {
-      ...data,
-      getModelIndex,
-      save,
-    };
+    data.getModelIndex = getModelIndex;
+    data.save = save;
+    return data;
   },
 };

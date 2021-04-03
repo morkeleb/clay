@@ -54,21 +54,23 @@ async function generate_file(
     fs.readFileSync(path.join(directory, file), "utf8")
   );
   var file_name = handlebars.compile(path.join(output, file));
-  model_partial.forEach(async (m) => {
-    const filename = file_name(m);
-    const preFormattedOutput = template(m);
-    const md5 = getMd5ForContent(preFormattedOutput);
+  await Promise.all(
+    model_partial.map(async (m) => {
+      const filename = file_name(m);
+      const preFormattedOutput = template(m);
+      const md5 = getMd5ForContent(preFormattedOutput);
+      if (modelIndex.getFileCheckSum(filename) !== md5) {
+        const content = await applyFormatters(
+          generator,
+          filename,
+          preFormattedOutput
+        );
 
-    if (modelIndex.getFileCheckSum(filename) !== md5) {
-      const content = await applyFormatters(
-        generator,
-        filename,
-        preFormattedOutput
-      );
-      write(filename, content);
-      modelIndex.setFileCheckSum(filename, md5);
-    }
-  });
+        write(filename, content);
+        modelIndex.setFileCheckSum(filename, md5);
+      }
+    })
+  );
 }
 
 function remove_file(model_partial, output, file) {
@@ -88,30 +90,34 @@ async function generate_directory(
 ) {
   const templates = fs.readdirSync(directory);
 
-  templates
-    .filter((file) => fs.lstatSync(path.join(directory, file)).isDirectory())
-    .forEach(async (file) => {
-      await generate_directory(
-        generator,
-        model_partial,
-        path.join(directory, file),
-        path.join(output, file),
-        modelIndex
-      );
-    });
+  await Promise.all(
+    templates
+      .filter((file) => fs.lstatSync(path.join(directory, file)).isDirectory())
+      .map((file) =>
+        generate_directory(
+          generator,
+          model_partial,
+          path.join(directory, file),
+          path.join(output, file),
+          modelIndex
+        )
+      )
+  );
 
-  templates
-    .filter((file) => fs.lstatSync(path.join(directory, file)).isFile())
-    .forEach(async (file) => {
-      await generate_file(
-        generator,
-        model_partial,
-        directory,
-        output,
-        file,
-        modelIndex
-      );
-    });
+  return Promise.all(
+    templates
+      .filter((file) => fs.lstatSync(path.join(directory, file)).isFile())
+      .map((file) =>
+        generate_file(
+          generator,
+          model_partial,
+          directory,
+          output,
+          file,
+          modelIndex
+        )
+      )
+  );
 }
 function remove_directory(model_partial, directory, output) {
   const templates = fs.readdirSync(directory);
@@ -135,13 +141,17 @@ function remove_directory(model_partial, directory, output) {
 
 function execute(commandline, output_dir) {
   ui.execute(commandline);
-  execSync(commandline, {
-    cwd: output_dir,
-    stdio: process.env.VERBOSE ? "inherit" : "pipe",
-  });
+  try {
+    execSync(commandline, {
+      cwd: output_dir,
+      stdio: process.env.VERBOSE ? "inherit" : "pipe",
+    });
+  } catch (e) {
+    ui.critical("error while excuting", commandline, e);
+  }
 }
 
-async function generate_template(
+function generate_template(
   generator,
   step,
   model,
@@ -150,7 +160,7 @@ async function generate_template(
   modelIndex
 ) {
   if (fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    await generate_file(
+    return generate_file(
       generator,
       jph.select(model, step.select),
       path.join(dirname, path.dirname(step.generate)),
@@ -159,7 +169,7 @@ async function generate_template(
       modelIndex
     );
   } else {
-    await generate_directory(
+    return generate_directory(
       generator,
       jph.select(model, step.select),
       path.join(dirname, step.generate),

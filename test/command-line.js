@@ -7,6 +7,9 @@ function sleep(ms) {
 }
 
 describe("the command line interface", () => {
+  beforeEach(() => {
+    fs.removeSync(".clay");
+  });
   afterEach(() => {
     fs.removeSync("./tmp");
     decache("./clay-file");
@@ -15,21 +18,23 @@ describe("the command line interface", () => {
     it("will generate using a specified model", async () => {
       const cmdln = require("../src/command-line");
 
-      cmdln.parse([
+      const result = cmdln.parse([
         "node",
         "clay",
         "generate",
         "test/samples/cmd-example.json",
         "tmp/output",
       ]);
-      await sleep(1);
+
+      await Promise.all(result._actionResults);
+
       expect(
         fs.existsSync("./tmp/output/order.txt"),
         "template file not generated"
       ).to.equal(true);
     });
 
-    it("will throw exceptions if generator not found", () => {
+    it("will throw exceptions if generator not found", async () => {
       const cmdln = require("../src/command-line");
 
       const args = [
@@ -40,19 +45,29 @@ describe("the command line interface", () => {
         "tmp/output",
       ];
 
-      expect(() => cmdln.parse(args)).to.throw(/.*generator not found.*/g);
+      const result = cmdln.parse(args);
+      let run = false;
+      try {
+        await result._actionResults[1];
+        run = true;
+      } catch (e) {
+        expect(e).to.match(/.*generator not found.*/g);
+      }
+      expect(run).to.equal(false);
     });
 
     it("will supply the generator with a specified output if specified", async () => {
       const cmdln = require("../src/command-line");
 
-      cmdln.parse([
+      const result = cmdln.parse([
         "node",
         "clay",
         "generate",
         "test/samples/cmd-example.json",
         "tmp/output",
       ]);
+
+      await result._actionResults[2];
       await sleep(1);
       expect(
         fs.existsSync("./tmp/output/otheroutput/order.txt"),
