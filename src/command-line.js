@@ -47,17 +47,18 @@ function resolve_generator(name, model_path, indexFile) {
 }
 
 const generate = (model_path, output_path) => {
-  const indexFile = require("./clay_file")
-    .load(".clay")
-    .getModelIndex(model_path, output_path);
+  const indexFile = require("./clay_file").load(".");
+
+  const modelIndex = indexFile.getModelIndex(model_path, output_path);
 
   const model = requireNew("./model").load(model_path);
   model.generators.forEach((g) =>
-    resolve_generator(g, path.dirname(model_path), indexFile).generate(
+    resolve_generator(g, path.dirname(model_path), modelIndex).generate(
       model,
       output_path
     )
   );
+  indexFile.save();
 };
 
 const clean = (model_path, output_path) => {
