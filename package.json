@@ -21,7 +21,6 @@
     "chokidar": "^3.5.1",
     "commander": "^7.2.0",
     "crypto": "^1.0.1",
-    "decache": "^4.6.0",
     "fs-extra": "^9.1.0",
     "handlebars": "^4.7.7",
     "handlebars-group-by": "https://github.com/jonasalfthan/handlebars-group-by",
@@ -38,6 +37,7 @@
     "chai": "^4.3.4",
     "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
-    "sinon": "^10.0.0"
+    "sinon": "^10.0.0",
+    "decache": "^4.6.0"
   }
 }
