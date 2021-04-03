@@ -22,14 +22,14 @@ module.exports = {
         data.models,
         (m) => m.path === modelPath && m.output === output
       );
+      if (!model) {
+        model = newModelEntry(modelPath, output);
+        data.models.push(model);
+      }
       function getFileCheckSum(filePath) {
         return _.get(model, "generated_files['" + filePath + "'].md5", null);
       }
       function setFileCheckSum(filePath, md5) {
-        if (!model) {
-          model = newModelEntry(modelPath, output);
-          data.models.push(model);
-        }
         _.set(model, "generated_files['" + filePath + "'].md5", md5);
         model.last_generated = new Date().toISOString();
       }

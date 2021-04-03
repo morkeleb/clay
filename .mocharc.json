@@ -1,0 +1,18 @@
+{
+  "diff": true,
+  "extension": [
+    "js"
+  ],
+  "package": "./package.json",
+  "reporter": "min",
+  "slow": 75,
+  "timeout": 2000,
+  "ui": "bdd",
+  "watch-files": [
+    "src/**/*.js",
+    "test/**/*.js"
+  ],
+  "ignore": [
+    "test/samples/**/*"
+  ]
+}
