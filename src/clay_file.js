@@ -30,8 +30,10 @@ module.exports = {
         return _.get(model, "generated_files['" + filePath + "'].md5", null);
       }
       function setFileCheckSum(filePath, md5) {
+        const date = new Date().toISOString();
         _.set(model, "generated_files['" + filePath + "'].md5", md5);
-        model.last_generated = new Date().toISOString();
+        _.set(model, "generated_files['" + filePath + "'].date", date);
+        model.last_generated = date;
       }
       return {
         ...model,
