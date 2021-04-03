@@ -1,5 +1,3 @@
-
-
 > The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander
 
 # What is Clay
@@ -10,10 +8,9 @@ The goal is to have a consistent implementation of all model related operations 
 
 ## Talks
 
-* [A short concept overview in Swedish @ Agila sverige 2019](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)
+- [A short concept overview in Swedish @ Agila sverige 2019](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)
 
 # Usage
-
 
 ## Installation
 
@@ -65,7 +62,6 @@ The command will simply print the resulting model objects your path returns.
 > clay test-path <model_path> $.model.types[*].actions[*].parameters[?\(@.type==\"array\"\)]
 ```
 
-
 ## Clean
 
 The `clean` command will clear up all generated code based on the generators specified in the
@@ -76,7 +72,6 @@ It will not undo any commandline executions that has ben run by a generator.
 ```
 > clay clean <model_path> <output_path>
 ```
-
 
 ## Watch
 
@@ -94,6 +89,7 @@ Using this will make clay listen for changes under the directory specified in th
 ### Recommended directory layout for the model and custom generators
 
 We have a directory called clay where we keep our model and our custom generators.
+
 ```
 .
 ├── dataaccess
@@ -116,7 +112,6 @@ We have a directory called clay where we keep our model and our custom generator
 This makes it simple to run clay watch on the "clay directory" and work continously on the
 generators and the model.
 
-
 # Domain model
 
 Clay takes a structured specification of a domain model and generates code based on the domain model and a given set of generators.
@@ -134,6 +129,7 @@ The model holds a list of generators to be run for this specific model.
 
 Generators holds a list of steps to run.
 Steps can do one of the following:
+
 1. Generate a set of files using a handlebar template and the model
 2. Run commands using the model and handlebar to modify executed commands
 3. Copy existing files
@@ -142,19 +138,18 @@ the order of execution is defined in the generator
 
 # Files
 
-
 ## Models
 
 Clays models are described in a file called models.json.
 
 The structure for describing a model in clay is as follows:
 
-* A model contains:
+- A model contains:
 
-* a list of generators.
-* a name
-* a list of mixins
-* the model as a json structure
+- a list of generators.
+- a name
+- a list of mixins
+- the model as a json structure
 
 `mixin` and `include` are reserved properties on a clay model.
 `mixin` is a list of functions to execute on a part of the model
@@ -162,6 +157,7 @@ The structure for describing a model in clay is as follows:
 specified file.
 
 Example of a models.json file:
+
 ```
 {
   name: 'mymodel'
@@ -211,14 +207,14 @@ Generators describe a sequence of steps that will be taken with the model
 as input. Generators are generally installed globaly so they can be used by clay.
 
 a generator contains:
-* a list of steps
-* a list of partials
-* a list of formatters
+
+- a list of steps
+- a list of partials
+- a list of formatters
 
 Currently available generators:
 
-* (Clay Model Generator)[https://github.com/morkeleb/clay-model-documentation]
-
+- (Clay Model Generator)[https://github.com/morkeleb/clay-model-documentation]
 
 ### Partials
 
@@ -229,9 +225,10 @@ the generator. These are usefull for header and footer like operations.
 
 The steps describe what the generator does and in which order.
 Steps can be one of:
-* Copy
-* generate handlebar template
-* run a command
+
+- Copy
+- generate handlebar template
+- run a command
 
 Steps use jsonpath to filter out what part of the model that is interesting
 for a particular step.
@@ -244,8 +241,8 @@ Formatters are used to format the output before it is written to disk.
 For example it could be to ensure propper indentation before writing the file.
 Formatters are installed globally and the generator will require the specified formatter.
 
-
 Example:
+
 ```
 {
   "partials":[],
@@ -315,10 +312,10 @@ Allowing you to check what objects you have received to the template as you were
 </p>
 ```
 
-
 #### markdown
 
 The markdown helper method shown in the following example.
+
 ```
 <p>
   {{markdown description}}
@@ -328,7 +325,6 @@ The markdown helper method shown in the following example.
 #### lobars
 
 lobars and lodash string manipulation as helpers to the handlebar templating system.
-
 
 ```
 var command = function (user, {{ parameters }}) {
@@ -342,13 +338,17 @@ var command = function (user, {{ parameters }}) {
 
 ### Changes
 
-- [X] support casing help in helpers
-- [X] inc one helper for indexes plus 1
-- [X] use chalk to make pretty output... pretty output is... pretty
-- [X] update generator and allow loading of node modules as generators
-- [X] built in watch support
-- [X] add usage instructions to readme
-- [X] clean up command that will remove files instead of writing them
+- [x] support casing help in helpers
+- [x] inc one helper for indexes plus 1
+- [x] use chalk to make pretty output... pretty output is... pretty
+- [x] update generator and allow loading of node modules as generators
+- [x] built in watch support
+- [x] add usage instructions to readme
+- [x] clean up command that will remove files instead of writing them
+- [x] add a .clay file that keeps inventory of what has been generated to make clean more precise
+  - [ ] make clean command work with the .clay file
+  - [ ] make the generate command work with the .clay file so it doesnt require arguments
+  - [ ] make the watch command work with the .clay file so it doesnt require arguments
 
 ### Future
 
@@ -356,5 +356,3 @@ var command = function (user, {{ parameters }}) {
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
 - [ ] option to clear directories
-- [ ] add a .clay file that keeps inventory of what has been generated to make clean more precise
-
