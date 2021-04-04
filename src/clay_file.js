@@ -42,7 +42,7 @@ module.exports = {
     }
 
     function save() {
-      fs.writeFileSync(filePath, JSON.stringify(data));
+      fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     }
     data.getModelIndex = getModelIndex;
     data.save = save;
