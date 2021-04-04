@@ -345,7 +345,8 @@ var command = function (user, {{ parameters }}) {
 - [x] built in watch support
 - [x] add usage instructions to readme
 - [x] clean up command that will remove files instead of writing them
-- [x] add a .clay file that keeps inventory of what has been generated to make clean more precise
+- [x] add a .clay file that keeps inventory of what has been generated
+  - [x] make sure regeneration of files only write changes
   - [ ] make clean command work with the .clay file
   - [ ] make the generate command work with the .clay file so it doesnt require arguments
   - [ ] make the watch command work with the .clay file so it doesnt require arguments
