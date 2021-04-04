@@ -1,10 +1,11 @@
 {
   "name": "clay-generator",
-  "version": "0.0.5",
+  "version": "0.2.0",
   "description": "a model and convention based source code generator",
   "main": "index.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "test:watch": "mocha --watch"
   },
   "bin": {
     "clay": "index.js"
@@ -17,23 +18,26 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^4.1.0",
-    "chokidar": "^3.4.3",
-    "commander": "^6.2.0",
-    "fs-extra": "^9.0.1",
-    "handlebars": "^4.7.6",
+    "chokidar": "^3.5.1",
+    "commander": "^7.2.0",
+    "crypto": "^1.0.1",
+    "fs-extra": "^9.1.0",
+    "handlebars": "^4.7.7",
     "handlebars-group-by": "https://github.com/jonasalfthan/handlebars-group-by",
-    "jsonpath": "^1.0.2",
+    "jsonpath": "^1.1.1",
     "lobars": "^1.2.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.21",
     "lodash-inflection": "^1.5.0",
-    "marked": "^1.2.3",
+    "marked": "^2.0.1",
     "minimatch": "^3.0.4",
+    "nyc": "^15.1.0",
     "resolve-global": "^1.0.0"
   },
   "devDependencies": {
-    "chai": "^4.2.0",
-    "mocha": "^8.2.1",
+    "chai": "^4.3.4",
+    "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
-    "sinon": "^9.2.1"
+    "sinon": "^10.0.0",
+    "decache": "^4.6.0"
   }
 }

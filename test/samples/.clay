@@ -1,0 +1,14 @@
+{
+    "models": [
+        {
+            "path": "",
+            "output": "",
+            "last_generated": "2020-04-01",
+            "generated_files": {
+                "test/etet": {
+                    "md5": "234234234324"
+                }
+            }
+        }
+    ]
+}
