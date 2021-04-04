@@ -73,12 +73,10 @@ async function generate_file(
   );
 }
 
-function remove_file(model_partial, output, file) {
-  var file_name = handlebars.compile(path.join(output, file));
-  model_partial.forEach((m) => {
-    ui.warn("removing ", file_name(m));
-    fs.removeSync(file_name(m));
-  });
+function remove_file(modelIndex, file) {
+  ui.warn("removing ", file);
+  fs.removeSync(file);
+  modelIndex.delFileCheckSum(file);
 }
 
 async function generate_directory(
@@ -118,25 +116,6 @@ async function generate_directory(
         )
       )
   );
-}
-function remove_directory(model_partial, directory, output) {
-  const templates = fs.readdirSync(directory);
-
-  templates
-    .filter((file) => fs.lstatSync(path.join(directory, file)).isDirectory())
-    .forEach((file) => {
-      remove_directory(
-        model_partial,
-        path.join(directory, file),
-        path.join(output, file)
-      );
-    });
-
-  templates
-    .filter((file) => fs.lstatSync(path.join(directory, file)).isFile())
-    .forEach((file) => {
-      remove_file(model_partial, output, file);
-    });
 }
 
 function execute(commandline, output_dir) {
@@ -179,20 +158,9 @@ function generate_template(
   }
 }
 
-function clean_template(step, model, output, dirname) {
-  if (fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    remove_file(
-      jph.select(model, step.select),
-      path.join(output, step.target || ""),
-      path.basename(step.generate)
-    );
-  } else {
-    remove_directory(
-      jph.select(model, step.select),
-      path.join(dirname, step.generate),
-      path.join(output, step.target || "")
-    );
-  }
+function remove_generated_files(modelIndex) {
+  const files = Object.keys(modelIndex.generated_files);
+  files.forEach((f) => remove_file(modelIndex, f));
 }
 
 function run_command(step, model, output, dirname) {
@@ -312,12 +280,10 @@ function decorate_generator(g, p, extra_output, modelIndex) {
   g.clean = (model, output) => {
     output = path.join(output, extra_output || "");
     const dirname = path.dirname(p);
-    handlebars.load_partials(g.partials, dirname);
+    remove_generated_files(modelIndex);
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
-      if (step.generate !== undefined) {
-        clean_template(step, _.cloneDeep(model), output, dirname);
-      } else if (step.copy !== undefined) {
+      if (step.copy !== undefined) {
         clean_copy(step, _.cloneDeep(model), output, dirname);
       }
     }

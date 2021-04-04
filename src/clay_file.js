@@ -38,6 +38,7 @@ module.exports = {
       }
       model.setFileCheckSum = setFileCheckSum;
       model.getFileCheckSum = getFileCheckSum;
+      model.delFileCheckSum = (file) => delete model.generated_files[file];
       return model;
     }
 

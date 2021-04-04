@@ -64,10 +64,18 @@ const generate = async (model_path, output_path) => {
 };
 
 const clean = (model_path, output_path) => {
+  const indexFile = require("./clay_file").load(".");
   const model = requireNew("./model").load(model_path);
+  const modelIndex = indexFile.getModelIndex(model_path, output_path);
+
   model.generators.forEach((g) =>
-    resolve_generator(g, path.dirname(model_path)).clean(model, output_path)
+    resolve_generator(g, path.dirname(model_path), modelIndex).clean(
+      model,
+      output_path
+    )
   );
+
+  indexFile.save();
 };
 const test = (model_path, json_path) => {
   const model = requireNew("./model").load(model_path);
