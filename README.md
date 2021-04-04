@@ -349,6 +349,7 @@ var command = function (user, {{ parameters }}) {
   - [x] make sure regeneration of files only write changes
   - [x] make clean command work with the .clay file
   - [ ] make the generate command work with the .clay file so it doesnt require arguments
+  - [ ] make the clean command work with the .clay file so it doesnt require arguments
   - [ ] make the watch command work with the .clay file so it doesnt require arguments
 
 ### Future
