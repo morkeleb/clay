@@ -4,6 +4,7 @@ const commander = new Command();
 const path = require("path");
 const fs = require("fs");
 const ui = require("./output");
+const _ = require("lodash");
 const resolveGlobal = require("resolve-global");
 const chokidar = require("chokidar");
 
@@ -46,37 +47,65 @@ function resolve_generator(name, model_path, indexFile) {
   return requireNew("./generator").load(generator_path[0], output, indexFile);
 }
 
-const generate = async (model_path, output_path) => {
+const generateModels = async (modelsToExecute) =>
+  Promise.all(
+    modelsToExecute.map(async (modelIndex) => {
+      const model = modelIndex.load();
+      await Promise.all(
+        model.generators.map((g) =>
+          resolve_generator(
+            g,
+            path.dirname(modelIndex.path),
+            modelIndex
+          ).generate(model, modelIndex.output)
+        )
+      );
+    })
+  );
+
+async function generate(model_path, output_path) {
   const indexFile = require("./clay_file").load(".");
 
-  const modelIndex = indexFile.getModelIndex(model_path, output_path);
+  let modelsToExecute = null;
 
-  const model = requireNew("./model").load(model_path);
-  await Promise.all(
-    model.generators.map((g) =>
-      resolve_generator(g, path.dirname(model_path), modelIndex).generate(
+  if (model_path)
+    modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
+  else {
+    modelsToExecute = indexFile.models.map((m) =>
+      indexFile.getModelIndex(m.path, m.output)
+    );
+  }
+
+  await generateModels(modelsToExecute);
+  indexFile.save();
+}
+
+const cleanModels = (modelsToExecute) => {
+  modelsToExecute.map(async (modelIndex) => {
+    const model = modelIndex.load();
+    model.generators.forEach((g) =>
+      resolve_generator(g, path.dirname(modelIndex.path), modelIndex).clean(
         model,
-        output_path
+        modelIndex.output
       )
-    )
-  );
-  indexFile.save();
+    );
+  });
 };
 
-const clean = (model_path, output_path) => {
+function clean(model_path, output_path) {
   const indexFile = require("./clay_file").load(".");
-  const model = requireNew("./model").load(model_path);
-  const modelIndex = indexFile.getModelIndex(model_path, output_path);
+  let modelsToExecute = null;
 
-  model.generators.forEach((g) =>
-    resolve_generator(g, path.dirname(model_path), modelIndex).clean(
-      model,
-      output_path
-    )
-  );
-
+  if (model_path)
+    modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
+  else {
+    modelsToExecute = indexFile.models.map((m) =>
+      indexFile.getModelIndex(m.path, m.output)
+    );
+  }
+  cleanModels(modelsToExecute);
   indexFile.save();
-};
+}
 const test = (model_path, json_path) => {
   const model = requireNew("./model").load(model_path);
   const jph = require("./jsonpath-helper");
@@ -90,29 +119,50 @@ commander
   .action(test);
 
 commander
-  .command("clean <model_path> <output_path>")
+  .command("clean [model_path] [output_path]")
   .description("cleans up the output of the generators")
   .action(clean);
 
 commander
-  .command("generate <model_path> <output_path>")
+  .command("generate [model_path] [output_path]")
   .description("runs the generators")
   .action(generate);
 
-commander
-  .command("watch <model_path> <output_path>")
-  .description("runs the generators on filechanges in the models directory")
-  .action((model_path, output_path) => {
-    const model_directory = path.dirname(path.resolve(model_path));
+function watch(model_path, output_path) {
+  const indexFile = require("./clay_file").load(".");
+  let modelsToExecute = null;
+
+  if (model_path)
+    modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
+  else {
+    modelsToExecute = indexFile.models.map((m) =>
+      indexFile.getModelIndex(m.path, m.output)
+    );
+  }
+
+  const directories_to_watch = _.uniq(
+    modelsToExecute.map((modelIndex) =>
+      path.dirname(path.resolve(modelIndex.path))
+    )
+  );
+  directories_to_watch.forEach((model_directory) => {
     ui.watch(model_directory);
 
     chokidar
       .watch(model_directory, { ignored: /(^|[\/\\])\../, ignoreInitial: true })
       .on("all", (event, path) => {
-        generate(model_path, output_path);
+        modelsToExecute.forEach((modelIndex) => {
+          generate(modelIndex.path, modelIndex.output);
 
-        ui.watch(model_directory);
+          ui.watch(model_directory);
+        });
       });
   });
+}
+
+commander
+  .command("watch [model_path] [output_path]")
+  .description("runs the generators on filechanges in the models directory")
+  .action(watch);
 
 module.exports = commander;

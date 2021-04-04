@@ -126,7 +126,7 @@ function execute(commandline, output_dir) {
       stdio: process.env.VERBOSE ? "inherit" : "pipe",
     });
   } catch (e) {
-    ui.critical("error while excuting", commandline, e);
+    ui.warn("error while excuting", commandline);
   }
 }
 
