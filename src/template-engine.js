@@ -77,7 +77,7 @@ handlebars.registerHelper( "switch", function( value, options ) {
     return html;
 } );
 
-Handlebars.registerHelper('times', function(n, block) {
+handlebars.registerHelper('times', function(n, block) {
   var accum = '';
   for(var i = 0; i < n; ++i) {
       block.data.index = i;
