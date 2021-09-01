@@ -48,7 +48,8 @@ async function generate_file(
   directory,
   output,
   file,
-  modelIndex
+  modelIndex,
+  step
 ) {
   var template = handlebars.compile(
     fs.readFileSync(path.join(directory, file), "utf8")
@@ -57,6 +58,9 @@ async function generate_file(
   await Promise.all(
     model_partial.map(async (m) => {
       const filename = file_name(m);
+      if(step.touch && fs.existsSync(filename)){
+        return;
+      } 
       const preFormattedOutput = template(m);
       const md5 = getMd5ForContent(preFormattedOutput);
       if (modelIndex.getFileCheckSum(filename) !== md5) {
@@ -67,7 +71,9 @@ async function generate_file(
         );
 
         write(filename, content);
-        modelIndex.setFileCheckSum(filename, md5);
+        if(!step.touch) {
+          modelIndex.setFileCheckSum(filename, md5);
+        }
       }
     })
   );
@@ -84,7 +90,8 @@ async function generate_directory(
   model_partial,
   directory,
   output,
-  modelIndex
+  modelIndex,
+  step
 ) {
   const templates = fs.readdirSync(directory);
 
@@ -97,7 +104,8 @@ async function generate_directory(
           model_partial,
           path.join(directory, file),
           path.join(output, file),
-          modelIndex
+          modelIndex,
+          step
         )
       )
   );
@@ -112,7 +120,8 @@ async function generate_directory(
           directory,
           output,
           file,
-          modelIndex
+          modelIndex,
+          step
         )
       )
   );
@@ -145,7 +154,8 @@ function generate_template(
       path.join(dirname, path.dirname(step.generate)),
       path.join(output, step.target || ""),
       path.basename(step.generate),
-      modelIndex
+      modelIndex,
+      step
     );
   } else {
     return generate_directory(
@@ -153,7 +163,8 @@ function generate_template(
       jph.select(model, step.select),
       path.join(dirname, step.generate),
       path.join(output, step.target || ""),
-      modelIndex
+      modelIndex,
+      step
     );
   }
 }
