@@ -59,6 +59,7 @@ async function generate_file(
     model_partial.map(async (m) => {
       const filename = file_name(m);
       if(step.touch && fs.existsSync(filename)){
+        ui.info("skipping touch file:", filename)
         return;
       } 
       const preFormattedOutput = template(m);

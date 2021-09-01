@@ -22,6 +22,11 @@ module.exports = {
     if(!process.isCLI) return;
     text.unshift(chalk.blue('executing: '))
     console.log.apply(console, text)
+  }, 
+  info: (...text)=>{
+    if(!process.isCLI) return;
+    text.unshift(chalk.blue('info: '))
+    console.log.apply(console, text)
   },
   write: (...filename)=>{
     if(!process.isCLI) return;
