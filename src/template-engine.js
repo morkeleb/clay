@@ -136,4 +136,21 @@ handlebars.registerHelper('ifCond', function (v1, operator, v2, options) {
   }
 });
 
+handlebars.registerHelper('eachUnique', function(array, options, context) {
+  let itterator = array;
+  if(lodash.isObject(array)){
+    itterator = Object.values(array);
+  }
+  const uniqueArray = arguments.length === 3 ? lodash.uniqBy(itterator, x=>x[options]): lodash.uniq(itterator);
+  
+  // template buffer
+  var buffer = '';
+  for( var i=0; i< uniqueArray.length; i++){
+    var entry = uniqueArray[i];
+    buffer +=(context || options).fn(entry);
+  }
+  // return the template compiled
+  return buffer;
+});
+
 module.exports = handlebars;
