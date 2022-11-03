@@ -28,7 +28,17 @@ async function applyFormatters(generator, file_name, data) {
     );
 
     if (applyFormatter) {
-      result = await formatter.apply(file_name, result);
+      try {
+        result = await formatter.apply(file_name, result);
+      } catch (e) {
+        ui.critical(
+          "Failed to apply formatter for: ",
+          file_name,
+          " This probably not due to clay but the formatter itself",
+          e
+        );
+        throw e;
+      }
     }
   }
 
@@ -58,10 +68,10 @@ async function generate_file(
   await Promise.all(
     model_partial.map(async (m) => {
       const filename = file_name(m);
-      if(step.touch && fs.existsSync(filename)){
-        ui.info("skipping touch file:", filename)
+      if (step.touch && fs.existsSync(filename)) {
+        ui.info("skipping touch file:", filename);
         return;
-      } 
+      }
       const preFormattedOutput = template(m);
       const md5 = getMd5ForContent(preFormattedOutput);
       if (modelIndex.getFileCheckSum(filename) !== md5) {
@@ -72,7 +82,7 @@ async function generate_file(
         );
 
         write(filename, content);
-        if(!step.touch) {
+        if (!step.touch) {
           modelIndex.setFileCheckSum(filename, md5);
         }
       }
