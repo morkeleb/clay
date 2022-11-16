@@ -72,19 +72,30 @@ async function generate_file(
         ui.info("skipping touch file:", filename);
         return;
       }
-      const preFormattedOutput = template(m);
-      const md5 = getMd5ForContent(preFormattedOutput);
-      if (modelIndex.getFileCheckSum(filename) !== md5) {
-        const content = await applyFormatters(
-          generator,
-          filename,
-          preFormattedOutput
-        );
+      try {
+        const preFormattedOutput = template(m);
 
-        write(filename, content);
-        if (!step.touch) {
-          modelIndex.setFileCheckSum(filename, md5);
+        const md5 = getMd5ForContent(preFormattedOutput);
+        if (modelIndex.getFileCheckSum(filename) !== md5) {
+          const content = await applyFormatters(
+            generator,
+            filename,
+            preFormattedOutput
+          );
+
+          write(filename, content);
+          if (!step.touch) {
+            modelIndex.setFileCheckSum(filename, md5);
+          }
         }
+      } catch (e) {
+        ui.critical(
+          "Failed to generate content for: ",
+          filename,
+          " This probably not due to clay but the template itself",
+          e
+        );
+        throw e;
       }
     })
   );
