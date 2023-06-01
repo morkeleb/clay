@@ -314,12 +314,6 @@ function decorate_generator(g, p, extra_output, modelIndex) {
     output = path.join(output, extra_output || "");
     const dirname = path.dirname(p);
     remove_generated_files(modelIndex);
-    for (let index = 0; index < g.steps.length; index++) {
-      const step = g.steps[index];
-      if (step.copy !== undefined) {
-        clean_copy(step, _.cloneDeep(model), output, dirname);
-      }
-    }
   };
   return g;
 }
