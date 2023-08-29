@@ -72,6 +72,10 @@ handlebars.registerHelper("pluralize", function (value, options) {
   return lodash.pluralize(value);
 });
 
+handlebars.registerHelper("singularize", function (value, options) {
+  return lodash.singularize(value);
+});
+
 handlebars.__switch_stack__ = [];
 
 handlebars.registerHelper("switch", function (value, options) {
