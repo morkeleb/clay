@@ -1,6 +1,6 @@
 {
   "name": "clay-generator",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "a model and convention based source code generator",
   "main": "index.js",
   "scripts": {
