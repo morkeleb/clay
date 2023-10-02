@@ -148,7 +148,7 @@ handlebars.registerHelper("ifCond", function (v1, operator, v2, options) {
   }
 });
 
-Handlebars.registerHelper({
+handlebars.registerHelper({
   eq: (v1, v2) => v1 === v2,
   ne: (v1, v2) => v1 !== v2,
   lt: (v1, v2) => v1 < v2,
