@@ -1,0 +1,90 @@
+{
+  "$schema": "https://raw.githubusercontent.com/morkeleb/clay/master/src/schemas/generator_schema.json",
+  "$id": "https://raw.githubusercontent.com/morkeleb/clay/master/src/schemas/generator_schema.json",
+  "title": "Generator",
+  "description": "A clay generator definition. Describes the steps taken to generate files based on the json model. Selection is done using JSONPath. Touch means it wont overwrite the file if it exists.",
+  "type": "object",
+  "properties": {
+    "partials": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string",
+          "description": "The partial to use. A partial adds functionality to the mustache templates as they are generating."
+        }
+      ]
+    },
+    "formatters": {
+      "type": "array",
+      "items": [
+        {
+          "type": "string",
+          "description": "The formatter to use. For example if this generator uses the prettifier formatter, the value would be 'clay-generator-formatter-prettier'."
+        }
+      ]
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "runCommand": {
+                "type": "string",
+                "description": "The command-line to execute. Mustache templating accessible with selected data based on the select property."
+              },
+              "select": {
+                "type": "string",
+                "description": "JSONPath to select the data to be used in the template."
+              }
+            },
+            "required": ["runCommand"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "copy": {
+                "type": "string",
+                "description": "The file to copy."
+              },
+              "select": {
+                "type": "string",
+                "description": "JSONPath to select the data to be used in the template."
+              },
+              "target": {
+                "type": "string",
+                "description": "The ouput file to copy to. Mustache template accessible with selectd data based on the select property"
+              }
+            },
+            "required": ["copy", "target"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "generate": {
+                "type": "string",
+                "description": "The mustache template or directory of templates to generate the output."
+              },
+              "target": {
+                "type": "string",
+                "description": "The ouput file to generate. Mustache template accessible with selectd data based on the select property"
+              },
+              "select": {
+                "type": "string",
+                "description": "JSONPath to select the data to be used in the template."
+              },
+              "touch": {
+                "type": "boolean",
+                "description": "If true, the file will not be overwritten if it exists."
+              }
+            },
+            "required": ["generate", "target", "select"]
+          }
+        ]
+      }
+    }
+  },
+  "required": ["partials", "formatters", "steps"]
+}
