@@ -9,14 +9,20 @@ const newModelEntry = (path, output) => ({
   generated_files: {},
 });
 
+const gitMergeAcceptAllIncomingChanges = (fileContent) => {
+  if (!fileContent) return null;
+  const mergeTagRegex =
+    /<<<<<<< HEAD([\s\S]*?)=======([\s\S]*?)>>>>>>> ([^\n]+)/g;
+  const cleanContent = fileContent.toString().replace(mergeTagRegex, "$2");
+  return JSON.parse(cleanContent);
+};
+
 module.exports = {
   load: (path) => {
     const filePath = osPath.join(path, ".clay");
     const indexExists = fs.existsSync(filePath);
-
-    const data = indexExists
-      ? JSON.parse(fs.readFileSync(filePath))
-      : emptyIndex;
+    const fileContent = indexExists ? fs.readFileSync(filePath) : null;
+    const data = gitMergeAcceptAllIncomingChanges(fileContent) || emptyIndex;
 
     function getModelIndex(modelPath, output) {
       let model = _.find(

@@ -3,7 +3,11 @@
         {
             "path": "",
             "output": "",
-            "last_generated": "2020-04-01",
+<<<<<<< HEAD
+            "last_generated": "2024-02-22T14:33:27.848Z",
+=======
+            "last_generated": "2024-03-05T15:50:19.328Z",
+>>>>>>> upstream/master
             "generated_files": {
                 "test/etet": {
                     "md5": "234234234324"
