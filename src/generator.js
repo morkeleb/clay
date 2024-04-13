@@ -158,6 +158,7 @@ function execute(commandline, output_dir) {
     });
   } catch (e) {
     ui.warn("error while excuting", commandline);
+    ui.warn(e);
   }
 }
 
