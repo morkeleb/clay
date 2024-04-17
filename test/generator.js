@@ -61,7 +61,7 @@ describe("a generator", () => {
 
       expect(
         output.warn.calledWith(
-          "No entires found for jsonpath ",
+          "No entries found for jsonpath ",
           g.steps[5].select
         )
       );
