@@ -30,7 +30,7 @@ function select(model, jsonpath) {
     return []
   }
   if(result.length == 0){
-    ui.warn('No entires found for jsonpath ', jsonpath)
+    ui.warn("No entries found for jsonpath ", jsonpath);
   }
   return result.map(f=>f.value);
 }
