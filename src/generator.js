@@ -149,10 +149,16 @@ async function generate_directory(
   );
 }
 
-function execute(commandline, output_dir) {
-  ui.execute(commandline);
+function execute(commandline, output_dir, npxCommand) {
+  let cmd = commandline;
+  if (npxCommand) {
+    // prepend generators dir to commandline to execute it in the current directory
+
+    cmd = `npx ${commandline}`;
+  }
+  ui.execute(cmd);
   try {
-    execSync(commandline, {
+    execSync(cmd, {
       cwd: output_dir,
       stdio: process.env.VERBOSE ? "inherit" : "pipe",
     });
@@ -201,11 +207,11 @@ function run_command(step, model, output, dirname) {
   const output_dir = path.resolve(output);
   fs.ensureDirSync(output_dir);
   if (step.select == undefined) {
-    execute(step.runCommand, output_dir);
+    execute(step.runCommand, output_dir, step.npxCommand);
   } else {
     var command = handlebars.compile(step.runCommand);
     jph.select(model, step.select).forEach((m) => {
-      execute(command(m), output_dir);
+      execute(command(m), output_dir, step.npxCommand);
     });
   }
 }
