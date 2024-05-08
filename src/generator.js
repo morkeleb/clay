@@ -163,8 +163,8 @@ function execute(commandline, output_dir, npxCommand) {
       stdio: process.env.VERBOSE ? "inherit" : "pipe",
     });
   } catch (e) {
-    ui.warn("error while excuting", commandline);
-    ui.warn(e);
+    ui.warn("error while executing", commandline);
+    ui.warn(e.stdout.toString());
   }
 }
 
