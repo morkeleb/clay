@@ -3,6 +3,7 @@ var handlebars = require("handlebars");
 
 var fs = require("fs");
 var path_module = require("path");
+var jsonPathHelper = require("./jsonpath-helper");
 
 var groupBy = require("handlebars-group-by");
 const lobars = require("lobars");
@@ -192,6 +193,34 @@ handlebars.registerHelper("eachUnique", function (array, options, context) {
   // return the template compiled
   return buffer;
 });
+
+handlebars.registerHelper(
+  "eachUniqueJSONPath",
+  function (modelToSelectFrom, options, context) {
+    if (arguments.length !== 3) {
+      throw new Error("eachUniqueJSONPath helper needs to have 3 arguments.");
+    }
+    const JSONPath = options;
+    const jsonPathValues = jsonPathHelper.select(modelToSelectFrom, JSONPath);
+    const uniqueArray = lodash.uniq(jsonPathValues);
+
+    // template buffer
+    var buffer = "";
+    for (var i = 0; i < uniqueArray.length; i++) {
+      var entry = uniqueArray[i];
+      buffer += (context || options).fn(entry, {
+        data: {
+          index: i,
+          first: i === 0,
+          last: i === uniqueArray.length - 1,
+          key: entry["clay_json_key"],
+        },
+      });
+    }
+    // return the template compiled
+    return buffer;
+  }
+);
 
 handlebars.registerHelper(
   "splitAndUseWord",
