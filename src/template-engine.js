@@ -166,7 +166,10 @@ handlebars.registerHelper({
 handlebars.registerHelper("eachUnique", function (array, options, context) {
   let itterator = array;
   if (lodash.isObject(array)) {
-    itterator = Object.values(array);
+    itterator = Object.entries(array).map(([key, value]) => ({
+      ...value,
+      "@key": key,
+    }));
   }
   const uniqueArray =
     arguments.length === 3
@@ -182,7 +185,7 @@ handlebars.registerHelper("eachUnique", function (array, options, context) {
         index: i,
         first: i === 0,
         last: i === uniqueArray.length - 1,
-        key: i,
+        key: entry["@key"],
       },
     });
   }
