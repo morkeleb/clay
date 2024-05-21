@@ -1,9 +1,8 @@
 var marked = require("marked");
 var handlebars = require("handlebars");
-
+const jp = require("jsonpath");
 var fs = require("fs");
 var path_module = require("path");
-var jsonPathHelper = require("./jsonpath-helper");
 
 var groupBy = require("handlebars-group-by");
 const lobars = require("lobars");
@@ -201,19 +200,22 @@ handlebars.registerHelper(
       throw new Error("eachUniqueJSONPath helper needs to have 3 arguments.");
     }
     const JSONPath = options;
-    const jsonPathValues = jsonPathHelper.select(modelToSelectFrom, JSONPath);
-    const uniqueArray = lodash.uniq(jsonPathValues);
-
+    const jsonPathValues = jp
+      .nodes(modelToSelectFrom, JSONPath)
+      .filter((x) => x);
+    const uniqueArray = lodash.uniqBy(jsonPathValues, (x) =>
+      lodash.last(x.path)
+    );
     // template buffer
     var buffer = "";
     for (var i = 0; i < uniqueArray.length; i++) {
-      var entry = uniqueArray[i];
+      var entry = uniqueArray[i].value;
       buffer += (context || options).fn(entry, {
         data: {
           index: i,
           first: i === 0,
           last: i === uniqueArray.length - 1,
-          key: entry["clay_json_key"],
+          key: lodash.last(uniqueArray[i].path),
         },
       });
     }
