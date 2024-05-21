@@ -182,7 +182,7 @@ handlebars.registerHelper("eachUnique", function (array, options, context) {
         index: i,
         first: i === 0,
         last: i === uniqueArray.length - 1,
-        key: uniqueArray[i],
+        key: i,
       },
     });
   }
