@@ -177,7 +177,14 @@ handlebars.registerHelper("eachUnique", function (array, options, context) {
   var buffer = "";
   for (var i = 0; i < uniqueArray.length; i++) {
     var entry = uniqueArray[i];
-    buffer += (context || options).fn(entry);
+    buffer += (context || options).fn(entry, {
+      data: {
+        index: i,
+        first: i === 0,
+        last: i === uniqueArray.length - 1,
+        key: Object.keys(array)[i],
+      },
+    });
   }
   // return the template compiled
   return buffer;
