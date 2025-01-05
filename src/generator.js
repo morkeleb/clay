@@ -17,14 +17,14 @@ async function applyFormatters(generator, file_name, data) {
   const resolveGlobal = require("resolve-global");
   const formatters = generator.formatters || [];
   const loaded_formatters = formatters.map((name) =>
-    require(resolveGlobal(name))
+    require(resolveGlobal(name)),
   );
   let result = data;
 
   for (let i = 0; i < loaded_formatters.length; i++) {
     const formatter = loaded_formatters[i];
     const applyFormatter = _.get(formatter, "extensions", []).some((ext) =>
-      minimatch(file_name, ext)
+      minimatch(file_name, ext),
     );
 
     if (applyFormatter) {
@@ -35,7 +35,7 @@ async function applyFormatters(generator, file_name, data) {
           "Failed to apply formatter for: ",
           file_name,
           " This probably not due to clay but the formatter itself",
-          e
+          e,
         );
         throw e;
       }
@@ -59,10 +59,10 @@ async function generate_file(
   output,
   file,
   modelIndex,
-  step
+  step,
 ) {
   var template = handlebars.compile(
-    fs.readFileSync(path.join(directory, file), "utf8")
+    fs.readFileSync(path.join(directory, file), "utf8"),
   );
   var file_name = handlebars.compile(path.join(output, file));
   await Promise.all(
@@ -80,7 +80,7 @@ async function generate_file(
           const content = await applyFormatters(
             generator,
             filename,
-            preFormattedOutput
+            preFormattedOutput,
           );
 
           write(filename, content);
@@ -93,11 +93,11 @@ async function generate_file(
           "Failed to generate content for: ",
           filename,
           " This probably not due to clay but the template itself",
-          e
+          e,
         );
         throw e;
       }
-    })
+    }),
   );
 }
 
@@ -113,7 +113,7 @@ async function generate_directory(
   directory,
   output,
   modelIndex,
-  step
+  step,
 ) {
   const templates = fs.readdirSync(directory);
 
@@ -127,9 +127,9 @@ async function generate_directory(
           path.join(directory, file),
           path.join(output, file),
           modelIndex,
-          step
-        )
-      )
+          step,
+        ),
+      ),
   );
 
   return Promise.all(
@@ -143,9 +143,9 @@ async function generate_directory(
           output,
           file,
           modelIndex,
-          step
-        )
-      )
+          step,
+        ),
+      ),
   );
 }
 
@@ -174,7 +174,7 @@ function generate_template(
   model,
   output,
   dirname,
-  modelIndex
+  modelIndex,
 ) {
   if (fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
     return generate_file(
@@ -184,7 +184,7 @@ function generate_template(
       path.join(output, step.target || ""),
       path.basename(step.generate),
       modelIndex,
-      step
+      step,
     );
   } else {
     return generate_directory(
@@ -193,7 +193,7 @@ function generate_template(
       path.join(dirname, step.generate),
       path.join(output, step.target || ""),
       modelIndex,
-      step
+      step,
     );
   }
 }
@@ -308,7 +308,7 @@ function decorate_generator(g, p, extra_output, modelIndex) {
           _.cloneDeep(model),
           output,
           dirname,
-          modelIndex
+          modelIndex,
         );
       } else if (step.runCommand !== undefined) {
         run_command(step, _.cloneDeep(model), output, dirname);

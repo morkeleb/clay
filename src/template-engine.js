@@ -18,7 +18,7 @@ handlebars.load_partials = function (templates, directory) {
     var name = path_module.basename(template).split(".")[0];
     handlebars.registerPartial(
       name,
-      fs.readFileSync(path_module.join(directory, template), "utf8")
+      fs.readFileSync(path_module.join(directory, template), "utf8"),
     );
   });
 };
@@ -29,6 +29,16 @@ handlebars.registerHelper("markdown", function (value) {
   } else {
     return "";
   }
+});
+
+handlebars.registerHelper("propertyExists", function (context, field) {
+  function getField(obj, path) {
+    return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+  }
+
+  return !!Object.values(context).some(
+    (item) => getField(item, field) !== undefined,
+  );
 });
 
 handlebars.registerHelper("json", function (context) {
@@ -204,7 +214,7 @@ handlebars.registerHelper(
       .nodes(modelToSelectFrom, JSONPath)
       .filter((x) => x);
     const uniqueArray = lodash.uniqBy(jsonPathValues, (x) =>
-      lodash.last(x.path)
+      lodash.last(x.path),
     );
     // template buffer
     var buffer = "";
@@ -221,13 +231,13 @@ handlebars.registerHelper(
     }
     // return the template compiled
     return buffer;
-  }
+  },
 );
 
 handlebars.registerHelper(
   "splitAndUseWord",
   function (inputString, splitWord, indexToUse) {
     return inputString.split(splitWord)[indexToUse];
-  }
+  },
 );
 module.exports = handlebars;
