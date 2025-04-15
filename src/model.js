@@ -13,6 +13,7 @@ function executeMixins(model) {
     return map;
   }, {});
   const check = m => {
+    if (m === null || m === undefined) return;
     if(m.hasOwnProperty('mixin')) {
       
       m.mixin.forEach(mixin_key => {
@@ -52,6 +53,7 @@ function executeMixins(model) {
 
 function executeIncludes(model, p) {
   const check = m => {
+    if (m === null || m === undefined) return;
     if(m.hasOwnProperty('include')) {
       const include_path = path.resolve(path.join(path.dirname(p), m.include))
       var include = require(include_path)
