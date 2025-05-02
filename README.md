@@ -37,6 +37,7 @@ Commands:
   clean <model_path> <output_path>     cleans up the output of the generators
   generate <model_path> <output_path>  runs the generators
   watch <model_path> <output_path>     runs the generators on filechanges in the models directory
+  init [type] [name]                   initializes the folder with an empty .clay file or a generator
 ```
 
 ## Generate
@@ -111,6 +112,35 @@ We have a directory called clay where we keep our model and our custom generator
 
 This makes it simple to run clay watch on the "clay directory" and work continously on the
 generators and the model.
+
+## Init
+
+The `init` command is used to initialize a Clay project in the current directory. It creates a `.clay` file, which is essential for Clay to function properly. This file keeps track of what has been generated and allows other commands like `generate`, `clean`, and `watch` to work without requiring additional arguments.
+
+### Usage
+
+To initialize a Clay project, run:
+
+```
+> clay init
+```
+
+This will create a `.clay` file in the current directory.
+
+### Initializing a Generator
+
+You can also use the `init` command to create a new generator. For example:
+
+```
+> clay init generator <generator_name>
+```
+
+This will create a new generator directory under `clay/generators/<generator_name>` and include a `generator.json` file. The `generator.json` file will have a basic structure that you can customize to define the steps and configurations for your generator.
+
+### Error Handling
+
+- If a `.clay` file already exists, the `init` command will fail with an error message: `A .clay file already exists in this folder`.
+- If you attempt to initialize a generator with the same name as an existing one, the command will also fail.
 
 # Domain model
 
