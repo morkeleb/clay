@@ -141,6 +141,52 @@ describe("a generator", () => {
         );
       });
     });
+    describe("formatters with configuration", () => {
+      let formatter_fake = null;
+      afterEach(() => {
+        delete require.cache["clay-generator-formatter-prettify"];
+        mock.stop("resolve-global");
+      });
+      beforeEach(() => {
+        mock("resolve-global", (x) => x);
+
+        formatter_fake = sinon.fake();
+        mock("clay-generator-formatter-prettify", {
+          extensions: ["**/*.js", "**/*.jsx"],
+          apply: (filename, data, options) => {
+            formatter_fake(filename, data, options);
+            return data;
+          },
+        });
+      });
+      it("will apply the formatters with the provided configuration", async () => {
+        const m = model.load("./test/samples/include-example.json");
+
+        const modelIndex = require("../src/clay_file")
+          .load("./test/samples")
+          .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/formatter-example.json",
+          "",
+          modelIndex
+        );
+
+        g.formatters = [
+          {
+            package: "clay-generator-formatter-prettify",
+            options: { semi: false, singleQuote: true },
+          },
+        ];
+
+        await g.generate(m, "./tmp/test-output");
+        sinon.assert.calledWith(
+          formatter_fake,
+          "tmp/test-output/javaorder.js",
+          "content of javascript file\n",
+          { semi: false, singleQuote: true }
+        );
+      });
+    });
     describe("with jsonpath statement", () => {
       it("will generate the templates using jsonpath selection", async () => {
         const modelIndex = require("../src/clay_file")
@@ -323,10 +369,14 @@ describe("a generator", () => {
   describe("copy foundation", () => {
     describe("with jsonpath statement", () => {
       it("will copy to a templated path with input from jsonpath", async () => {
-        var g = generator.load("./test/samples/just-copy-example.json");
         const modelIndex = require("../src/clay_file")
           .load("./test/samples")
           .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/just-copy-example.json",
+          "",
+          modelIndex
+        );
 
         await g.generate(
           model.load("./test/samples/example-unknown-generator.json"),
@@ -350,10 +400,14 @@ describe("a generator", () => {
 
     describe("without jsonpath statement", () => {
       it("will copy once", async () => {
-        var g = generator.load("./test/samples/just-copy-example.json");
         const modelIndex = require("../src/clay_file")
           .load("./test/samples")
           .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/just-copy-example.json",
+          "",
+          modelIndex
+        );
 
         await g.generate(
           model.load("./test/samples/example-unknown-generator.json"),
@@ -366,12 +420,16 @@ describe("a generator", () => {
         ).to.equal(true);
       });
       it("will copy overwrite existing files", async () => {
-        var g = generator.load("./test/samples/just-copy-example.json");
-        fs.ensureDirSync(path.resolve("./tmp/test-output/"));
-        fs.writeFileSync(path.resolve("./tmp/test-output/once"), "hi!");
         const modelIndex = require("../src/clay_file")
           .load("./test/samples")
           .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/just-copy-example.json",
+          "",
+          modelIndex
+        );
+        fs.ensureDirSync(path.resolve("./tmp/test-output/"));
+        fs.writeFileSync(path.resolve("./tmp/test-output/once"), "hi!");
 
         await g.generate(
           model.load("./test/samples/example-unknown-generator.json"),

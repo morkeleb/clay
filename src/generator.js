@@ -16,29 +16,58 @@ function getMd5ForContent(content) {
 async function applyFormatters(generator, file_name, data) {
   const resolveGlobal = require("resolve-global");
   const formatters = generator.formatters || [];
-  const loaded_formatters = formatters.map((name) =>
-    require(resolveGlobal(name)),
-  );
   let result = data;
 
-  for (let i = 0; i < loaded_formatters.length; i++) {
-    const formatter = loaded_formatters[i];
-    const applyFormatter = _.get(formatter, "extensions", []).some((ext) =>
-      minimatch(file_name, ext),
-    );
+  // Normalize each entry to { pkg, options }
+  const formatterSpecs = formatters.map((fmt) => {
+    if (typeof fmt === "string") {
+      // legacy: just the package name
+      return { pkg: fmt, options: {} };
+    } else if (typeof fmt === "object" && fmt.package) {
+      // new: { package: "...", options: { ... } }
+      return { pkg: fmt.package, options: fmt.options || {} };
+    } else {
+      throw new Error(
+        `Invalid formatter spec: ${JSON.stringify(fmt)}. ` +
+          `Expected string or { package, options }.`
+      );
+    }
+  });
 
-    if (applyFormatter) {
-      try {
+  // Load all formatter modules
+  const loadedFormatters = formatterSpecs.map(({ pkg }) =>
+    require(resolveGlobal(pkg))
+  );
+
+  // Apply sequentially
+  for (let i = 0; i < loadedFormatters.length; i++) {
+    const formatter = loadedFormatters[i];
+    const { options } = formatterSpecs[i];
+
+    // check extension match
+    const applyFormatter = Array.isArray(formatter.extensions)
+      ? formatter.extensions.some((ext) => minimatch(file_name, ext))
+      : true;
+
+    if (!applyFormatter) continue;
+
+    try {
+      // Pass options into apply if supported
+      if (formatter.apply.length >= 3) {
+        // new signature: apply(file, content, options)
+        result = await formatter.apply(file_name, result, options);
+      } else {
+        // old signature: apply(file, content)
         result = await formatter.apply(file_name, result);
-      } catch (e) {
-        ui.critical(
-          "Failed to apply formatter for: ",
-          file_name,
-          " This probably not due to clay but the formatter itself",
-          e,
-        );
-        throw e;
       }
+    } catch (e) {
+      ui.critical(
+        "Failed to apply formatter for:",
+        file_name,
+        "This is probably not due to Clay but the formatter itself",
+        e
+      );
+      throw e;
     }
   }
 
@@ -59,10 +88,10 @@ async function generate_file(
   output,
   file,
   modelIndex,
-  step,
+  step
 ) {
   var template = handlebars.compile(
-    fs.readFileSync(path.join(directory, file), "utf8"),
+    fs.readFileSync(path.join(directory, file), "utf8")
   );
   var file_name = handlebars.compile(path.join(output, file));
   await Promise.all(
@@ -80,7 +109,7 @@ async function generate_file(
           const content = await applyFormatters(
             generator,
             filename,
-            preFormattedOutput,
+            preFormattedOutput
           );
 
           write(filename, content);
@@ -93,11 +122,11 @@ async function generate_file(
           "Failed to generate content for: ",
           filename,
           " This probably not due to clay but the template itself",
-          e,
+          e
         );
         throw e;
       }
-    }),
+    })
   );
 }
 
@@ -113,7 +142,7 @@ async function generate_directory(
   directory,
   output,
   modelIndex,
-  step,
+  step
 ) {
   const templates = fs.readdirSync(directory);
 
@@ -127,9 +156,9 @@ async function generate_directory(
           path.join(directory, file),
           path.join(output, file),
           modelIndex,
-          step,
-        ),
-      ),
+          step
+        )
+      )
   );
 
   return Promise.all(
@@ -143,9 +172,9 @@ async function generate_directory(
           output,
           file,
           modelIndex,
-          step,
-        ),
-      ),
+          step
+        )
+      )
   );
 }
 
@@ -174,7 +203,7 @@ function generate_template(
   model,
   output,
   dirname,
-  modelIndex,
+  modelIndex
 ) {
   if (fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
     return generate_file(
@@ -184,7 +213,7 @@ function generate_template(
       path.join(output, step.target || ""),
       path.basename(step.generate),
       modelIndex,
-      step,
+      step
     );
   } else {
     return generate_directory(
@@ -193,7 +222,7 @@ function generate_template(
       path.join(dirname, step.generate),
       path.join(output, step.target || ""),
       modelIndex,
-      step,
+      step
     );
   }
 }
@@ -216,7 +245,23 @@ function run_command(step, model, output, dirname) {
   }
 }
 
-function copy(step, model, output, dirname) {
+function addToIndex(modelIndex, file) {
+  if (!modelIndex.generated_files[file]) {
+    modelIndex.generated_files[file] = true;
+  }
+}
+
+function cleanEmptyDirectories(directory) {
+  if (fs.existsSync(directory) && fs.lstatSync(directory).isDirectory()) {
+    const files = fs.readdirSync(directory);
+    if (files.length === 0) {
+      fs.rmdirSync(directory);
+      ui.warn("Removed empty directory", directory);
+    }
+  }
+}
+
+function copy(step, model, output, dirname, modelIndex) {
   const output_dir = path.resolve(output);
   let source = path.resolve(path.join(dirname, step.copy));
   if (step.select == undefined) {
@@ -232,6 +277,7 @@ function copy(step, model, output, dirname) {
     fs.ensureDirSync(output_dir);
     ui.copy(source, out);
     fs.copySync(source, out);
+    addToIndex(modelIndex, out);
   } else {
     jph.select(model, step.select).forEach((m) => {
       let out = null;
@@ -244,6 +290,7 @@ function copy(step, model, output, dirname) {
       fs.ensureDirSync(output_dir);
       ui.copy(source, out);
       fs.copySync(source, out);
+      addToIndex(modelIndex, out);
       const recusiveHandlebars = (p) => {
         fs.readdirSync(p).forEach((f) => {
           let file = path.join(p, f);
@@ -255,41 +302,12 @@ function copy(step, model, output, dirname) {
             const template_path = template(m);
             if (file !== template_path) {
               fs.moveSync(file, template_path);
+              addToIndex(modelIndex, template_path);
             }
           }
         });
       };
       recusiveHandlebars(out);
-    });
-  }
-}
-
-function clean_copy(step, model, output, dirname) {
-  const output_dir = path.resolve(output);
-  let source = path.resolve(path.join(dirname, step.copy));
-  if (step.select == undefined) {
-    let out = null;
-    if (step.target) {
-      out = path.join(output_dir, step.target);
-    } else {
-      out = output_dir;
-    }
-    if (fs.lstatSync(source).isFile()) {
-      out = path.join(out, path.basename(step.copy));
-    }
-    ui.warn("Removing ", out);
-    fs.removeSync(out);
-  } else {
-    jph.select(model, step.select).forEach((m) => {
-      let out = null;
-      if (step.target) {
-        let target = handlebars.compile(step.target);
-        out = path.join(output_dir, target(m));
-      } else {
-        out = output_dir;
-      }
-      ui.warn("Removing ", out);
-      fs.removeSync(out);
     });
   }
 }
@@ -308,12 +326,12 @@ function decorate_generator(g, p, extra_output, modelIndex) {
           _.cloneDeep(model),
           output,
           dirname,
-          modelIndex,
+          modelIndex
         );
       } else if (step.runCommand !== undefined) {
         run_command(step, _.cloneDeep(model), output, dirname);
       } else if (step.copy !== undefined) {
-        copy(step, _.cloneDeep(model), output, dirname);
+        copy(step, _.cloneDeep(model), output, dirname, modelIndex);
       }
     }
   };
@@ -321,6 +339,12 @@ function decorate_generator(g, p, extra_output, modelIndex) {
     output = path.join(output, extra_output || "");
     const dirname = path.dirname(p);
     remove_generated_files(modelIndex);
+
+    // Remove empty directories
+    Object.keys(modelIndex.generated_files).forEach((file) => {
+      const dir = path.dirname(file);
+      cleanEmptyDirectories(dir);
+    });
   };
   return g;
 }
