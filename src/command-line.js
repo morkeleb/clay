@@ -151,9 +151,31 @@ commander
   .description("runs the generators")
   .action(generate);
 
-function init() {
+function init(type, name) {
   try {
-    createClayFile(".");
+    if (type === "generator" && name) {
+      const generatorPath = path.join("clay", "generators", name);
+      fs.mkdirSync(generatorPath, { recursive: true });
+      const generatorFilePath = path.join(generatorPath, "generator.json");
+      const generatorTemplate = {
+        partials: [],
+        formatters: [],
+        steps: [
+          {
+            generate: "templates/example-template.txt",
+            select: "$.model.example",
+            target: "./output",
+          },
+        ],
+      };
+      fs.writeFileSync(
+        generatorFilePath,
+        JSON.stringify(generatorTemplate, null, 2)
+      );
+      ui.log(`Generator initialized at ${generatorFilePath}`);
+    } else {
+      createClayFile(".");
+    }
   } catch (error) {
     console.error(error.message);
     process.exit(1);
@@ -161,8 +183,8 @@ function init() {
 }
 
 commander
-  .command("init")
-  .description("initializes the folder with an empty .clay file")
+  .command("init [type] [name]")
+  .description("initializes the folder with an empty .clay file or a generator")
   .action(init);
 
 function watch(model_path, output_path) {

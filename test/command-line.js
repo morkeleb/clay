@@ -16,7 +16,6 @@ describe("the command line interface", () => {
     if (fs.existsSync(clayFilePath)) {
       fs.unlinkSync(clayFilePath);
     }
-    // Use the new createClayFile function for setup
     createClayFile(".");
   });
 
@@ -25,6 +24,10 @@ describe("the command line interface", () => {
     decache("./clay-file");
     if (fs.existsSync(clayFilePath)) {
       fs.unlinkSync(clayFilePath);
+    }
+    const generatorPath = path.join("clay", "generators");
+    if (fs.existsSync(generatorPath)) {
+      fs.removeSync(generatorPath);
     }
   });
 
@@ -141,6 +144,24 @@ describe("the command line interface", () => {
           /A .clay file already exists in this folder/
         );
       }
+    });
+
+    it("should create a generator.json file when initializing a generator", () => {
+      const cmdln = require("../src/command-line");
+      const generatorName = "myOwnGenerator";
+      const generatorPath = path.join("clay", "generators", generatorName);
+      const generatorFilePath = path.join(generatorPath, "generator.json");
+
+      // Programmatically invoke the commander instance
+      cmdln.parse(["node", "clay", "init", "generator", generatorName]);
+
+      // Verify the directory and file were created
+      expect(fs.existsSync(generatorPath)).to.equal(true);
+      expect(fs.existsSync(generatorFilePath)).to.equal(true);
+
+      // Verify the content of the generator.json file
+      const generatorContent = JSON.parse(fs.readFileSync(generatorFilePath, "utf8"));
+      expect(generatorContent).to.have.property("steps").that.is.an("array");
     });
   });
 });
