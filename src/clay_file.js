@@ -1,6 +1,7 @@
 const fs = require("fs");
 const osPath = require("path");
 const _ = require("lodash");
+const output = require("./output");
 
 const emptyIndex = { models: [] };
 const newModelEntry = (path, output) => ({
@@ -55,5 +56,14 @@ module.exports = {
     data.getModelIndex = getModelIndex;
     data.save = save;
     return data;
+  },
+
+  createClayFile: (directory) => {
+    const clayFilePath = osPath.join(directory, ".clay");
+    if (fs.existsSync(clayFilePath)) {
+      throw new Error("A .clay file already exists in this folder.");
+    }
+    fs.writeFileSync(clayFilePath, JSON.stringify({ models: [] }), "utf8");
+    output.write(".clay file has been created successfully.");
   },
 };

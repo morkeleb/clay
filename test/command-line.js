@@ -1,19 +1,33 @@
 const { expect } = require("chai");
 const fs = require("fs-extra");
 const decache = require("decache");
+const { execSync } = require("child_process");
+const path = require("path");
+const { createClayFile } = require("../src/clay_file");
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 describe("the command line interface", () => {
+  const clayFilePath = path.resolve(".clay");
+
   beforeEach(() => {
-    fs.removeSync(".clay");
+    if (fs.existsSync(clayFilePath)) {
+      fs.unlinkSync(clayFilePath);
+    }
+    // Use the new createClayFile function for setup
+    createClayFile(".");
   });
+
   afterEach(() => {
     fs.removeSync("./tmp");
     decache("./clay-file");
+    if (fs.existsSync(clayFilePath)) {
+      fs.unlinkSync(clayFilePath);
+    }
   });
+
   describe("the generate command", () => {
     it("will generate using a specified model", async () => {
       const cmdln = require("../src/command-line");
@@ -73,6 +87,60 @@ describe("the command line interface", () => {
         fs.existsSync("./tmp/output/otheroutput/order.txt"),
         "template file not generated"
       ).to.equal(true);
+    });
+
+    it("should fail if .clay file is missing", () => {
+      try {
+        execSync("node src/command-line.js generate", { stdio: "pipe" });
+      } catch (error) {
+        expect(error.message).to.match(
+          /This folder has not been initiated with clay/
+        );
+      }
+    });
+  });
+
+  describe("the clean command", () => {
+    it("should fail if .clay file is missing", () => {
+      try {
+        execSync("node src/command-line.js clean", { stdio: "pipe" });
+      } catch (error) {
+        expect(error.message).to.match(
+          /This folder has not been initiated with clay/
+        );
+      }
+    });
+  });
+
+  describe("the test command", () => {
+    it("should fail if .clay file is missing", () => {
+      try {
+        execSync("node src/command-line.js test-path someModel somePath", {
+          stdio: "pipe",
+        });
+      } catch (error) {
+        expect(error.message).to.match(
+          /This folder has not been initiated with clay/
+        );
+      }
+    });
+  });
+
+  describe("the init command", () => {
+    it("should create a .clay file", () => {
+      execSync("node src/command-line.js init", { stdio: "pipe" });
+      expect(fs.existsSync(clayFilePath)).to.equal(true);
+    });
+
+    it("should fail if .clay file already exists", () => {
+      fs.writeFileSync(clayFilePath, "", "utf8");
+      try {
+        execSync("node src/command-line.js init", { stdio: "pipe" });
+      } catch (error) {
+        expect(error.message).to.match(
+          /A .clay file already exists in this folder/
+        );
+      }
     });
   });
 });

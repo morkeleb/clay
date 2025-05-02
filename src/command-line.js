@@ -7,6 +7,7 @@ const ui = require("./output");
 const _ = require("lodash");
 const resolveGlobal = require("resolve-global");
 const chokidar = require("chokidar");
+const { createClayFile } = require("./clay_file");
 
 commander.version(require("../package.json").version);
 
@@ -64,6 +65,13 @@ const generateModels = async (modelsToExecute) =>
   );
 
 async function generate(model_path, output_path) {
+  const clayFilePath = path.resolve(".clay");
+  if (!fs.existsSync(clayFilePath)) {
+    throw new Error(
+      "This folder has not been initiated with clay. Please create a .clay file."
+    );
+  }
+
   const indexFile = require("./clay_file").load(".");
 
   let modelsToExecute = null;
@@ -93,6 +101,13 @@ const cleanModels = (modelsToExecute) => {
 };
 
 function clean(model_path, output_path) {
+  const clayFilePath = path.resolve(".clay");
+  if (!fs.existsSync(clayFilePath)) {
+    throw new Error(
+      "This folder has not been initiated with clay. Please create a .clay file."
+    );
+  }
+
   const indexFile = require("./clay_file").load(".");
   let modelsToExecute = null;
 
@@ -106,7 +121,15 @@ function clean(model_path, output_path) {
   cleanModels(modelsToExecute);
   indexFile.save();
 }
+
 const test = (model_path, json_path) => {
+  const clayFilePath = path.resolve(".clay");
+  if (!fs.existsSync(clayFilePath)) {
+    throw new Error(
+      "This folder has not been initiated with clay. Please create a .clay file."
+    );
+  }
+
   const model = requireNew("./model").load(model_path);
   const jph = require("./jsonpath-helper");
 
@@ -127,6 +150,20 @@ commander
   .command("generate [model_path] [output_path]")
   .description("runs the generators")
   .action(generate);
+
+function init() {
+  try {
+    createClayFile(".");
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+}
+
+commander
+  .command("init")
+  .description("initializes the folder with an empty .clay file")
+  .action(init);
 
 function watch(model_path, output_path) {
   const indexFile = require("./clay_file").load(".");

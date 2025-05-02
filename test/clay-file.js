@@ -1,10 +1,49 @@
 const path = require("path");
 const { expect } = require("chai");
-const clay_file = require("../src/clay_file.js");
+const fs = require("fs-extra");
+const sinon = require("sinon");
+const clay_file = require("../src/clay_file");
+const output = require("../src/output");
 
-describe("the clay file index system", () => {
-  describe("the models portion", () => {
-    it("keeps track of all models generatored and which params used", () => {
+const clayFilePath = path.resolve(".clay");
+
+describe("clay_file", () => {
+  let outputWriteStub;
+
+  beforeEach(() => {
+    outputWriteStub = sinon.stub(output, "write");
+  });
+
+  afterEach(() => {
+    outputWriteStub.restore();
+    if (fs.existsSync(clayFilePath)) {
+      fs.unlinkSync(clayFilePath);
+    }
+  });
+
+  describe("createClayFile", () => {
+    it("should create a .clay file with the correct structure and log output", () => {
+      clay_file.createClayFile(".");
+      const fileExists = fs.existsSync(clayFilePath);
+      const fileContent = JSON.parse(fs.readFileSync(clayFilePath, "utf8"));
+
+      expect(fileExists).to.be.true;
+      expect(fileContent).to.deep.equal({ models: [] });
+      expect(outputWriteStub.calledWith(".clay file has been created successfully.")).to.be.true;
+    });
+
+    it("should throw an error if a .clay file already exists", () => {
+      fs.writeFileSync(clayFilePath, "", "utf8");
+
+      expect(() => clay_file.createClayFile(".")).to.throw(
+        "A .clay file already exists in this folder."
+      );
+      expect(outputWriteStub.notCalled).to.be.true;
+    });
+  });
+
+  describe("models management", () => {
+    it("keeps track of all models generated and which params used", () => {
       const clay_index = clay_file.load("./test/samples");
       const fileMd5 = "32453245345";
       clay_index
@@ -15,6 +54,7 @@ describe("the clay file index system", () => {
         path: "./test/include-example.json",
       });
     });
+
     it("keeps track of which files have been generated for the model", () => {
       const clay_index = clay_file.load("./test/samples");
       const fileMd5 = "32453245345";
@@ -25,7 +65,8 @@ describe("the clay file index system", () => {
         md5: fileMd5,
       });
     });
-    it("keeps the md5 checksum of the filecontent last generated for each file", () => {
+
+    it("keeps the md5 checksum of the file content last generated for each file", () => {
       const clay_index = clay_file.load("./test/samples");
       const fileMd5 = "32453245345";
       clay_index
@@ -39,6 +80,7 @@ describe("the clay file index system", () => {
       expect(resultMd5).to.equal(fileMd5);
     });
   });
+
   describe("loading the generated file", () => {
     it("will check for a .clay file in the specified directory", () => {
       const clay_index = clay_file.load("./test/samples");
