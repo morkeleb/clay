@@ -21,15 +21,15 @@ describe("a generator", () => {
         },
         {
           generate: "templates/jdl-files",
-          select: "jsonpath statement",
+          select: "$.jsonpath.statement", // Updated to valid JSONPath
         },
         {
           runCommand: "jhipster import-jdl {{service.name}}",
-          select: "jsonpath statement",
+          select: "$.jsonpath.statement", // Updated to valid JSONPath
         },
         {
           copy: "git+morkeleb/foundation",
-          select: "jsonpath statement",
+          select: "$.jsonpath.statement", // Updated to valid JSONPath
           target: "{{microservice}}",
         },
       ]);
@@ -54,6 +54,7 @@ describe("a generator", () => {
         "",
         modelIndex
       );
+      g.steps[0].select = "$.valid.jsonpath"; // Updated to valid JSONPath
       await g.generate(
         model.load("./test/samples/example-unknown-generator.json"),
         "./tmp/test-output"
@@ -62,9 +63,9 @@ describe("a generator", () => {
       expect(
         output.warn.calledWith(
           "No entires found for jsonpath ",
-          g.steps[5].select
+          g.steps[0].select
         )
-      );
+      ).to.be.true;
     });
     it("will warn and stop if jsonpath expression is bad", async () => {
       const modelIndex = require("../src/clay_file")
@@ -75,7 +76,7 @@ describe("a generator", () => {
         "",
         modelIndex
       );
-      g.steps[5].select = "I will so crash!";
+      g.steps[0].select = "I will so crash!"; // Invalid JSONPath retained for testing
       await g.generate(
         model.load("./test/samples/example-unknown-generator.json"),
         "./tmp/test-output"
@@ -94,11 +95,19 @@ describe("a generator", () => {
       beforeEach(() => {
         mock("resolve-global", (x) => x);
 
-        formatter_fake = sinon.fake();
+        formatter_fake = sinon.fake((filename, data, step, options) => {
+          if (step && step.generate) {
+            expect(step).to.have.property("generate");
+          }
+          if (options && options.semi !== undefined) {
+            expect(options).to.have.property("semi", false);
+            expect(options).to.have.property("singleQuote", true);
+          }
+        });
         mock("clay-generator-formatter-prettify", {
           extensions: ["**/*.js", "**/*.jsx"],
-          apply: (filename, data) => {
-            formatter_fake(filename, data);
+          apply: (filename, data, step, options) => {
+            formatter_fake(filename, data, step, options);
             return data;
           },
         });
@@ -115,11 +124,26 @@ describe("a generator", () => {
           modelIndex
         );
 
+        g.formatters = [
+          {
+            package: "clay-generator-formatter-prettify",
+            options: { semi: false, singleQuote: true },
+          },
+        ];
+
+        const step = {
+          generate: "templates/java{{name}}.js",
+          select: "$.model.types.*",
+          target: "/",
+        };
+        g.steps = [step];
+
         await g.generate(m, "./tmp/test-output");
         sinon.assert.calledWith(
           formatter_fake,
           "tmp/test-output/javaorder.js",
-          "content of javascript file\n"
+          "content of javascript file\n",
+          { semi: false, singleQuote: true }
         );
       });
       it("wont apply the formatters where the extensions dont match", async () => {
@@ -150,7 +174,15 @@ describe("a generator", () => {
       beforeEach(() => {
         mock("resolve-global", (x) => x);
 
-        formatter_fake = sinon.fake();
+        formatter_fake = sinon.fake((filename, data, step, options) => {
+          if (step && step.generate) {
+            expect(step).to.have.property("generate");
+          }
+          if (options && options.semi !== undefined) {
+            expect(options).to.have.property("semi", false);
+            expect(options).to.have.property("singleQuote", true);
+          }
+        });
         mock("clay-generator-formatter-prettify", {
           extensions: ["**/*.js", "**/*.jsx"],
           apply: (filename, data, options) => {
@@ -178,12 +210,85 @@ describe("a generator", () => {
           },
         ];
 
+        const step = {
+          generate: "templates/java{{name}}.js",
+          select: "$.model.types.*",
+          target: "/",
+        };
+        g.steps = [step];
+
         await g.generate(m, "./tmp/test-output");
         sinon.assert.calledWith(
           formatter_fake,
           "tmp/test-output/javaorder.js",
           "content of javascript file\n",
           { semi: false, singleQuote: true }
+        );
+      });
+    });
+    describe("formatters with step parameter", () => {
+      let formatter_fake = null;
+      afterEach(() => {
+        delete require.cache["clay-generator-formatter-prettify"];
+        mock.stop("resolve-global");
+      });
+      beforeEach(() => {
+        mock("resolve-global", (x) => x);
+
+        formatter_fake = sinon.fake((filename, data, step, options) => {
+          if (step && step.generate) {
+            expect(step).to.have.property("generate");
+          }
+          if (options && options.semi !== undefined) {
+            expect(options).to.have.property("semi", false);
+            expect(options).to.have.property("singleQuote", true);
+          }
+        });
+        mock("clay-generator-formatter-prettify", {
+          extensions: ["**/*.js", "**/*.jsx"],
+          apply: (filename, data, step, options) => {
+            formatter_fake(filename, data, step, options);
+            return data;
+          },
+        });
+      });
+      it("will apply the formatters with the step parameter", async () => {
+        const m = model.load("./test/samples/include-example.json");
+
+        const modelIndex = require("../src/clay_file")
+          .load("./test/samples")
+          .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/formatter-example.json",
+          "",
+          modelIndex
+        );
+
+        g.formatters = [
+          {
+            package: "clay-generator-formatter-prettify",
+            options: { semi: false, singleQuote: true },
+          },
+        ];
+
+        const step = {
+          generate: "templates/java{{name}}.js",
+          select: "$.model.types.*",
+          target: "/",
+        };
+        g.steps = [step];
+
+        await g.generate(m, "./tmp/test-output");
+        sinon.assert.calledWithMatch(
+          formatter_fake,
+          "tmp/test-output/javaorder.js",
+          "content of javascript file\n",
+          sinon.match({ semi: false, singleQuote: true }),
+          sinon.match({
+            generate: "templates/java{{name}}.js",
+            select: "$.model.types.*",
+            target: "/",
+          })
         );
       });
     });
@@ -545,6 +650,36 @@ describe("a generator", () => {
           ).to.equal(false);
         });
       });
+    });
+  });
+  describe("schema validation", () => {
+    let warnSpy;
+
+    beforeEach(() => {
+      warnSpy = sinon.spy(output, "warn");
+    });
+
+    afterEach(() => {
+      warnSpy.restore();
+    });
+
+    it("should throw an error for an invalid generator schema and log warnings", () => {
+      expect(() => {
+        generator.load("./test/samples/broken-generator.json");
+      }).to.throw(Error, /Invalid generator schema/);
+
+      sinon.assert.calledWithMatch(
+        warnSpy,
+        sinon.match(/Error in path 'steps.1.select'/)
+      );
+      sinon.assert.calledWithMatch(
+        warnSpy,
+        sinon.match(/Error in path 'steps.2.select'/)
+      );
+      sinon.assert.calledWithMatch(
+        warnSpy,
+        sinon.match(/Error in path 'steps.3.select'/)
+      );
     });
   });
 });

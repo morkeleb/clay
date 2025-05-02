@@ -8,12 +8,86 @@ const jph = require("./jsonpath-helper");
 const requireNew = require("./require-helper");
 const minimatch = require("minimatch");
 const crypto = require("crypto");
+const { z } = require("zod");
+const jp = require("jsonpath");
+const output = require("./output");
+
+const isValidJsonPath = (path) => {
+  try {
+    jp.parse(path);
+    return { valid: true };
+  } catch (error) {
+    return { valid: false, error: error.message };
+  }
+};
+
+const SelectSchema = z
+  .string()
+  .optional()
+  .superRefine((path, ctx) => {
+    if (path && !isValidJsonPath(path).valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid JSONPath in 'select': ${path}`,
+      });
+    }
+  });
+
+const GeneratorStepSchema = z.union([
+  z.object({
+    generate: z.string(),
+    touch: z.boolean().optional(),
+    select: SelectSchema,
+    target: z.string().optional(),
+  }),
+  z.object({
+    copy: z.string(),
+    select: SelectSchema,
+    target: z.string().optional(),
+  }),
+  z.object({
+    runCommand: z.string(),
+    select: SelectSchema,
+    npxCommand: z.boolean().optional(),
+  }),
+]);
+
+const GeneratorSchema = z.object({
+  steps: z.array(GeneratorStepSchema),
+  partials: z.array(z.string()).optional(),
+  formatters: z
+    .array(
+      z.union([
+        z.string(),
+        z.object({
+          package: z.string(),
+          options: z.record(z.any()).optional(),
+        }),
+      ])
+    )
+    .optional(),
+});
+
+function validateGeneratorSchema(generator) {
+  const result = GeneratorSchema.safeParse(generator);
+  if (!result.success) {
+    const detailedErrors = result.error.issues.map((issue) => {
+      const path = issue.path.join(".");
+      const message = `Error in path '${path}': ${issue.message}`;
+      output.warn(message); // Use output.js for pretty-printed warnings
+      return message;
+    });
+
+    throw new Error(`Invalid generator schema:\n${detailedErrors.join("\n")}`);
+  }
+  return result.data;
+}
 
 function getMd5ForContent(content) {
   return crypto.createHash("md5").update(content).digest("hex");
 }
 
-async function applyFormatters(generator, file_name, data) {
+async function applyFormatters(generator, file_name, data, step) {
   const resolveGlobal = require("resolve-global");
   const formatters = generator.formatters || [];
   let result = data;
@@ -55,7 +129,7 @@ async function applyFormatters(generator, file_name, data) {
       // Pass options into apply if supported
       if (formatter.apply.length >= 3) {
         // new signature: apply(file, content, options)
-        result = await formatter.apply(file_name, result, options);
+        result = await formatter.apply(file_name, result, options, step);
       } else {
         // old signature: apply(file, content)
         result = await formatter.apply(file_name, result);
@@ -109,7 +183,8 @@ async function generate_file(
           const content = await applyFormatters(
             generator,
             filename,
-            preFormattedOutput
+            preFormattedOutput,
+            step
           );
 
           write(filename, content);
@@ -313,6 +388,7 @@ function copy(step, model, output, dirname, modelIndex) {
 }
 
 function decorate_generator(g, p, extra_output, modelIndex) {
+  validateGeneratorSchema(g);
   g.generate = async (model, output) => {
     output = path.join(output, extra_output || "");
     const dirname = path.dirname(p);

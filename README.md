@@ -216,6 +216,104 @@ Currently available generators:
 
 - (Clay Model Generator)[https://github.com/morkeleb/clay-model-documentation]
 
+### Setting Up `generator.json`
+
+The `generator.json` file is a critical part of Clay's functionality. It defines the steps and configurations for generating code based on your model. Below is a detailed guide on how to set up this file.
+
+#### Structure
+
+The `generator.json` file contains the following main sections:
+
+- **partials**: An array of handlebar partials that can be used in templates.
+- **steps**: An array of steps that define the actions to be performed during code generation.
+- **formatters**: (Optional) An array of formatters to prettify the generated files.
+
+#### Example
+
+```json
+{
+  "partials": [],
+  "steps": [
+    {
+      "runCommand": "jhipster microservice"
+    },
+    {
+      "generate": "templates/jdl-files",
+      "select": "$.jsonpath.statement"
+    },
+    {
+      "runCommand": "jhipster import-jdl {{service.name}}",
+      "select": "$.jsonpath.statement"
+    },
+    {
+      "copy": "git+morkeleb/foundation",
+      "select": "$.jsonpath.statement",
+      "target": "{{microservice}}"
+    }
+  ],
+  "formatters": ["clay-generator-formatter-prettier"]
+}
+```
+
+#### Steps
+
+Each step in the `steps` array can perform one of the following actions:
+
+1. **Run a Command**
+
+   - **Parameters**:
+     - `runCommand` (string): The shell command to execute.
+     - `npxCommand` (boolean, optional): Whether to run the command using `npx`.
+   - **Example**:
+     ```json
+     {
+       "runCommand": "yo newservice",
+       "npxCommand": true
+     }
+     ```
+
+2. **Generate Handlebar Template**
+
+   - **Parameters**:
+     - `generate` (string): Path to the handlebar template.
+     - `select` (string, optional): JSONPath to filter the model.
+     - `target` (string, optional): Target path for the generated files.
+     - `touch` (boolean, optional): Generate only if the file does not exist.
+   - **Example**:
+     ```json
+     {
+       "generate": "templates/java{{name}}.js",
+       "select": "$.model.types[*]",
+       "target": "src/{{name}}.js",
+       "touch": true
+     }
+     ```
+
+3. **Copy Files**
+   - **Parameters**:
+     - `copy` (string): Source path to copy.
+     - `select` (string, optional): JSONPath to filter the model.
+     - `target` (string, optional): Target path for the copied files.
+   - **Example**:
+     ```json
+     {
+       "copy": "foundation",
+       "select": "$.model.types[*]",
+       "target": "{{name}}/foundation"
+     }
+     ```
+
+#### Validation
+
+- Ensure all `select` fields use valid JSONPath expressions.
+- Use the `test-path` command to verify your JSONPath expressions against your model.
+
+#### Tips
+
+- Keep your `generator.json` file organized and modular by splitting complex configurations into multiple steps.
+- Use partials for reusable template components.
+- Leverage formatters to ensure consistent code style in the generated files.
+
 ### Partials
 
 The partials are handlebar partials that can be used in the templates within
@@ -223,15 +321,84 @@ the generator. These are usefull for header and footer like operations.
 
 ### Steps
 
-The steps describe what the generator does and in which order.
-Steps can be one of:
+The steps describe what the generator does and in which order. Steps can be one of:
 
-- Copy
-- generate handlebar template
-- run a command
+- **Copy**: Copies files or directories to a target location.
+- **Generate Handlebar Template**: Generates files using a handlebar template and the model.
+- **Run a Command**: Executes a shell command, optionally using the model for dynamic inputs.
 
-Steps use jsonpath to filter out what part of the model that is interesting
-for a particular step.
+#### Parameters
+
+Each step can include the following parameters:
+
+- **runCommand** (optional): A string representing the shell command to execute.
+- **npxCommand** (optional): A boolean indicating whether the command should be run using `npx`.
+- **generate** (optional): A string specifying the path to the handlebar template to use for file generation.
+- **touch** (optional): A boolean that, if true, ensures the file is only generated if it does not already exist.
+- **select** (optional): A JSONPath string to filter the model for the step.
+- **copy** (optional): A string representing the source path to copy.
+- **target** (optional): A string specifying the target path for the generated or copied files.
+
+#### Examples
+
+1. **Copy Step**
+
+   ```json
+   {
+     "copy": "foundation",
+     "select": "$.model.types[*]",
+     "target": "{{name}}/foundation"
+   }
+   ```
+
+   This step copies the `foundation` directory for each type in the model to a dynamically generated target path based on the type's name.
+
+2. **Run Command Step with npxCommand**
+
+   ```json
+   {
+     "runCommand": "yo newservice",
+     "npxCommand": true
+   }
+   ```
+
+   This step runs the `yo newservice` command using `npx`.
+
+3. **Generate Handlebar Template Step**
+
+   ```json
+   {
+     "generate": "templates/java{{name}}.js",
+     "select": "$.model.types[*]",
+     "target": "src/{{name}}.js"
+   }
+   ```
+
+   This step generates JavaScript files for each type in the model using a handlebar template located at `templates/java{{name}}.js` and saves them to the `src` directory.
+
+4. **Generate Handlebar Template Step with touch**
+
+   ```json
+   {
+     "generate": "templates/java{{name}}.js",
+     "select": "$.model.types[*]",
+     "target": "src/{{name}}.js",
+     "touch": true
+   }
+   ```
+
+   This step generates JavaScript files for each type in the model using a handlebar template, but only if the file does not already exist.
+
+5. **Run Command Step**
+   ```json
+   {
+     "runCommand": "echo Generating {{name}}",
+     "select": "$.model.types[*]"
+   }
+   ```
+   This step runs a shell command for each type in the model, dynamically inserting the type's name into the command.
+
+These examples demonstrate how steps can be configured to perform specific actions during the generation process.
 
 ### Formatters
 
