@@ -244,7 +244,7 @@ a generator contains:
 
 Currently available generators:
 
-- (Clay Model Generator)[https://github.com/morkeleb/clay-model-documentation]
+- [Clay Model Generator](https://github.com/morkeleb/clay-model-documentation)
 
 ### Setting Up `generator.json`
 
@@ -464,6 +464,11 @@ Example:
   ]
 }
 ```
+
+Currently available formatters:
+
+- [JavaScript / TypeScript](https://github.com/morkeleb/clay-generator-formatter-prettier)
+- [Java](https://github.com/VictorHedegran/clay-generator-formatter-java)
 
 ### Templates
 
