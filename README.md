@@ -475,11 +475,11 @@ Example of a template:
 
 ```
 var command = function (user, {{ parameters }}) {
-	var {{lowerCase type.name}} = repository.find('{{type.name}}', id);
+  var {{lowerCase type.name}} = repository.find('{{type.name}}', id);
 
-	if({{lowerCase type.name}}){
-		eventsource.raise('{{raises}}', [user, {{parameters}}]);
-	}
+  if({{lowerCase type.name}}){
+    eventsource.raise('{{raises}}', [user, {{parameters}}]);
+  }
 }
 ```
 
@@ -492,46 +492,153 @@ in the domain-documentation.html template I use the header partial as shown:
 
 ```
 {{>header }}
-		<h1>{{name}}</h1>
+    <h1>{{name}}</h1>
 ```
 
 ### Template helpers
 
-#### json
 
-This helper is very usefull when creating templates.
-It will pretty print the json input given to it.
-Allowing you to check what objects you have received to the template as you were generating.
+## Handlebars Helpers
 
-```
-<p>
-  {{{json this}}}
-</p>
-```
+Clay's template engine provides a rich set of helpers to use in your Handlebars templates. Below is a list of all available helpers, with usage examples.
 
-#### markdown
+### 1. `markdown`
+Renders a string as HTML using Markdown.
 
-The markdown helper method shown in the following example.
-
-```
-<p>
-  {{markdown description}}
-</p>
+```handlebars
+{{markdown description}}
 ```
 
-#### lobars
+### 2. `propertyExists`
+Checks if a property exists in any object in a context.
 
-lobars and lodash string manipulation as helpers to the handlebar templating system.
-
+```handlebars
+{{#if (propertyExists this "fieldName")}}
+  Property exists!
+{{/if}}
 ```
-var command = function (user, {{ parameters }}) {
-	var {{lowerCase type.name}} = repository.find('{{type.name}}', id);
 
-	if({{lowerCase type.name}}){
-		eventsource.raise('{{raises}}', l[user, {{parameters}}]);
-	}
-}
+### 3. `json`
+Pretty-prints a JavaScript object as JSON.
+
+```handlebars
+<pre>{{{json this}}}</pre>
 ```
+
+### 4. `pascalCase`
+Converts a string to PascalCase.
+
+```handlebars
+{{pascalCase name}}
+```
+
+### 5. `inc`
+Increments a number by 1 (useful for 1-based indexes).
+
+```handlebars
+{{inc @index}}
+```
+
+### 6. `pluralize`
+Pluralizes a word.
+
+```handlebars
+{{pluralize "category"}}
+```
+
+### 7. `singularize`
+Singularizes a word.
+
+```handlebars
+{{singularize "categories"}}
+```
+
+### 8. `switch`, `case`, `default`
+Implements switch/case/default logic.
+
+```handlebars
+{{#switch type}}
+  {{#case "admin"}}
+    Admin user
+  {{/case}}
+  {{#case "user"}}
+    Regular user
+  {{/case}}
+  {{#default}}
+    Unknown type
+  {{/default}}
+{{/switch}}
+```
+
+### 9. `times`
+Repeats a block N times.
+
+```handlebars
+{{#times 3}}
+  Index: {{@index}}
+{{/times}}
+```
+
+### 10. `ifCond`
+Conditional logic with operators.
+
+```handlebars
+{{#ifCond value "==" 10}}
+  Value is 10
+{{else}}
+  Value is not 10
+{{/ifCond}}
+```
+
+Supported operators: `==`, `===`, `!=`, `!==`, `<`, `<=`, `>`, `>=`, `&&`, `||`
+
+### 11. Comparison and Logical Helpers
+
+- `eq` (equal): `{{#if (eq a b)}}...{{/if}}`
+- `ne` (not equal): `{{#if (ne a b)}}...{{/if}}`
+- `lt` (less than): `{{#if (lt a b)}}...{{/if}}`
+- `gt` (greater than): `{{#if (gt a b)}}...{{/if}}`
+- `lte` (less than or equal): `{{#if (lte a b)}}...{{/if}}`
+- `gte` (greater than or equal): `{{#if (gte a b)}}...{{/if}}`
+- `and` (all true): `{{#if (and a b c)}}...{{/if}}`
+- `or` (any true): `{{#if (or a b c)}}...{{/if}}`
+
+### 12. `eachUnique`
+Iterates over unique values in an array or object.
+
+```handlebars
+{{#eachUnique items}}
+  {{this}}
+{{/eachUnique}}
+```
+
+Or, to get unique by a property:
+
+```handlebars
+{{#eachUnique items "id"}}
+  {{this.name}}
+{{/eachUnique}}
+```
+
+### 13. `eachUniqueJSONPath`
+Iterates over unique values selected by a JSONPath.
+
+```handlebars
+{{#eachUniqueJSONPath model "$.types[*].name"}}
+  {{this}}
+{{/eachUniqueJSONPath}}
+```
+
+### 14. `splitAndUseWord`
+Splits a string and returns the word at the given index.
+
+```handlebars
+{{splitAndUseWord "foo-bar-baz" "-" 1}} <!-- Outputs: bar -->
+```
+
+---
+
+These helpers can be used in any template or partial. For more advanced string manipulation, you can also use [lobars](https://github.com/morkeleb/lobars) and lodash helpers directly in your templates.
 
 ### Changes
 
