@@ -638,7 +638,92 @@ Splits a string and returns the word at the given index.
 
 ---
 
-These helpers can be used in any template or partial. For more advanced string manipulation, you can also use [lobars](https://github.com/morkeleb/lobars) and lodash helpers directly in your templates.
+
+These helpers can be used in any template or partial. For more advanced string manipulation, you can also use [lobars](https://github.com/zeke/lobars) and lodash helpers directly in your templates.
+
+---
+
+### Additional Helpers from `lobars`
+
+Clay includes [lobars](https://github.com/zeke/lobars), which exposes a wide range of [lodash](https://lodash.com/docs) functions as Handlebars helpers. These helpers can be used directly in your templates for advanced string, comparison, and utility operations.
+
+#### Common String Helpers
+
+- **camelCase**  
+  Converts a string to camelCase.  
+  `{{camelCase "hello world"}}` → `helloWorld`
+
+- **capitalize**  
+  Capitalizes the first character of a string.  
+  `{{capitalize "hello world"}}` → `Hello world`
+
+- **kebabCase**  
+  Converts a string to kebab-case.  
+  `{{kebabCase "Hello World"}}` → `hello-world`
+
+- **snakeCase**  
+  Converts a string to snake_case.  
+  `{{snakeCase "Hello World"}}` → `hello_world`
+
+- **lowerCase**  
+  Converts a string to lower case.  
+  `{{lowerCase "Hello World"}}` → `hello world`
+
+- **upperCase**  
+  Converts a string to upper case.  
+  `{{upperCase "Hello World"}}` → `HELLO WORLD`
+
+- **startCase**  
+  Converts a string to Start Case.  
+  `{{startCase "hello world"}}` → `Hello World`
+
+- **pad, padEnd, padStart**  
+  Pads a string to a given length.  
+  `{{pad "abc" 5}}` → `" abc "`
+
+- **repeat**  
+  Repeats a string N times.  
+  `{{repeat "ab" 3}}` → `ababab`
+
+- **replace**  
+  Replaces part of a string.  
+  `{{replace "foo bar" "bar" "baz"}}` → `foo baz`
+
+- **truncate**  
+  Truncates a string to a given length.  
+  `{{truncate "Hello World" 5}}` → `Hello...`
+
+#### Comparison and Type Helpers
+
+- **eq, ne, gt, gte, lt, lte**  
+  Compare values.  
+  `{{#if (eq a b)}}Equal{{/if}}`
+
+- **isArray, isBoolean, isDate, isEmpty, isNumber, isString, isObject, isNull, isUndefined, etc.**  
+  Type checks.  
+  `{{#if (isArray myVar)}}It's an array!{{/if}}`
+
+- **includes, startsWith, endsWith**  
+  String/array checks.  
+  `{{#if (includes "foobar" "foo")}}Yes{{/if}}`
+
+#### Utility Helpers
+
+- **parseInt**  
+  Parses a string to an integer.  
+  `{{parseInt "42"}}` → `42`
+
+- **split**  
+  Splits a string into an array.  
+  `{{#each (split "a,b,c" ",")}}[{{this}}]{{/each}}` → `[a][b][c]`
+
+- **words**  
+  Splits a string into words.  
+  `{{#each (words "foo bar")}}[{{this}}]{{/each}}` → `[foo][bar]`
+
+---
+
+For a full list of available helpers, see the [lodash documentation](https://lodash.com/docs) and the [lobars README](https://github.com/zeke/lobars).
 
 ### Changes
 
