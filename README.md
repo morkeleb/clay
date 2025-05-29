@@ -497,12 +497,12 @@ in the domain-documentation.html template I use the header partial as shown:
 
 ### Template helpers
 
-
 ## Handlebars Helpers
 
 Clay's template engine provides a rich set of helpers to use in your Handlebars templates. Below is a list of all available helpers, with usage examples.
 
 ### 1. `markdown`
+
 Renders a string as HTML using Markdown.
 
 ```handlebars
@@ -510,6 +510,7 @@ Renders a string as HTML using Markdown.
 ```
 
 ### 2. `propertyExists`
+
 Checks if a property exists in any object in a context.
 
 ```handlebars
@@ -519,6 +520,7 @@ Checks if a property exists in any object in a context.
 ```
 
 ### 3. `json`
+
 Pretty-prints a JavaScript object as JSON.
 
 ```handlebars
@@ -526,6 +528,7 @@ Pretty-prints a JavaScript object as JSON.
 ```
 
 ### 4. `pascalCase`
+
 Converts a string to PascalCase.
 
 ```handlebars
@@ -533,6 +536,7 @@ Converts a string to PascalCase.
 ```
 
 ### 5. `inc`
+
 Increments a number by 1 (useful for 1-based indexes).
 
 ```handlebars
@@ -540,6 +544,7 @@ Increments a number by 1 (useful for 1-based indexes).
 ```
 
 ### 6. `pluralize`
+
 Pluralizes a word.
 
 ```handlebars
@@ -547,6 +552,7 @@ Pluralizes a word.
 ```
 
 ### 7. `singularize`
+
 Singularizes a word.
 
 ```handlebars
@@ -554,6 +560,7 @@ Singularizes a word.
 ```
 
 ### 8. `switch`, `case`, `default`
+
 Implements switch/case/default logic.
 
 ```handlebars
@@ -571,15 +578,18 @@ Implements switch/case/default logic.
 ```
 
 ### 9. `times`
+
 Repeats a block N times.
 
 ```handlebars
 {{#times 3}}
-  Index: {{@index}}
+  Index:
+  {{@index}}
 {{/times}}
 ```
 
 ### 10. `ifCond`
+
 Conditional logic with operators.
 
 ```handlebars
@@ -604,6 +614,7 @@ Supported operators: `==`, `===`, `!=`, `!==`, `<`, `<=`, `>`, `>=`, `&&`, `||`
 - `or` (any true): `{{#if (or a b c)}}...{{/if}}`
 
 ### 12. `eachUnique`
+
 Iterates over unique values in an array or object.
 
 ```handlebars
@@ -621,6 +632,7 @@ Or, to get unique by a property:
 ```
 
 ### 13. `eachUniqueJSONPath`
+
 Iterates over unique values selected by a JSONPath.
 
 ```handlebars
@@ -630,6 +642,7 @@ Iterates over unique values selected by a JSONPath.
 ```
 
 ### 14. `splitAndUseWord`
+
 Splits a string and returns the word at the given index.
 
 ```handlebars
@@ -637,7 +650,6 @@ Splits a string and returns the word at the given index.
 ```
 
 ---
-
 
 These helpers can be used in any template or partial. For more advanced string manipulation, you can also use [lobars](https://github.com/zeke/lobars) and lodash helpers directly in your templates.
 
@@ -740,10 +752,11 @@ For a full list of available helpers, see the [lodash documentation](https://lod
   - [x] make the generate command work with the .clay file so it doesnt require arguments
   - [x] make the clean command work with the .clay file so it doesnt require arguments
   - [x] make the watch command work with the .clay file so it doesnt require arguments
+  - [x] Validations on generators
 
 ### Future
 
-- [ ] validations on models and generators
+- [ ] validations on models
 - [ ] add an option to make dry runs
 - [ ] tests on handlebar templating system to prevent regressions and broken generators
 - [ ] option to clear directories
