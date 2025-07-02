@@ -737,6 +737,101 @@ Clay includes [lobars](https://github.com/zeke/lobars), which exposes a wide ran
 
 For a full list of available helpers, see the [lodash documentation](https://lodash.com/docs) and the [lobars README](https://github.com/zeke/lobars).
 
+## GitHub Copilot Integration
+
+To enhance your development workflow with Clay, you can integrate it with GitHub Copilot by adding instructions to your project's `copilot-instructions.md` file. This will help Copilot understand Clay's concepts and assist you with model creation, template development, and generator configuration.
+
+### Setting Up Copilot Instructions
+
+Create a `copilot-instructions.md` file in your project root and add the following content to help Copilot understand how to work with Clay:
+
+```markdown
+# Clay Generator Instructions for GitHub Copilot
+
+## Overview
+Clay is a template-focused code generator that uses JSON models and Handlebars templates to generate code. The system consists of models, generators, templates, and partials.
+
+## Key Concepts
+
+### Models (model.json)
+- JSON files that describe the domain model
+- Can include mixins and includes for modularity
+- Support JSONPath selectors for targeting specific parts
+- Reserved properties: `mixin`, `include`, `generators`
+
+### Generators (generator.json)
+- Define steps to transform models into code
+- Support three types of steps:
+  - `generate`: Use Handlebars templates
+  - `copy`: Copy files/directories
+  - `runCommand`: Execute shell commands
+- Can include partials and formatters
+
+### Templates
+- Use Handlebars syntax with extensive helper library
+- Support dynamic file paths using model data
+- Include lobars helpers for string manipulation (camelCase, kebabCase, etc.)
+
+## Common Tasks
+
+### Creating Models
+When creating model.json files:
+- Use clear, descriptive property names
+- Leverage JSONPath for selecting data subsets
+- Consider using mixins for reusable functionality
+- Structure data to match the intended output
+
+### Writing Templates
+When creating Handlebars templates:
+- Use appropriate helpers: `{{pascalCase name}}`, `{{kebabCase name}}`, etc.
+- Leverage partials for reusable components
+- Use conditional logic: `{{#if condition}}...{{/if}}`
+- Iterate with: `{{#each items}}...{{/each}}`
+
+### Configuring Generators
+When setting up generator.json:
+- Order steps logically (dependencies first)
+- Use JSONPath selectors to target specific model parts
+- Include formatters for code quality
+- Test with `clay test-path` command
+
+## Available Commands
+- `clay generate <model_path> <output_path>` - Generate code
+- `clay clean <model_path> <output_path>` - Clean generated files
+- `clay watch <model_path> <output_path>` - Watch for changes
+- `clay test-path <model_path> <json_path>` - Test JSONPath selectors
+- `clay init` - Initialize Clay project
+
+## Best Practices
+- Use semantic naming for models and generators
+- Keep templates focused and modular
+- Test JSONPath expressions before using in generators
+- Use the .clay file for tracking generated files
+- Leverage mixins for common model transformations
+```
+
+### Benefits of Copilot Integration
+
+With these instructions, GitHub Copilot will be able to:
+
+1. **Suggest appropriate model structures** based on your domain requirements
+2. **Generate Handlebars templates** with correct syntax and helper usage
+3. **Help configure generator.json files** with proper step ordering and JSONPath selectors
+4. **Recommend Clay commands** for common development tasks
+5. **Assist with template debugging** using available helpers and partials
+6. **Suggest best practices** for organizing Clay projects
+
+### Example Usage
+
+After adding the copilot instructions, you can ask Copilot to help with tasks like:
+
+- "Create a Clay model for a user management system"
+- "Generate a Handlebars template for a REST API controller"
+- "Set up a generator that creates both frontend and backend files"
+- "Help me write a JSONPath expression to select all array type parameters"
+
+This integration will make Clay development more efficient and help maintain consistency across your generated code.
+
 ### Changes
 
 - [x] support casing help in helpers
