@@ -1,0 +1,3 @@
+{{name}}
+{{clay_model.name}}
+{{clay_model.model.types.length}}

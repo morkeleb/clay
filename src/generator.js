@@ -96,10 +96,10 @@ async function applyFormatters(generator, file_name, data, step) {
   const formatterSpecs = formatters.map((fmt) => {
     if (typeof fmt === "string") {
       // legacy: just the package name
-      return { pkg: fmt, options: {} };
+      return { pkg: fmt, options: {}, new: false };
     } else if (typeof fmt === "object" && fmt.package) {
       // new: { package: "...", options: { ... } }
-      return { pkg: fmt.package, options: fmt.options || {} };
+      return { pkg: fmt.package, options: fmt.options || {}, new: true };
     } else {
       throw new Error(
         `Invalid formatter spec: ${JSON.stringify(fmt)}. ` +
@@ -107,6 +107,7 @@ async function applyFormatters(generator, file_name, data, step) {
       );
     }
   });
+  console.log("formatters", formatterSpecs);
 
   // Load all formatter modules
   const loadedFormatters = formatterSpecs.map(({ pkg }) =>
@@ -117,6 +118,7 @@ async function applyFormatters(generator, file_name, data, step) {
   for (let i = 0; i < loadedFormatters.length; i++) {
     const formatter = loadedFormatters[i];
     const { options } = formatterSpecs[i];
+    const { new: isNewFormatter } = formatterSpecs[i];
 
     // check extension match
     const applyFormatter = Array.isArray(formatter.extensions)
@@ -127,10 +129,12 @@ async function applyFormatters(generator, file_name, data, step) {
 
     try {
       // Pass options into apply if supported
-      if (formatter.apply.length >= 3) {
+      if (isNewFormatter) {
+        console.log("applying formatter new", formatter.apply);
         // new signature: apply(file, content, options)
         result = await formatter.apply(file_name, result, options, step);
       } else {
+        console.log("applying formatter old", formatter.apply);
         // old signature: apply(file, content)
         result = await formatter.apply(file_name, result);
       }

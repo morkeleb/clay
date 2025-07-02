@@ -495,6 +495,104 @@ in the domain-documentation.html template I use the header partial as shown:
     <h1>{{name}}</h1>
 ```
 
+### Template Context Variables
+
+When Clay processes templates using JSONPath selectors, it automatically adds several context variables to each selected element to make template development easier and more powerful:
+
+#### `clay_model`
+
+Provides access to the complete root model from any template context. This is particularly useful for lookups and cross-references within your templates.
+
+```handlebars
+<!-- Access the model name from anywhere in your template -->
+<h1>{{clay_model.name}}</h1>
+
+<!-- Look up related data from the root model -->
+{{#each clay_model.model.types}}
+  <p>Available type: {{name}}</p>
+{{/each}}
+
+<!-- Count total items in the model -->
+<p>Total types: {{clay_model.model.types.length}}</p>
+```
+
+#### `clay_parent`
+
+References the parent element in the JSON structure, along with its JSONPath.
+
+```handlebars
+<!-- Access parent properties -->
+<p>Parent name: {{clay_parent.name}}</p>
+<p>Parent path: {{clay_parent.json_path}}</p>
+
+<!-- Navigate up multiple levels -->
+<p>Grandparent: {{clay_parent.clay_parent.name}}</p>
+```
+
+#### `clay_key`
+
+The JSON property name of the current element.
+
+```handlebars
+<p>Current property: {{clay_key}}</p>
+```
+
+#### `clay_json_key`
+
+Alternative reference to the JSON property name of the current element.
+
+```handlebars
+<p>JSON key: {{clay_json_key}}</p>
+```
+
+#### Example Usage
+
+Consider a model with nested structure:
+
+```json
+{
+  "name": "UserService",
+  "model": {
+    "types": [
+      {
+        "name": "User",
+        "commands": [
+          {
+            "name": "createUser",
+            "parameters": [{ "name": "email", "type": "string" }]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+With JSONPath selector `$.model.types[*].commands[*].parameters[*]`, a template can access:
+
+```handlebars
+Parameter:
+{{name}}
+({{type}}) Command:
+{{clay_parent.name}}
+Type:
+{{clay_parent.clay_parent.name}}
+Service:
+{{clay_model.name}}
+Total types in service:
+{{clay_model.model.types.length}}
+```
+
+This would generate:
+
+```
+Parameter: email (string)
+Command: createUser
+Type: User
+Service: UserService
+Total types in service: 1
+```
+
 ### Template helpers
 
 ## Handlebars Helpers
@@ -749,17 +847,20 @@ Create a `copilot-instructions.md` file in your project root and add the followi
 # Clay Generator Instructions for GitHub Copilot
 
 ## Overview
+
 Clay is a template-focused code generator that uses JSON models and Handlebars templates to generate code. The system consists of models, generators, templates, and partials.
 
 ## Key Concepts
 
 ### Models (model.json)
+
 - JSON files that describe the domain model
 - Can include mixins and includes for modularity
 - Support JSONPath selectors for targeting specific parts
 - Reserved properties: `mixin`, `include`, `generators`
 
 ### Generators (generator.json)
+
 - Define steps to transform models into code
 - Support three types of steps:
   - `generate`: Use Handlebars templates
@@ -768,6 +869,7 @@ Clay is a template-focused code generator that uses JSON models and Handlebars t
 - Can include partials and formatters
 
 ### Templates
+
 - Use Handlebars syntax with extensive helper library
 - Support dynamic file paths using model data
 - Include lobars helpers for string manipulation (camelCase, kebabCase, etc.)
@@ -775,27 +877,34 @@ Clay is a template-focused code generator that uses JSON models and Handlebars t
 ## Common Tasks
 
 ### Creating Models
+
 When creating model.json files:
+
 - Use clear, descriptive property names
 - Leverage JSONPath for selecting data subsets
 - Consider using mixins for reusable functionality
 - Structure data to match the intended output
 
 ### Writing Templates
+
 When creating Handlebars templates:
+
 - Use appropriate helpers: `{{pascalCase name}}`, `{{kebabCase name}}`, etc.
 - Leverage partials for reusable components
 - Use conditional logic: `{{#if condition}}...{{/if}}`
 - Iterate with: `{{#each items}}...{{/each}}`
 
 ### Configuring Generators
+
 When setting up generator.json:
+
 - Order steps logically (dependencies first)
 - Use JSONPath selectors to target specific model parts
 - Include formatters for code quality
 - Test with `clay test-path` command
 
 ## Available Commands
+
 - `clay generate <model_path> <output_path>` - Generate code
 - `clay clean <model_path> <output_path>` - Clean generated files
 - `clay watch <model_path> <output_path>` - Watch for changes
@@ -803,6 +912,7 @@ When setting up generator.json:
 - `clay init` - Initialize Clay project
 
 ## Best Practices
+
 - Use semantic naming for models and generators
 - Keep templates focused and modular
 - Test JSONPath expressions before using in generators

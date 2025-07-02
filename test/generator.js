@@ -342,6 +342,34 @@ describe("a generator", () => {
           "finish_order\n$.model.types[0]\norder\n$.model\n2\n$\nmymodel\n"
         );
       });
+      it("context for handlebars is decorated with clay_model reference", async () => {
+        const modelIndex = require("../src/clay_file")
+          .load("./test/samples")
+          .getModelIndex("./test/include-example.json", "./tmp/test-output/");
+        var g = generator.load(
+          "./test/samples/clay-model-test.json",
+          "",
+          modelIndex
+        );
+
+        await g.generate(
+          model.load("./test/samples/example-unknown-generator.json"),
+          "./tmp/test-output"
+        );
+
+        expect(
+          fs.existsSync("./tmp/test-output/clay-model-test/finish_order.txt"),
+          "clay_model template file not generated"
+        ).to.equal(true);
+
+        var result = fs.readFileSync(
+          "./tmp/test-output/clay-model-test/finish_order.txt",
+          "utf8"
+        );
+
+        // Expected: command name, model name, number of types in model
+        expect(result).to.equal("finish_order\nmymodel\n2\n");
+      });
       it("will respect subdirectories", async () => {
         const modelIndex = require("../src/clay_file")
           .load("./test/samples")

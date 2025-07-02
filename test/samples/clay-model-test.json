@@ -1,0 +1,10 @@
+{
+  "partials": ["partials/hello"],
+  "steps": [
+    {
+      "generate": "templates/clay-model-test/{{name}}.txt",
+      "select": "$.model.types[*].commands[*]",
+      "target": "clay-model-test/"
+    }
+  ]
+}
