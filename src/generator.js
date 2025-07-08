@@ -49,6 +49,7 @@ const GeneratorStepSchema = z.union([
     runCommand: z.string(),
     select: SelectSchema,
     npxCommand: z.boolean().optional(),
+    verbose: z.boolean().optional(),
   }),
 ]);
 
@@ -257,7 +258,7 @@ async function generate_directory(
   );
 }
 
-function execute(commandline, output_dir, npxCommand) {
+function execute(commandline, output_dir, npxCommand, verbose) {
   let cmd = commandline;
   if (npxCommand) {
     // prepend generators dir to commandline to execute it in the current directory
@@ -268,7 +269,7 @@ function execute(commandline, output_dir, npxCommand) {
   try {
     execSync(cmd, {
       cwd: output_dir,
-      stdio: process.env.VERBOSE ? "inherit" : "pipe",
+      stdio: verbose ? "inherit" : "pipe",
     });
   } catch (e) {
     ui.warn("error while executing", commandline);
@@ -314,12 +315,15 @@ function remove_generated_files(modelIndex) {
 function run_command(step, model, output, dirname) {
   const output_dir = path.resolve(output);
   fs.ensureDirSync(output_dir);
+  const verbose =
+    step.verbose !== undefined ? step.verbose : !!process.env.VERBOSE;
+
   if (step.select == undefined) {
-    execute(step.runCommand, output_dir, step.npxCommand);
+    execute(step.runCommand, output_dir, step.npxCommand, verbose);
   } else {
     var command = handlebars.compile(step.runCommand);
     jph.select(model, step.select).forEach((m) => {
-      execute(command(m), output_dir, step.npxCommand);
+      execute(command(m), output_dir, step.npxCommand, verbose);
     });
   }
 }
