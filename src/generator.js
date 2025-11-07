@@ -212,7 +212,9 @@ async function generate_file(
 
 function remove_file(modelIndex, file) {
   ui.warn("removing ", file);
-  fs.removeSync(file);
+  if (fs.existsSync(file)) {
+    fs.removeSync(file);
+  }
   modelIndex.delFileCheckSum(file);
 }
 
