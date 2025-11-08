@@ -106,14 +106,18 @@ describe("generator-manager", () => {
 
   describe("findGeneratorInRegistry", () => {
     it("should find existing generator in registry", async () => {
-      const generator = await generatorManager.findGeneratorInRegistry("clay-model-documentation");
+      const generator = await generatorManager.findGeneratorInRegistry(
+        "clay-model-documentation"
+      );
       expect(generator).to.not.be.null;
       expect(generator).to.have.property("name");
       expect(generator).to.have.property("repository");
     });
 
     it("should return null for non-existing generator", async () => {
-      const generator = await generatorManager.findGeneratorInRegistry("non-existing-generator");
+      const generator = await generatorManager.findGeneratorInRegistry(
+        "non-existing-generator"
+      );
       expect(generator).to.be.null;
     });
   });

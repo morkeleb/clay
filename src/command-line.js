@@ -21,7 +21,7 @@ commander.on("option:verbose", function () {
 commander.on("command:*", function () {
   console.error(
     "Invalid command: %s\nSee --help for a list of available commands.",
-    commander.args.join(" "),
+    commander.args.join(" ")
   );
   process.exit(1);
 });
@@ -59,18 +59,18 @@ const generateModels = async (modelsToExecute) =>
           resolve_generator(
             g,
             path.dirname(modelIndex.path),
-            modelIndex,
-          ).generate(model, modelIndex.output),
-        ),
+            modelIndex
+          ).generate(model, modelIndex.output)
+        )
       );
-    }),
+    })
   );
 
 async function generate(model_path, output_path) {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -82,7 +82,7 @@ async function generate(model_path, output_path) {
     modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
   else {
     modelsToExecute = indexFile.models.map((m) =>
-      indexFile.getModelIndex(m.path, m.output),
+      indexFile.getModelIndex(m.path, m.output)
     );
   }
 
@@ -96,8 +96,8 @@ const cleanModels = (modelsToExecute) => {
     model.generators.forEach((g) =>
       resolve_generator(g, path.dirname(modelIndex.path), modelIndex).clean(
         model,
-        modelIndex.output,
-      ),
+        modelIndex.output
+      )
     );
   });
 };
@@ -106,7 +106,7 @@ function clean(model_path, output_path) {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -117,7 +117,7 @@ function clean(model_path, output_path) {
     modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
   else {
     modelsToExecute = indexFile.models.map((m) =>
-      indexFile.getModelIndex(m.path, m.output),
+      indexFile.getModelIndex(m.path, m.output)
     );
   }
   cleanModels(modelsToExecute);
@@ -128,7 +128,7 @@ const test = (model_path, json_path) => {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -172,7 +172,7 @@ function init(type, name) {
       };
       fs.writeFileSync(
         generatorFilePath,
-        JSON.stringify(generatorTemplate, null, 2),
+        JSON.stringify(generatorTemplate, null, 2)
       );
       ui.log(`Generator initialized at ${generatorFilePath}`);
     } else {
@@ -197,14 +197,14 @@ function watch(model_path, output_path) {
     modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
   else {
     modelsToExecute = indexFile.models.map((m) =>
-      indexFile.getModelIndex(m.path, m.output),
+      indexFile.getModelIndex(m.path, m.output)
     );
   }
 
   const directories_to_watch = _.uniq(
     modelsToExecute.map((modelIndex) =>
-      path.dirname(path.resolve(modelIndex.path)),
-    ),
+      path.dirname(path.resolve(modelIndex.path))
+    )
   );
   directories_to_watch.forEach((model_directory) => {
     ui.watch(model_directory);
@@ -231,7 +231,7 @@ async function generatorList() {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -242,7 +242,7 @@ async function generatorList() {
 async function generatorAdd(generatorRef) {
   if (!generatorRef) {
     ui.warn(
-      "Please provide a generator reference (GitHub URL or generator name)",
+      "Please provide a generator reference (GitHub URL or generator name)"
     );
     return;
   }
@@ -250,7 +250,7 @@ async function generatorAdd(generatorRef) {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -263,7 +263,7 @@ async function generatorDelete(generatorName) {
   const clayFilePath = path.resolve(".clay");
   if (!fs.existsSync(clayFilePath)) {
     throw new Error(
-      "This folder has not been initiated with clay. Please create a .clay file.",
+      "This folder has not been initiated with clay. Please create a .clay file."
     );
   }
 
@@ -295,7 +295,7 @@ generatorCommand
 generatorCommand
   .command("delete [generator_name]")
   .description(
-    "delete a generator (will prompt for selection if name not provided)",
+    "delete a generator (will prompt for selection if name not provided)"
   )
   .action(generatorDelete);
 

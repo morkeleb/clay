@@ -12,31 +12,36 @@ const https = require("https");
  */
 function fetchRegistryFromGitHub() {
   return new Promise((resolve, reject) => {
-    const registryUrl = "https://raw.githubusercontent.com/morkeleb/clay/master/generator-registry.json";
-    
-    https.get(registryUrl, (res) => {
-      let data = "";
-      
-      if (res.statusCode !== 200) {
-        reject(new Error(`Failed to fetch registry: HTTP ${res.statusCode}`));
-        return;
-      }
-      
-      res.on("data", (chunk) => {
-        data += chunk;
-      });
-      
-      res.on("end", () => {
-        try {
-          const registry = JSON.parse(data);
-          resolve(registry);
-        } catch (error) {
-          reject(new Error(`Failed to parse registry JSON: ${error.message}`));
+    const registryUrl =
+      "https://raw.githubusercontent.com/morkeleb/clay/master/generator-registry.json";
+
+    https
+      .get(registryUrl, (res) => {
+        let data = "";
+
+        if (res.statusCode !== 200) {
+          reject(new Error(`Failed to fetch registry: HTTP ${res.statusCode}`));
+          return;
         }
+
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+
+        res.on("end", () => {
+          try {
+            const registry = JSON.parse(data);
+            resolve(registry);
+          } catch (error) {
+            reject(
+              new Error(`Failed to parse registry JSON: ${error.message}`)
+            );
+          }
+        });
+      })
+      .on("error", (error) => {
+        reject(error);
       });
-    }).on("error", (error) => {
-      reject(error);
-    });
   });
 }
 
@@ -94,17 +99,21 @@ async function loadGeneratorRegistry() {
     return registry;
   } catch (error) {
     ui.warn(`Could not fetch registry from GitHub: ${error.message}`);
-    
+
     // Try to use cached version
     const cachedRegistry = loadRegistryCache();
     if (cachedRegistry) {
       ui.info("Using cached registry (may be outdated)");
       return cachedRegistry;
     }
-    
+
     // Final fallback: try to load from local file in repo
     try {
-      const localRegistryPath = path.join(__dirname, "..", "generator-registry.json");
+      const localRegistryPath = path.join(
+        __dirname,
+        "..",
+        "generator-registry.json"
+      );
       if (fs.existsSync(localRegistryPath)) {
         ui.info("Using local registry file");
         return require(localRegistryPath);
@@ -112,7 +121,7 @@ async function loadGeneratorRegistry() {
     } catch (localError) {
       // Ignore
     }
-    
+
     ui.warn("No registry available. Cannot list or add generators by name.");
     return { generators: {} };
   }
@@ -135,12 +144,12 @@ async function findGeneratorInRegistry(generatorName) {
 async function listAvailableGenerators() {
   const registry = await loadGeneratorRegistry();
   const generators = Object.entries(registry.generators);
-  
+
   if (generators.length === 0) {
     ui.info("No generators found in registry.");
     return;
   }
-  
+
   ui.info("Available generators from registry:");
   generators.forEach(([key, gen]) => {
     ui.log(`  ${key} - ${gen.name}`);
@@ -236,15 +245,18 @@ function listGenerators(clayFile) {
  */
 function generatorExistsLocally(generatorRef) {
   // Check if it's a direct path to a generator.json file
-  if (generatorRef.endsWith('generator.json') && fs.existsSync(generatorRef)) {
+  if (generatorRef.endsWith("generator.json") && fs.existsSync(generatorRef)) {
     return true;
   }
-  
+
   // Check if it's a path to a directory containing generator.json
-  if (fs.existsSync(generatorRef) && fs.existsSync(path.join(generatorRef, "generator.json"))) {
+  if (
+    fs.existsSync(generatorRef) &&
+    fs.existsSync(path.join(generatorRef, "generator.json"))
+  ) {
     return true;
   }
-  
+
   // Check in clay/generators/<name>
   const generatorName = path.basename(generatorRef);
   const generatorPath = path.join("clay", "generators", generatorName);
@@ -274,12 +286,12 @@ async function downloadGenerator(repoUrl, generatorName) {
     const generatorJsonPath = path.join(generatorPath, "generator.json");
     if (!fs.existsSync(generatorJsonPath)) {
       throw new Error(
-        "Downloaded repository does not contain a generator.json file",
+        "Downloaded repository does not contain a generator.json file"
       );
     }
 
     ui.info(
-      `Generator "${generatorName}" downloaded successfully to ${generatorPath}`,
+      `Generator "${generatorName}" downloaded successfully to ${generatorPath}`
     );
     return true;
   } catch (error) {
@@ -331,11 +343,13 @@ async function addGenerator(generatorRef, clayFile) {
   } else {
     generatorName = generatorRef;
     generatorPath = generatorRef;
-    
+
     // Check if this is a known generator in the registry
     const registryEntry = await findGeneratorInRegistry(generatorName);
     if (registryEntry) {
-      ui.info(`Found "${generatorName}" in registry: ${registryEntry.description}`);
+      ui.info(
+        `Found "${generatorName}" in registry: ${registryEntry.description}`
+      );
       isGitRepo = true;
       generatorRef = registryEntry.repository;
       ui.info(`Using repository: ${registryEntry.repository}`);
@@ -358,7 +372,9 @@ async function addGenerator(generatorRef, clayFile) {
       ui.info("You can:");
       ui.info("1. Provide a GitHub repository URL");
       ui.info("2. Install it globally with npm/yarn");
-      ui.info("3. Use 'clay generator list-available' to see available generators");
+      ui.info(
+        "3. Use 'clay generator list-available' to see available generators"
+      );
       return;
     }
   } else {
@@ -380,7 +396,7 @@ async function addGenerator(generatorRef, clayFile) {
   if (clayFile.models.length === 1) {
     selectedModel = clayFile.models[0];
     ui.info(
-      `Adding generator to the only available model: ${selectedModel.path}`,
+      `Adding generator to the only available model: ${selectedModel.path}`
     );
   } else {
     const { modelChoice } = await inquirer.prompt([
@@ -415,7 +431,7 @@ async function addGenerator(generatorRef, clayFile) {
 
     if (alreadyExists) {
       ui.warn(
-        `Generator "${generatorName}" is already added to model ${selectedModel.path}`,
+        `Generator "${generatorName}" is already added to model ${selectedModel.path}`
       );
       return;
     }
@@ -426,7 +442,7 @@ async function addGenerator(generatorRef, clayFile) {
     // Write back to model file
     fs.writeFileSync(modelPath, JSON.stringify(modelData, null, 2));
     ui.info(
-      `Generator "${generatorName}" added to model ${selectedModel.path}`,
+      `Generator "${generatorName}" added to model ${selectedModel.path}`
     );
   } catch (error) {
     ui.warn(`Failed to update model file: ${error.message}`);
@@ -449,10 +465,11 @@ async function deleteGenerator(generatorName, clayFile) {
   let selectedGenerator;
 
   if (generatorName) {
-    selectedGenerator = generators.find((gen) => 
-      gen.name === generatorName || 
-      gen.name === `clay/generators/${generatorName}` ||
-      path.basename(gen.name) === generatorName
+    selectedGenerator = generators.find(
+      (gen) =>
+        gen.name === generatorName ||
+        gen.name === `clay/generators/${generatorName}` ||
+        path.basename(gen.name) === generatorName
     );
     if (!selectedGenerator) {
       ui.warn(`Generator "${generatorName}" not found in any models.`);
@@ -497,7 +514,7 @@ async function deleteGenerator(generatorName, clayFile) {
     }
 
     modelsToRemoveFrom = modelChoices.map(
-      (index) => selectedGenerator.usedInModels[index],
+      (index) => selectedGenerator.usedInModels[index]
     );
   }
 
@@ -518,12 +535,12 @@ async function deleteGenerator(generatorName, clayFile) {
 
         fs.writeFileSync(modelPath, JSON.stringify(modelData, null, 2));
         ui.info(
-          `Removed generator "${selectedGenerator.name}" from model ${usage.modelPath}`,
+          `Removed generator "${selectedGenerator.name}" from model ${usage.modelPath}`
         );
       }
     } catch (error) {
       ui.warn(
-        `Failed to update model file ${usage.modelPath}: ${error.message}`,
+        `Failed to update model file ${usage.modelPath}: ${error.message}`
       );
     }
   }
@@ -531,7 +548,7 @@ async function deleteGenerator(generatorName, clayFile) {
   // Check if generator is still used in any model
   const updatedGenerators = getAllGenerators(clayFile);
   const stillInUse = updatedGenerators.find(
-    (gen) => gen.name === selectedGenerator.name,
+    (gen) => gen.name === selectedGenerator.name
   );
 
   // If not used anywhere and exists locally, ask if user wants to delete the folder
@@ -549,7 +566,7 @@ async function deleteGenerator(generatorName, clayFile) {
       const generatorPath = path.join(
         "clay",
         "generators",
-        selectedGenerator.name,
+        selectedGenerator.name
       );
       fs.removeSync(generatorPath);
       ui.info(`Deleted generator folder: ${generatorPath}`);
