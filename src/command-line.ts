@@ -14,9 +14,10 @@ import type { DecoratedGenerator } from './types/generator';
 const commander = new Command();
 
 // Read version from package.json
-const packageJson = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')
-);
+// In production (compiled), package.json is at ../package.json from dist/src/
+// In development (ts-node), package.json is at ../package.json from src/
+const packageJsonPath = path.join(__dirname, '../../package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
 commander.version(packageJson.version);
 
