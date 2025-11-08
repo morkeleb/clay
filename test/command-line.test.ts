@@ -122,9 +122,12 @@ describe('the command line interface', () => {
     it('should fail if .clay file is missing', () => {
       try {
         // Use a valid path to an existing model file so it doesn't fail on that first
-        execSync('node dist/index.js test-path test/samples/cmd-example.json $', {
-          stdio: 'pipe',
-        });
+        execSync(
+          'node dist/index.js test-path test/samples/cmd-example.json $',
+          {
+            stdio: 'pipe',
+          }
+        );
       } catch (error: any) {
         expect(error.message).to.match(
           /This folder has not been initiated with clay/
