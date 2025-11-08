@@ -75,10 +75,7 @@ describe('a generator', () => {
       );
 
       expect(
-        warnStub.calledWith(
-          'No entires found for jsonpath ',
-          '$.valid.jsonpath'
-        )
+        warnStub.calledWith('No entries found for jsonpath', '$.valid.jsonpath')
       ).to.be.true;
     });
 

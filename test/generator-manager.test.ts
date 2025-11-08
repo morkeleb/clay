@@ -75,12 +75,18 @@ describe('generator-manager', () => {
   });
 
   afterEach(() => {
-    // Clean up test files
+    // Clean up test files - be careful to only remove what we created
     if (fs.existsSync(testModelPath)) {
       fs.unlinkSync(testModelPath);
     }
-    if (fs.existsSync(path.dirname(testModelPath))) {
-      fs.rmdirSync(path.dirname(testModelPath));
+    const modelDir = path.dirname(testModelPath);
+    // Only remove the models directory if it exists and is in our test folder
+    if (modelDir.includes('test-registry/models') && fs.existsSync(modelDir)) {
+      try {
+        fs.rmdirSync(modelDir); // Only works if empty
+      } catch (e) {
+        // Directory not empty, that's okay
+      }
     }
     if (fs.existsSync(testGeneratorPath)) {
       fs.removeSync(path.dirname(testGeneratorPath));

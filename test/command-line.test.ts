@@ -97,7 +97,7 @@ describe('the command line interface', () => {
 
     it('should fail if .clay file is missing', () => {
       try {
-        execSync('node src/command-line.js generate', { stdio: 'pipe' });
+        execSync('node dist/index.js generate', { stdio: 'pipe' });
       } catch (error: any) {
         expect(error.message).to.match(
           /This folder has not been initiated with clay/
@@ -109,7 +109,7 @@ describe('the command line interface', () => {
   describe('the clean command', () => {
     it('should fail if .clay file is missing', () => {
       try {
-        execSync('node src/command-line.js clean', { stdio: 'pipe' });
+        execSync('node dist/index.js clean', { stdio: 'pipe' });
       } catch (error: any) {
         expect(error.message).to.match(
           /This folder has not been initiated with clay/
@@ -121,7 +121,8 @@ describe('the command line interface', () => {
   describe('the test command', () => {
     it('should fail if .clay file is missing', () => {
       try {
-        execSync('node src/command-line.js test-path someModel somePath', {
+        // Use a valid path to an existing model file so it doesn't fail on that first
+        execSync('node dist/index.js test-path test/samples/cmd-example.json $', {
           stdio: 'pipe',
         });
       } catch (error: any) {
@@ -134,14 +135,18 @@ describe('the command line interface', () => {
 
   describe('the init command', () => {
     it('should create a .clay file', () => {
-      execSync('node src/command-line.js init', { stdio: 'pipe' });
+      // Remove the .clay file created in beforeEach so we can test init
+      if (fs.existsSync(clayFilePath)) {
+        fs.unlinkSync(clayFilePath);
+      }
+      execSync('node dist/index.js init', { stdio: 'pipe' });
       expect(fs.existsSync(clayFilePath)).to.equal(true);
     });
 
     it('should fail if .clay file already exists', () => {
       fs.writeFileSync(clayFilePath, '', 'utf8');
       try {
-        execSync('node src/command-line.js init', { stdio: 'pipe' });
+        execSync('node dist/index.js init', { stdio: 'pipe' });
       } catch (error: any) {
         expect(error.message).to.match(
           /A .clay file already exists in this folder/
