@@ -50,6 +50,14 @@ export interface Generator {
 }
 
 /**
+ * Decorated generator with execution methods
+ */
+export interface DecoratedGenerator extends Generator {
+  generate: (model: any, outputDir: string) => Promise<void>;
+  clean: (model: any, outputDir: string) => void;
+}
+
+/**
  * Type guards for generator steps
  */
 export function isGenerateStep(step: GeneratorStep): step is GeneratorStepGenerate {

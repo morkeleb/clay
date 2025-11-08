@@ -11,7 +11,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import jp from 'jsonpath';
 import * as output from './output';
-import type { Generator, GeneratorStep, GeneratorStepGenerate, GeneratorStepCopy, GeneratorStepCommand } from './types/generator';
+import type { Generator, DecoratedGenerator, GeneratorStep, GeneratorStepGenerate, GeneratorStepCopy, GeneratorStepCommand } from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
 
 const isValidJsonPath = (jsonPath: string): { valid: boolean; error?: string } => {
@@ -429,11 +429,6 @@ function copy(
       recursiveHandlebars(out);
     });
   }
-}
-
-interface DecoratedGenerator extends Generator {
-  generate: (model: any, output: string) => Promise<void>;
-  clean: (model: any, output: string) => void;
 }
 
 function decorate_generator(

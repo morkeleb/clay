@@ -15,7 +15,7 @@ export interface ClayFileEntry {
  */
 export interface ClayModelEntry {
   path: string;
-  output: string;
+  output?: string;
   generated_files: {
     [filePath: string]: ClayFileEntry;
   };
@@ -36,11 +36,17 @@ export interface ClayFile {
 }
 
 /**
+ * Model index returned by getModelIndex
+ */
+export interface ModelIndex extends ClayModelEntry {
+  // Inherits all ClayModelEntry properties and methods
+}
+
+/**
  * Clay file management interface
  */
 export interface ClayFileManager {
-  load: (path: string) => {
-    getModelIndex: (modelPath: string, output: string) => ClayModelEntry;
-    save: () => void;
-  };
+  models: ClayModelEntry[];
+  getModelIndex: (modelPath: string, output?: string) => ModelIndex;
+  save: () => void;
 }
