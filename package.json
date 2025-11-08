@@ -36,10 +36,18 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/handlebars": "^4.0.40",
+    "@types/inquirer": "^9.0.9",
+    "@types/lodash": "^4.17.20",
+    "@types/marked": "^5.0.2",
+    "@types/minimatch": "^5.1.2",
+    "@types/node": "^24.10.0",
     "chai": "^4.3.4",
     "decache": "^4.6.0",
     "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
-    "sinon": "^10.0.0"
+    "sinon": "^10.0.0",
+    "typescript": "^5.9.3"
   }
 }
