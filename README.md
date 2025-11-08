@@ -6,6 +6,8 @@ Clay is a template focused code generator. Used to take a model represented in J
 
 The goal is to have a consistent implementation of all model related operations in a system. Similar to how Ruby On Rails scaffolds work but backed using files, so you can with confident change the model and have all files updated.
 
+**Built with TypeScript** - Clay is written in TypeScript, providing type safety and excellent IDE support for both the core tool and custom generator development.
+
 ## Talks
 
 - [A short concept overview in Swedish @ Agila sverige 2019](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)
@@ -16,11 +18,189 @@ The goal is to have a consistent implementation of all model related operations 
 
 I use clay as a globally installed commandline tool.
 
-```
->  npm install -g clay-generator
+```bash
+npm install -g clay-generator
 ```
 
 Running `clay` will display its available commands.
+
+## Development
+
+### Prerequisites
+
+- Node.js 14 or higher
+- npm 7 or higher
+
+### Getting Started for Contributors
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/morkeleb/clay.git
+cd clay
+```
+
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Build the project**
+
+```bash
+npm run build
+```
+
+This compiles TypeScript files from `src/` to JavaScript in `dist/`.
+
+4. **Link for local development**
+
+```bash
+npm link
+```
+
+This makes the `clay` command available globally, pointing to your local development version. Changes to TypeScript files are automatically picked up by the development wrapper script.
+
+### Development Workflow
+
+Clay is written in TypeScript and uses a smart development workflow that doesn't require constant recompilation:
+
+**Development Mode (Recommended)**
+
+When you `npm link` Clay locally, the `bin/clay-dev` wrapper automatically detects that source files exist and uses `ts-node` to run TypeScript directly:
+
+```bash
+# After npm link, just run clay commands normally
+clay generate ./my-model.json ./output
+
+# TypeScript files are executed directly via ts-node
+# No compilation needed!
+```
+
+**Production Build**
+
+For production or to test the compiled output:
+
+```bash
+npm run build        # Compile TypeScript to dist/
+npm run build:watch  # Compile and watch for changes
+```
+
+### Available Scripts
+
+- `npm run build` - Compile TypeScript to JavaScript
+- `npm run build:watch` - Compile and watch for changes
+- `npm run dev` - Run Clay with ts-node directly
+- `npm test` - Run test suite
+- `npm run test:watch` - Run tests in watch mode
+- `npm run lint` - Check code style and quality
+- `npm run lint:fix` - Auto-fix linting issues
+- `npm run format` - Format all TypeScript files with Prettier
+- `npm run format:check` - Check formatting without making changes
+
+### Project Structure
+
+```
+clay/
+├── src/                     # TypeScript source files
+│   ├── types/              # Type definitions
+│   │   ├── generator.ts    # Generator types
+│   │   ├── model.ts        # Model types
+│   │   ├── clay-file.ts    # Clay file types
+│   │   └── ...
+│   ├── command-line.ts     # CLI command definitions
+│   ├── generator.ts        # Generator execution engine
+│   ├── model.ts            # Model loading and processing
+│   ├── template-engine.ts  # Handlebars template system
+│   └── ...
+├── dist/                   # Compiled JavaScript (gitignored)
+├── test/                   # Test files (.js and .test.ts)
+├── bin/                    # Executable scripts
+│   └── clay-dev           # Development wrapper
+├── index.ts               # Entry point
+├── tsconfig.json          # TypeScript configuration
+├── eslint.config.js       # ESLint configuration
+└── .prettierrc.json       # Prettier configuration
+```
+
+### TypeScript Development
+
+**Type Definitions**
+
+Clay uses comprehensive type definitions for all core concepts. Key types include:
+
+- `Generator` - Generator configuration and steps
+- `ClayModel` - Model structure with mixins and includes
+- `ClayFile` - .clay file inventory tracking
+- `GeneratorStep` - Union type for generate/copy/command steps
+
+**Strict Mode**
+
+The project uses TypeScript strict mode for maximum type safety. When adding new code:
+
+- Avoid `any` types when possible
+- Use proper type annotations
+- Leverage type guards for discriminated unions
+- Use `unknown` instead of `any` for truly unknown types
+
+**IDE Support**
+
+TypeScript provides excellent IDE support. VS Code (or similar) will provide:
+
+- Autocomplete for all functions and properties
+- Inline type documentation
+- Error detection as you type
+- Refactoring support
+
+### Testing
+
+Tests are written in TypeScript using Mocha, Chai, and Sinon:
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Run tests in watch mode
+```
+
+Test files use `.test.ts` extension and are located in the `test/` directory. The test setup uses `ts-node` to run TypeScript tests directly.
+
+### Code Quality
+
+**Linting**
+
+```bash
+npm run lint          # Check for issues
+npm run lint:fix      # Auto-fix issues
+```
+
+ESLint is configured with TypeScript support and checks for:
+
+- TypeScript-specific issues
+- Code style consistency
+- Potential bugs
+- Best practices
+
+**Formatting**
+
+```bash
+npm run format        # Format all files
+npm run format:check  # Check formatting
+```
+
+Prettier ensures consistent code formatting across the project.
+
+### Making Contributions
+
+1. Create a feature branch from `main`
+2. Make your changes in TypeScript
+3. Add tests for new functionality
+4. Run `npm run lint` and `npm run format`
+5. Ensure `npm test` passes
+6. Submit a pull request
+
+### Publishing
+
+The npm package includes only the compiled JavaScript in `dist/` and the bin wrapper. The TypeScript source is excluded from the published package but available in the GitHub repository.
 
 ```
 > clay
