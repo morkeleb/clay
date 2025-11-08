@@ -2,18 +2,13 @@
   "name": "clay-generator",
   "version": "0.2.9",
   "description": "a model and convention based source code generator",
-  "main": "dist/index.js",
+  "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "dev": "ts-node index.ts",
-    "prepare": "npm run build",
-    "prepublishOnly": "npm run build && npm test",
     "test": "mocha",
     "test:watch": "mocha --watch"
   },
   "bin": {
-    "clay": "bin/clay-dev"
+    "clay": "index.js"
   },
   "files": [
     "dist/",
@@ -47,6 +42,7 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@types/chai": "^5.2.3",
     "@types/fs-extra": "^11.0.4",
     "@types/handlebars": "^4.0.40",
     "@types/inquirer": "^9.0.9",
@@ -54,7 +50,9 @@
     "@types/lodash": "^4.17.20",
     "@types/marked": "^5.0.2",
     "@types/minimatch": "^5.1.2",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^24.10.0",
+    "@types/sinon": "^17.0.4",
     "chai": "^4.3.4",
     "decache": "^4.6.0",
     "mocha": "^8.3.2",
