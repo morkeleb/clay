@@ -1,8 +1,9 @@
 # TypeScript Migration Plan
 
 **Branch:** `feature/typescript-migration`  
-**Status:** Planning  
-**Started:** November 8, 2025
+**Status:** In Progress - 36% Complete (4/11 tasks)  
+**Started:** November 8, 2025  
+**Last Updated:** November 8, 2025
 
 ## Overview
 
@@ -42,20 +43,22 @@ clay/
 ### Phase 1: Setup & Configuration
 
 #### Task 1: Set up TypeScript configuration and dependencies
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 1-2 hours
 
 **Actions:**
-- [ ] Install TypeScript as a dev dependency
-- [ ] Install type definitions:
-  - [ ] `@types/node`
-  - [ ] `@types/lodash`
-  - [ ] `@types/handlebars`
-  - [ ] `@types/inquirer`
-  - [ ] `@types/minimatch`
-  - [ ] `@types/fs-extra`
-  - [ ] `@types/marked`
-- [ ] Create `tsconfig.json` with appropriate compiler options:
+- [x] Install TypeScript as a dev dependency
+- [x] Install type definitions:
+  - [x] `@types/node`
+  - [x] `@types/lodash`
+  - [x] `@types/handlebars`
+  - [x] `@types/inquirer`
+  - [x] `@types/minimatch`
+  - [x] `@types/fs-extra`
+  - [x] `@types/marked`
+  - [x] `@types/jsonpath`
+- [x] Create `tsconfig.json` with appropriate compiler options:
   - Target: ES2020 or later
   - Module: CommonJS (for Node.js compatibility)
   - Output directory: `dist/`
@@ -70,74 +73,73 @@ clay/
 - None
 
 **Verification:**
-- `tsc --noEmit` runs without errors on initial setup
+- [x] `tsc --noEmit` runs without errors on initial setup
+
+**Commit:** `1c2af1a` - Set up TypeScript configuration and dependencies
 
 ---
 
 #### Task 2: Configure build and development scripts
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 1-2 hours
 
 **Actions:**
-- [ ] Install development dependencies:
-  - [ ] `ts-node` - Run TypeScript directly without compilation
-  - [ ] `tsconfig-paths` - Support path mapping in development
-- [ ] Create development entry point `dev-index.ts`:
-  - [ ] Use ts-node shebang: `#!/usr/bin/env ts-node`
-  - [ ] Import and run main CLI logic
-- [ ] Update `package.json`:
-  - [ ] Add `build` script: `tsc`
-  - [ ] Add `build:watch` script: `tsc --watch`
-  - [ ] Add `dev` script: `ts-node index.ts` (for manual testing)
-  - [ ] Update `main` to point to `dist/index.js`
-  - [ ] Add conditional `bin` field strategy:
-    - Development (when using `npm link`): Use `dev-index.ts` with ts-node
-    - Production (when published): Use `dist/index.js`
-  - [ ] Add `prepare` script: `npm run build` (builds on npm install)
-  - [ ] Add `prepublishOnly` script: `npm run build` (ensures build before publish)
-  - [ ] Add `files` field to include `dist/` in npm package
-- [ ] Create wrapper script `bin/clay-dev` for development:
-  - [ ] Checks if TypeScript files are newer than compiled files
-  - [ ] Uses ts-node for development mode
-  - [ ] Falls back to compiled version for production
-- [ ] Create `.npmignore` to exclude TypeScript source files from package
-- [ ] Add `dist/` to `.gitignore`
-- [ ] Document `npm link` workflow in migration plan
+- [x] Install development dependencies:
+  - [x] `ts-node` - Run TypeScript directly without compilation
+  - [x] `tsconfig-paths` - Support path mapping in development
+- [x] Create wrapper script `bin/clay-dev`:
+  - [x] Auto-detects development vs production mode
+  - [x] Uses ts-node in dev, compiled JS in production
+- [x] Update `package.json`:
+  - [x] Add `build` script: `tsc`
+  - [x] Add `build:watch` script: `tsc --watch`
+  - [x] Add `dev` script: `ts-node index.ts` (for manual testing)
+  - [x] Update `main` to point to `dist/index.js`
+  - [x] Update `bin` field to point to `bin/clay-dev`
+  - [x] Add `prepare` script: `npm run build` (builds on npm install)
+  - [x] Add `prepublishOnly` script: `npm run build && npm test`
+  - [x] Add `files` field to include `dist/` and `bin/` in npm package
+- [x] Create `.npmignore` to exclude TypeScript source files from package
+- [x] Add `dist/` to `.gitignore`
 
 **Dependencies:**
 - Task 1
 
 **Verification:**
-- `npm run build` compiles successfully
-- Generated files appear in `dist/` directory
-- `npm link` allows running `clay` commands without recompilation
-- Changes to TypeScript files are immediately available when running linked CLI
+- [x] `npm run build` compiles successfully
+- [x] Generated files appear in `dist/` directory
+- [x] `npm link` allows running `clay` commands without recompilation
+- [x] Changes to TypeScript files are immediately available when running linked CLI
+
+**Commit:** `459d77e` - Configure build and development scripts
 
 ---
 
 ### Phase 2: Type Definitions
 
 #### Task 3: Create TypeScript type definitions
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 3-4 hours
 
 **Actions:**
-- [ ] Create `src/types/` directory for type definitions
-- [ ] Define core interfaces in `src/types/index.ts`:
-  - [ ] `ClayModel` - Root model structure
-  - [ ] `Generator` - Generator configuration
-  - [ ] `GeneratorStep` - Individual step types (generate, copy, runCommand)
-  - [ ] `GeneratorStepGenerate`
-  - [ ] `GeneratorStepCopy`
-  - [ ] `GeneratorStepCommand`
-  - [ ] `ClayFile` - .clay file structure
-  - [ ] `ClayFileEntry` - Individual generated file entry
-  - [ ] `TemplateContext` - Context passed to Handlebars
-  - [ ] `ModelWithMixins` - Model with mixin support
-  - [ ] `OutputOptions` - File output configuration
-  - [ ] `CommandLineOptions` - CLI option types
-- [ ] Import and use JSON schema types for validation
-- [ ] Document each interface with JSDoc comments
+- [x] Create `src/types/` directory for type definitions
+- [x] Define core interfaces in separate organized files:
+  - [x] `ClayModel` - Root model structure
+  - [x] `Generator` - Generator configuration
+  - [x] `GeneratorStep` - Individual step types (generate, copy, runCommand)
+  - [x] `GeneratorStepGenerate`
+  - [x] `GeneratorStepCopy`
+  - [x] `GeneratorStepCommand`
+  - [x] `ClayFile` - .clay file structure
+  - [x] `ClayFileEntry` - Individual generated file entry
+  - [x] `TemplateContext` - Context passed to Handlebars
+  - [x] `ModelWithMixins` - Model with mixin support
+  - [x] `OutputOptions` - File output configuration
+  - [x] `CommandLineOptions` - CLI option types
+- [x] Add type guard functions for generator steps
+- [x] Document each interface with JSDoc comments
 
 **Dependencies:**
 - Task 1
@@ -150,29 +152,33 @@ clay/
 - `src/types/template.ts`
 
 **Verification:**
-- All type definitions compile without errors
-- Types accurately represent current JavaScript objects
+- [x] All type definitions compile without errors
+- [x] Types accurately represent current JavaScript objects
+
+**Commit:** `c9fab0a` - Create comprehensive TypeScript type definitions
 
 ---
 
 ### Phase 3: Incremental Migration
 
 #### Task 4: Migrate utility modules first
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 2-3 hours
 
 **Actions:**
-- [ ] Rename and migrate `src/jsonpath-helper.js` → `src/jsonpath-helper.ts`
-  - [ ] Add return type annotations
-  - [ ] Add parameter type annotations
-  - [ ] Handle JSONPath library types
-- [ ] Rename and migrate `src/require-helper.js` → `src/require-helper.ts`
-  - [ ] Add return type annotations for dynamic requires
-  - [ ] Handle global module resolution types
-- [ ] Rename and migrate `src/output.js` → `src/output.ts`
-  - [ ] Add types for file operations
-  - [ ] Type file hashing and change detection
-  - [ ] Import ClayFile types
+- [x] Migrate `src/jsonpath-helper.js` → `src/jsonpath-helper.ts`
+  - [x] Add return type annotations
+  - [x] Add parameter type annotations
+  - [x] Handle JSONPath library types with JsonPathNode interface
+  - [x] Properly type clay context variables (clay_model, clay_parent, etc.)
+- [x] Migrate `src/require-helper.js` → `src/require-helper.ts`
+  - [x] Add return type annotations for dynamic requires
+  - [x] Add JSDoc documentation
+- [x] Migrate `src/output.js` → `src/output.ts`
+  - [x] Add types for all console output functions
+  - [x] Extend NodeJS.Process interface for isCLI property
+  - [x] Maintain chalk color integration
 
 **Dependencies:**
 - Task 3
@@ -183,13 +189,16 @@ clay/
 - `src/output.js` → `src/output.ts`
 
 **Verification:**
-- Modules compile without errors
-- Existing tests pass (if running in hybrid mode)
+- [x] Modules compile without errors
+- [x] All three utility modules pass strict type checking
+
+**Commit:** `d6e9ca4` - Migrate utility modules to TypeScript
 
 ---
 
 #### Task 5: Migrate core modules
-**Status:** ⏳ Not Started  
+**Status:** 🔄 In Progress  
+**Started:** November 8, 2025  
 **Estimated Time:** 4-6 hours
 
 **Actions:**
@@ -572,12 +581,15 @@ If critical issues arise:
 ### Completed Tasks
 <!-- Update this section as tasks are completed -->
 
-- None yet
+1. ✅ **Task 1** - Set up TypeScript configuration and dependencies (Nov 8)
+2. ✅ **Task 2** - Configure build and development scripts (Nov 8)
+3. ✅ **Task 3** - Create TypeScript type definitions (Nov 8)
+4. ✅ **Task 4** - Migrate utility modules first (Nov 8)
 
 ### Current Task
 <!-- Update this section with what you're currently working on -->
 
-Planning phase
+**Task 5** - Migrating core modules (model.js, template-engine.js, generator.js)
 
 ### Blocked Tasks
 <!-- List any tasks that are blocked and why -->
@@ -684,6 +696,25 @@ During development, use `clay-dev` instead of `clay`.
 3. Work through tasks sequentially
 4. Update this document as progress is made
 5. Document any issues or decisions in the Notes section
+
+---
+
+## Progress Summary
+
+| Phase | Tasks | Completed | Status |
+|-------|-------|-----------|--------|
+| Phase 1: Setup | 2 | 2 | ✅ Complete |
+| Phase 2: Types | 1 | 1 | ✅ Complete |
+| Phase 3: Migration | 4 | 1 | 🔄 In Progress (25%) |
+| Phase 4: Quality | 4 | 0 | ⏳ Not Started |
+| **Total** | **11** | **4** | **36% Complete** |
+
+**Commits Made:**
+1. `d737312` - Add comprehensive TypeScript migration plan
+2. `1c2af1a` - Set up TypeScript configuration and dependencies
+3. `459d77e` - Configure build and development scripts
+4. `c9fab0a` - Create comprehensive TypeScript type definitions
+5. `d6e9ca4` - Migrate utility modules to TypeScript
 
 ---
 
