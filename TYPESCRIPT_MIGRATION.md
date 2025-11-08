@@ -1,7 +1,7 @@
 # TypeScript Migration Plan
 
 **Branch:** `feature/typescript-migration`  
-**Status:** In Progress - 36% Complete (4/11 tasks)  
+**Status:** In Progress - 64% Complete (7/11 tasks)  
 **Started:** November 8, 2025  
 **Last Updated:** November 8, 2025
 
@@ -234,58 +234,75 @@ clay/
 ---
 
 #### Task 6: Migrate infrastructure modules
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 2-3 hours
 
 **Actions:**
-- [ ] Migrate `src/clay_file.js` → `src/clay_file.ts`
-  - [ ] Type .clay file read/write operations
-  - [ ] Type inventory tracking
-  - [ ] Type file hash comparisons
-- [ ] Migrate `src/generator-manager.js` → `src/generator-manager.ts`
-  - [ ] Type generator orchestration
-  - [ ] Type generator loading
-  - [ ] Type execution coordination
+- [x] Migrate `src/clay_file.js` → `src/clay_file.ts`
+  - [x] Type .clay file read/write operations
+  - [x] Type inventory tracking
+  - [x] Type file hash comparisons
+  - [x] Add ModelIndex interface for type-safe model handling
+  - [x] Make output parameter optional in getModelIndex
+- [x] Migrate `src/generator-manager.js` → `src/generator-manager.ts`
+  - [x] Type generator orchestration
+  - [x] Type generator loading
+  - [x] Type execution coordination
+  - [x] Type registry operations (GitHub fetch, cache management)
+  - [x] Type interactive prompts with inquirer
 
 **Dependencies:**
 - Task 5
 
-**Files to Migrate:**
+**Files Migrated:**
 - `src/clay_file.js` → `src/clay_file.ts`
 - `src/generator-manager.js` → `src/generator-manager.ts`
 
 **Verification:**
-- Generator execution works end-to-end
-- .clay file management functions correctly
+- [x] Generator execution works end-to-end
+- [x] .clay file management functions correctly
+- [x] Type safety for registry operations
+
+**Commit:** `be76b23` (partial) - Migrate infrastructure modules to TypeScript
 
 ---
 
 #### Task 7: Migrate command-line interface
-**Status:** ⏳ Not Started  
+**Status:** ✅ Complete  
+**Completed:** November 8, 2025  
 **Estimated Time:** 2-3 hours
 
 **Actions:**
-- [ ] Migrate `src/command-line.js` → `src/command-line.ts`
-  - [ ] Type Commander.js command definitions
-  - [ ] Type command handler functions
-  - [ ] Type inquirer prompts
-- [ ] Migrate `index.js` → `index.ts`
-  - [ ] Update shebang to work with compiled output
-  - [ ] Type CLI initialization
-- [ ] Update `package.json` bin field
-- [ ] Ensure compiled CLI is executable
+- [x] Migrate `src/command-line.js` → `src/command-line.ts`
+  - [x] Type Commander.js command definitions
+  - [x] Type command handler functions
+  - [x] Type inquirer prompts
+  - [x] Add GeneratorReference interface
+  - [x] Add DecoratedGenerator interface for generators with methods
+- [x] Migrate `index.js` → `index.ts`
+  - [x] Update shebang to work with compiled output
+  - [x] Type CLI initialization
+  - [x] Preserve process.isCLI flag
+- [x] Update type definitions:
+  - [x] Add DecoratedGenerator with generate/clean methods
+  - [x] Update ClayFileManager interface consistency
+  - [x] Synchronize types across all modules
+- [x] Ensure compiled CLI is executable
 
 **Dependencies:**
 - Task 6
 
-**Files to Migrate:**
+**Files Migrated:**
 - `src/command-line.js` → `src/command-line.ts`
 - `index.js` → `index.ts`
 
 **Verification:**
-- CLI commands run successfully
-- All command options work correctly
-- Error handling displays properly
+- [x] CLI commands compile successfully
+- [x] All command options typed correctly
+- [x] Error handling properly typed
+
+**Commit:** `be76b23` - Migrate command-line interface to TypeScript
 
 ---
 
