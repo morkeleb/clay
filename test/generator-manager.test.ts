@@ -1,26 +1,26 @@
-import { expect } from "chai";
-import fs from "fs-extra";
-import path from "path";
-import sinon from "sinon";
-import * as generatorManager from "../src/generator-manager";
-import type { ClayFileManager } from "../src/types/clay-file";
+import { expect } from 'chai';
+import fs from 'fs-extra';
+import path from 'path';
+import sinon from 'sinon';
+import * as generatorManager from '../src/generator-manager';
+import type { ClayFileManager } from '../src/types/clay-file';
 
-describe("generator-manager", () => {
+describe('generator-manager', () => {
   let clayFile: ClayFileManager;
   let testModelPath: string;
   let testGeneratorPath: string;
 
   beforeEach(() => {
     // Set up test environment
-    testModelPath = path.join(__dirname, "temp-model.json");
-    testGeneratorPath = path.join(__dirname, "temp-generators", "test-gen");
+    testModelPath = path.join(__dirname, 'temp-model.json');
+    testGeneratorPath = path.join(__dirname, 'temp-generators', 'test-gen');
 
     // Create test clay file structure
     clayFile = {
       models: [
         {
           path: testModelPath,
-          output: "output/",
+          output: 'output/',
           generated_files: {},
           setFileCheckSum: () => {},
           getFileCheckSum: () => null,
@@ -30,7 +30,7 @@ describe("generator-manager", () => {
       ],
       getModelIndex: (modelPath: string, output?: string) => ({
         path: modelPath,
-        output: output || "",
+        output: output || '',
         generated_files: {},
         setFileCheckSum: () => {},
         getFileCheckSum: () => null,
@@ -42,11 +42,11 @@ describe("generator-manager", () => {
 
     // Create test model
     const testModel = {
-      name: "test-model",
+      name: 'test-model',
       generators: [],
       mixins: [],
       model: {
-        types: [{ name: "user", fields: [{ name: "id", type: "string" }] }],
+        types: [{ name: 'user', fields: [{ name: 'id', type: 'string' }] }],
       },
     };
 
@@ -56,15 +56,15 @@ describe("generator-manager", () => {
     // Create test generator
     fs.ensureDirSync(testGeneratorPath);
     fs.writeFileSync(
-      path.join(testGeneratorPath, "generator.json"),
+      path.join(testGeneratorPath, 'generator.json'),
       JSON.stringify(
         {
           partials: [],
           steps: [
             {
-              generate: "templates/{{name}}.js",
-              select: "$.model.types.*",
-              target: "generated/",
+              generate: 'templates/{{name}}.js',
+              select: '$.model.types.*',
+              target: 'generated/',
             },
           ],
         },
@@ -88,16 +88,16 @@ describe("generator-manager", () => {
     sinon.restore();
   });
 
-  describe("getAllGenerators", () => {
-    it("should return empty array when no generators are configured", () => {
+  describe('getAllGenerators', () => {
+    it('should return empty array when no generators are configured', () => {
       const generators = generatorManager.getAllGenerators(clayFile);
-      expect(generators).to.be.an("array").that.is.empty;
+      expect(generators).to.be.an('array').that.is.empty;
     });
 
-    it("should return generators from models", () => {
+    it('should return generators from models', () => {
       // Add generator to model
-      const model = JSON.parse(fs.readFileSync(testModelPath, "utf-8"));
-      model.generators = ["test-generator"];
+      const model = JSON.parse(fs.readFileSync(testModelPath, 'utf-8'));
+      model.generators = ['test-generator'];
       fs.writeFileSync(testModelPath, JSON.stringify(model, null, 2));
 
       // Clear require cache for the model file
@@ -105,65 +105,65 @@ describe("generator-manager", () => {
 
       const generators = generatorManager.getAllGenerators(clayFile);
       expect(generators).to.have.length(1);
-      expect(generators[0].name).to.equal("test-generator");
+      expect(generators[0].name).to.equal('test-generator');
       expect(generators[0].usedInModels).to.have.length(1);
     });
   });
 
-  describe("loadGeneratorRegistry", () => {
-    it("should load the generator registry", async () => {
+  describe('loadGeneratorRegistry', () => {
+    it('should load the generator registry', async () => {
       const registry = await generatorManager.loadGeneratorRegistry();
-      expect(registry).to.be.an("object");
-      expect(registry).to.have.property("generators");
+      expect(registry).to.be.an('object');
+      expect(registry).to.have.property('generators');
     });
   });
 
-  describe("findGeneratorInRegistry", () => {
-    it("should find existing generator in registry", async () => {
+  describe('findGeneratorInRegistry', () => {
+    it('should find existing generator in registry', async () => {
       const generator = await generatorManager.findGeneratorInRegistry(
-        "clay-model-documentation"
+        'clay-model-documentation'
       );
       expect(generator).to.not.be.null;
-      expect(generator).to.have.property("name");
-      expect(generator).to.have.property("repository");
+      expect(generator).to.have.property('name');
+      expect(generator).to.have.property('repository');
     });
 
-    it("should return null for non-existing generator", async () => {
+    it('should return null for non-existing generator', async () => {
       const generator = await generatorManager.findGeneratorInRegistry(
-        "non-existing-generator"
+        'non-existing-generator'
       );
       expect(generator).to.be.null;
     });
   });
 
-  describe("listAvailableGenerators", () => {
-    it("should not throw when listing available generators", async () => {
+  describe('listAvailableGenerators', () => {
+    it('should not throw when listing available generators', async () => {
       await generatorManager.listAvailableGenerators();
     });
   });
 
-  describe("generatorExistsLocally", () => {
-    it("should return true for existing generator directory with generator.json", () => {
+  describe('generatorExistsLocally', () => {
+    it('should return true for existing generator directory with generator.json', () => {
       const exists = generatorManager.generatorExistsLocally(testGeneratorPath);
       expect(exists).to.be.true;
     });
 
-    it("should return false for non-existing generator", () => {
+    it('should return false for non-existing generator', () => {
       const exists = generatorManager.generatorExistsLocally(
-        "non-existing-generator"
+        'non-existing-generator'
       );
       expect(exists).to.be.false;
     });
 
-    it("should return true for direct path to generator.json", () => {
-      const generatorJsonPath = path.join(testGeneratorPath, "generator.json");
+    it('should return true for direct path to generator.json', () => {
+      const generatorJsonPath = path.join(testGeneratorPath, 'generator.json');
       const exists = generatorManager.generatorExistsLocally(generatorJsonPath);
       expect(exists).to.be.true;
     });
   });
 
-  describe("listGenerators", () => {
-    it("should not throw when no generators are found", () => {
+  describe('listGenerators', () => {
+    it('should not throw when no generators are found', () => {
       expect(() => {
         generatorManager.listGenerators(clayFile);
       }).to.not.throw();

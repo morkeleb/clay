@@ -60,7 +60,9 @@ export interface DecoratedGenerator extends Generator {
 /**
  * Type guards for generator steps
  */
-export function isGenerateStep(step: GeneratorStep): step is GeneratorStepGenerate {
+export function isGenerateStep(
+  step: GeneratorStep
+): step is GeneratorStepGenerate {
   return 'generate' in step;
 }
 
@@ -68,6 +70,8 @@ export function isCopyStep(step: GeneratorStep): step is GeneratorStepCopy {
   return 'copy' in step;
 }
 
-export function isCommandStep(step: GeneratorStep): step is GeneratorStepCommand {
+export function isCommandStep(
+  step: GeneratorStep
+): step is GeneratorStepCommand {
   return 'runCommand' in step;
 }

@@ -1,0 +1,10 @@
+{
+  "partials": [],
+  "steps": [
+    {
+      "generate": "templates/{{name}}.js",
+      "select": "$.model.types.*",
+      "target": "generated/"
+    }
+  ]
+}

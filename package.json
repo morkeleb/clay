@@ -2,13 +2,22 @@
   "name": "clay-generator",
   "version": "0.2.9",
   "description": "a model and convention based source code generator",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "ts-node index.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build && npm test",
     "test": "mocha",
-    "test:watch": "mocha --watch"
+    "test:watch": "mocha --watch",
+    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts' 'index.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' 'test/**/*.ts' 'index.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts' 'index.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'test/**/*.ts' 'index.ts'"
   },
   "bin": {
-    "clay": "index.js"
+    "clay": "bin/clay-dev"
   },
   "files": [
     "dist/",
@@ -53,10 +62,16 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^24.10.0",
     "@types/sinon": "^17.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
     "chai": "^4.3.4",
     "decache": "^4.6.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
+    "prettier": "^3.6.2",
     "sinon": "^10.0.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",

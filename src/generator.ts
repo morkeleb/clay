@@ -11,10 +11,19 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import jp from 'jsonpath';
 import * as output from './output';
-import type { Generator, DecoratedGenerator, GeneratorStep, GeneratorStepGenerate, GeneratorStepCopy, GeneratorStepCommand } from './types/generator';
+import type {
+  Generator,
+  DecoratedGenerator,
+  GeneratorStep,
+  GeneratorStepGenerate,
+  GeneratorStepCopy,
+  GeneratorStepCommand,
+} from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
 
-const isValidJsonPath = (jsonPath: string): { valid: boolean; error?: string } => {
+const isValidJsonPath = (
+  jsonPath: string
+): { valid: boolean; error?: string } => {
   try {
     jp.parse(jsonPath);
     return { valid: true };
@@ -98,7 +107,12 @@ interface FormatterSpec {
 
 interface FormatterModule {
   extensions?: string[];
-  apply: (fileName: string, content: string, options?: Record<string, any>, step?: any) => string | Promise<string>;
+  apply: (
+    fileName: string,
+    content: string,
+    options?: Record<string, any>,
+    step?: any
+  ) => string | Promise<string>;
 }
 
 async function applyFormatters(
@@ -112,14 +126,20 @@ async function applyFormatters(
   let result = data;
 
   // Normalize each entry to { pkg, options }
-  const formatterSpecs: FormatterSpec[] = formatters.map((fmt): FormatterSpec => {
-    if (typeof fmt === 'string') {
-      // legacy: just the package name
-      return { pkg: fmt, options: {}, new: false };
+  const formatterSpecs: FormatterSpec[] = formatters.map(
+    (fmt): FormatterSpec => {
+      if (typeof fmt === 'string') {
+        // legacy: just the package name
+        return { pkg: fmt, options: {}, new: false };
+      }
+      // new: { package: "...", options: { ... } }
+      return {
+        pkg: (fmt as any).package,
+        options: (fmt as any).options || {},
+        new: true,
+      };
     }
-    // new: { package: "...", options: { ... } }
-    return { pkg: (fmt as any).package, options: (fmt as any).options || {}, new: true };
-  });
+  );
   console.log('formatters', formatterSpecs);
 
   // Load all formatter modules
@@ -185,7 +205,7 @@ async function generate_file(
     fs.readFileSync(path.join(directory, file), 'utf8')
   );
   const file_name = handlebars.compile(path.join(outputDir, file));
-  
+
   await Promise.all(
     model_partial.map(async (m) => {
       const filename = file_name(m);
@@ -381,7 +401,7 @@ function copy(
 ): void {
   const output_dir = path.resolve(outputDir);
   const source = path.resolve(path.join(dirname, step.copy));
-  
+
   if (step.select === undefined) {
     let out: string;
     if (step.target) {
@@ -409,7 +429,7 @@ function copy(
       ui.copy(source, out);
       fs.copySync(source, out);
       addToIndex(modelIndex, out);
-      
+
       const recursiveHandlebars = (p: string): void => {
         fs.readdirSync(p).forEach((f) => {
           const file = path.join(p, f);
@@ -438,14 +458,14 @@ function decorate_generator(
   modelIndex: ClayModelEntry
 ): DecoratedGenerator {
   validateGeneratorSchema(g);
-  
+
   const decorated = g as DecoratedGenerator;
-  
+
   decorated.generate = async (model: any, outputDir: string): Promise<void> => {
     const output = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials || [], dirname);
-    
+
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if ('generate' in step) {
@@ -464,7 +484,7 @@ function decorate_generator(
       }
     }
   };
-  
+
   decorated.clean = (_model: any, _outputDir: string): void => {
     remove_generated_files(modelIndex);
 
@@ -474,7 +494,7 @@ function decorate_generator(
       cleanEmptyDirectories(dir);
     });
   };
-  
+
   return decorated;
 }
 

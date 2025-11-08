@@ -26,7 +26,10 @@ groupBy.register(handlebars);
 /**
  * Load partial templates from a directory
  */
-handlebars.load_partials = function (templates: string[], directory: string): void {
+handlebars.load_partials = function (
+  templates: string[],
+  directory: string
+): void {
   templates.forEach(function (template) {
     const name = path.basename(template).split('.')[0];
     handlebars.registerPartial(
@@ -50,15 +53,18 @@ handlebars.registerHelper('markdown', function (value: string) {
 /**
  * Property exists helper - checks if a property exists in any object in context
  */
-handlebars.registerHelper('propertyExists', function (context: any, field: string) {
-  function getField(obj: any, fieldPath: string): any {
-    return fieldPath.split('.').reduce((acc, part) => acc && acc[part], obj);
-  }
+handlebars.registerHelper(
+  'propertyExists',
+  function (context: any, field: string) {
+    function getField(obj: any, fieldPath: string): any {
+      return fieldPath.split('.').reduce((acc, part) => acc && acc[part], obj);
+    }
 
-  return !!Object.values(context).some(
-    (item) => getField(item, field) !== undefined
-  );
-});
+    return !!Object.values(context).some(
+      (item) => getField(item, field) !== undefined
+    );
+  }
+);
 
 /**
  * JSON helper - pretty-prints an object as JSON
@@ -76,7 +82,8 @@ handlebars.registerHelper('json', function (context: any) {
       )
         return '[Circular]';
 
-      if (i >= 29) // seems to be a hardcoded maximum of 30 serialized objects?
+      if (i >= 29)
+        // seems to be a hardcoded maximum of 30 serialized objects?
         return '[Unknown]';
 
       ++i; // so we know we aren't using the original object anymore
@@ -92,7 +99,12 @@ handlebars.registerHelper('json', function (context: any) {
  */
 handlebars.registerHelper('pascalCase', function (value: string) {
   if (value) {
-    return lodash.chain(value).camelCase().startCase().replace(/\s/g, '').value();
+    return lodash
+      .chain(value)
+      .camelCase()
+      .startCase()
+      .replace(/\s/g, '')
+      .value();
   } else {
     return '';
   }
@@ -125,31 +137,37 @@ handlebars.__switch_stack__ = [];
 /**
  * Switch helper - implements switch/case logic
  */
-handlebars.registerHelper('switch', function (this: any, value: any, options: Handlebars.HelperOptions) {
-  handlebars.__switch_stack__.push({
-    switch_match: false,
-    switch_value: value,
-  });
-  const html = options.fn(this);
-  handlebars.__switch_stack__.pop();
-  return html;
-});
+handlebars.registerHelper(
+  'switch',
+  function (this: any, value: any, options: Handlebars.HelperOptions) {
+    handlebars.__switch_stack__.push({
+      switch_match: false,
+      switch_value: value,
+    });
+    const html = options.fn(this);
+    handlebars.__switch_stack__.pop();
+    return html;
+  }
+);
 
 /**
  * Times helper - repeats a block N times
  */
-handlebars.registerHelper('times', function (this: any, n: number, block: Handlebars.HelperOptions) {
-  let accum = '';
-  for (let i = 0; i < n; ++i) {
-    if (block.data) {
-      block.data.index = i;
-      block.data.first = i === 0;
-      block.data.last = i === n - 1;
+handlebars.registerHelper(
+  'times',
+  function (this: any, n: number, block: Handlebars.HelperOptions) {
+    let accum = '';
+    for (let i = 0; i < n; ++i) {
+      if (block.data) {
+        block.data.index = i;
+        block.data.first = i === 0;
+        block.data.last = i === n - 1;
+      }
+      accum += block.fn(this);
     }
-    accum += block.fn(this);
+    return accum;
   }
-  return accum;
-});
+);
 
 /**
  * Case helper - used within switch
@@ -157,7 +175,8 @@ handlebars.registerHelper('times', function (this: any, n: number, block: Handle
 handlebars.registerHelper('case', function (this: any, ...args: any[]) {
   const options = args.pop() as Handlebars.HelperOptions;
   const caseValues = args;
-  const stack = handlebars.__switch_stack__[handlebars.__switch_stack__.length - 1];
+  const stack =
+    handlebars.__switch_stack__[handlebars.__switch_stack__.length - 1];
 
   if (stack.switch_match || caseValues.indexOf(stack.switch_value) === -1) {
     return '';
@@ -170,49 +189,56 @@ handlebars.registerHelper('case', function (this: any, ...args: any[]) {
 /**
  * Default helper - used within switch
  */
-handlebars.registerHelper('default', function (this: any, options: Handlebars.HelperOptions) {
-  const stack = handlebars.__switch_stack__[handlebars.__switch_stack__.length - 1];
-  if (!stack.switch_match) {
-    return options.fn(this);
+handlebars.registerHelper(
+  'default',
+  function (this: any, options: Handlebars.HelperOptions) {
+    const stack =
+      handlebars.__switch_stack__[handlebars.__switch_stack__.length - 1];
+    if (!stack.switch_match) {
+      return options.fn(this);
+    }
+    return '';
   }
-  return '';
-});
+);
 
 /**
  * IfCond helper - conditional with operators
  */
-handlebars.registerHelper('ifCond', function (
-  this: any,
-  v1: any,
-  operator: string,
-  v2: any,
-  options: Handlebars.HelperOptions
-) {
-  switch (operator) {
-    case '==':
-      return v1 == v2 ? options.fn(this) : options.inverse(this);
-    case '===':
-      return v1 === v2 ? options.fn(this) : options.inverse(this);
-    case '!=':
-      return v1 != v2 ? options.fn(this) : options.inverse(this);
-    case '!==':
-      return v1 !== v2 ? options.fn(this) : options.inverse(this);
-    case '<':
-      return v1 < v2 ? options.fn(this) : options.inverse(this);
-    case '<=':
-      return v1 <= v2 ? options.fn(this) : options.inverse(this);
-    case '>':
-      return v1 > v2 ? options.fn(this) : options.inverse(this);
-    case '>=':
-      return v1 >= v2 ? options.fn(this) : options.inverse(this);
-    case '&&':
-      return v1 && v2 ? options.fn(this) : options.inverse(this);
-    case '||':
-      return v1 || v2 ? options.fn(this) : options.inverse(this);
-    default:
-      return options.inverse(this);
+handlebars.registerHelper(
+  'ifCond',
+  function (
+    this: any,
+    v1: any,
+    operator: string,
+    v2: any,
+    options: Handlebars.HelperOptions
+  ) {
+    switch (operator) {
+      case '==':
+        return v1 == v2 ? options.fn(this) : options.inverse(this);
+      case '===':
+        return v1 === v2 ? options.fn(this) : options.inverse(this);
+      case '!=':
+        return v1 != v2 ? options.fn(this) : options.inverse(this);
+      case '!==':
+        return v1 !== v2 ? options.fn(this) : options.inverse(this);
+      case '<':
+        return v1 < v2 ? options.fn(this) : options.inverse(this);
+      case '<=':
+        return v1 <= v2 ? options.fn(this) : options.inverse(this);
+      case '>':
+        return v1 > v2 ? options.fn(this) : options.inverse(this);
+      case '>=':
+        return v1 >= v2 ? options.fn(this) : options.inverse(this);
+      case '&&':
+        return v1 && v2 ? options.fn(this) : options.inverse(this);
+      case '||':
+        return v1 || v2 ? options.fn(this) : options.inverse(this);
+      default:
+        return options.inverse(this);
+    }
   }
-});
+);
 
 /**
  * Comparison helpers
@@ -235,41 +261,39 @@ handlebars.registerHelper({
 /**
  * EachUnique helper - iterates over unique values
  */
-handlebars.registerHelper('eachUnique', function (
-  this: any,
-  array: any,
-  options: any,
-  context?: any
-) {
-  let iterator = array;
-  if (lodash.isObject(array) && !Array.isArray(array)) {
-    iterator = Object.entries(array).map(([key, value]) => ({
-      ...(value as object),
-      '@key': key,
-    }));
-  }
-  
-  const uniqueArray =
-    arguments.length === 3
-      ? lodash.uniqBy(iterator, (x: any) => x[options])
-      : lodash.uniq(iterator);
+handlebars.registerHelper(
+  'eachUnique',
+  function (this: any, array: any, options: any, context?: any) {
+    let iterator = array;
+    if (lodash.isObject(array) && !Array.isArray(array)) {
+      iterator = Object.entries(array).map(([key, value]) => ({
+        ...(value as object),
+        '@key': key,
+      }));
+    }
 
-  // template buffer
-  let buffer = '';
-  for (let i = 0; i < uniqueArray.length; i++) {
-    const entry = uniqueArray[i];
-    buffer += (context || options).fn(entry, {
-      data: {
-        index: i,
-        first: i === 0,
-        last: i === uniqueArray.length - 1,
-        key: entry['@key'],
-      },
-    });
+    const uniqueArray =
+      arguments.length === 3
+        ? lodash.uniqBy(iterator, (x: any) => x[options])
+        : lodash.uniq(iterator);
+
+    // template buffer
+    let buffer = '';
+    for (let i = 0; i < uniqueArray.length; i++) {
+      const entry = uniqueArray[i];
+      buffer += (context || options).fn(entry, {
+        data: {
+          index: i,
+          first: i === 0,
+          last: i === uniqueArray.length - 1,
+          key: entry['@key'],
+        },
+      });
+    }
+    // return the compiled template
+    return buffer;
   }
-  // return the compiled template
-  return buffer;
-});
+);
 
 /**
  * EachUniqueJSONPath helper - iterates over unique values from JSONPath
@@ -287,7 +311,7 @@ handlebars.registerHelper(
     const uniqueArray = lodash.uniqBy(jsonPathValues, (x: any) =>
       lodash.last(x.path)
     );
-    
+
     // template buffer
     let buffer = '';
     for (let i = 0; i < uniqueArray.length; i++) {

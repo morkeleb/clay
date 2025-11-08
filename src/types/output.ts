@@ -23,9 +23,17 @@ export interface FileChangeResult {
  * Output manager interface
  */
 export interface OutputManager {
-  writeFile: (filePath: string, content: string, options?: WriteFileOptions) => Promise<void>;
+  writeFile: (
+    filePath: string,
+    content: string,
+    options?: WriteFileOptions
+  ) => Promise<void>;
   deleteFile: (filePath: string) => Promise<void>;
   fileExists: (filePath: string) => boolean;
   calculateHash: (content: string) => string;
-  hasFileChanged: (filePath: string, content: string, oldHash?: string) => FileChangeResult;
+  hasFileChanged: (
+    filePath: string,
+    content: string,
+    oldHash?: string
+  ) => FileChangeResult;
 }

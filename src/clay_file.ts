@@ -6,7 +6,10 @@ import type { ClayFile, ClayModelEntry } from './types/clay-file';
 
 const emptyIndex: ClayFile = { models: [] };
 
-const newModelEntry = (modelPath: string, outputPath?: string): ClayModelEntry => ({
+const newModelEntry = (
+  modelPath: string,
+  outputPath?: string
+): ClayModelEntry => ({
   path: modelPath,
   output: outputPath || '',
   generated_files: {},
@@ -16,7 +19,9 @@ const newModelEntry = (modelPath: string, outputPath?: string): ClayModelEntry =
   load: () => ({}),
 });
 
-const gitMergeAcceptAllIncomingChanges = (fileContent: Buffer | null): ClayFile | null => {
+const gitMergeAcceptAllIncomingChanges = (
+  fileContent: Buffer | null
+): ClayFile | null => {
   if (!fileContent) return null;
   const mergeTagRegex =
     /<<<<<<< HEAD([\s\S]*?)=======([\s\S]*?)>>>>>>> ([^\n]+)/g;
@@ -34,9 +39,13 @@ export function load(directory: string): ClayFileManager {
   const filePath = path.join(directory, '.clay');
   const indexExists = fs.existsSync(filePath);
   const fileContent = indexExists ? fs.readFileSync(filePath) : null;
-  const data: ClayFile = gitMergeAcceptAllIncomingChanges(fileContent) || emptyIndex;
+  const data: ClayFile =
+    gitMergeAcceptAllIncomingChanges(fileContent) || emptyIndex;
 
-  function getModelIndex(modelPath: string, outputPath?: string): ClayModelEntry {
+  function getModelIndex(
+    modelPath: string,
+    outputPath?: string
+  ): ClayModelEntry {
     const resolvedOutput = outputPath || '';
     let model = _.find(
       data.models,
@@ -46,23 +55,24 @@ export function load(directory: string): ClayFileManager {
       model = newModelEntry(modelPath, resolvedOutput);
       data.models.push(model);
     }
-    
+
     function getFileCheckSum(file: string): string | null {
       return _.get(model, "generated_files['" + file + "'].md5", null);
     }
-    
+
     function setFileCheckSum(file: string, md5: string): void {
       const date = new Date().toISOString();
       _.set(model!, "generated_files['" + file + "'].md5", md5);
       _.set(model!, "generated_files['" + file + "'].date", date);
       model!.last_generated = date;
     }
-    
+
     model.setFileCheckSum = setFileCheckSum;
     model.getFileCheckSum = getFileCheckSum;
-    model.delFileCheckSum = (file: string) => delete model!.generated_files[file];
+    model.delFileCheckSum = (file: string) =>
+      delete model!.generated_files[file];
     model.load = () => require('./model').load(modelPath);
-    
+
     return model;
   }
 

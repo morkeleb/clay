@@ -34,7 +34,10 @@ export type HandlebarsHelper = (...args: any[]) => any;
 /**
  * Formatter function signature
  */
-export type FormatterFunction = (content: string, filePath: string) => string | Promise<string>;
+export type FormatterFunction = (
+  content: string,
+  filePath: string
+) => string | Promise<string>;
 
 /**
  * Registered formatter interface

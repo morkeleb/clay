@@ -403,7 +403,7 @@ export async function addGenerator(
       ui.info('1. Provide a GitHub repository URL');
       ui.info('2. Install it globally with npm/yarn');
       ui.info(
-        '3. Use \'clay generator list-available\' to see available generators'
+        "3. Use 'clay generator list-available' to see available generators"
       );
       return;
     }
@@ -454,10 +454,12 @@ export async function addGenerator(
     }
 
     // Check if generator is already in the model
-    const alreadyExists = modelData.generators.some((gen: string | { generator: string }) => {
-      const existingName = typeof gen === 'string' ? gen : gen.generator;
-      return existingName === generatorName || existingName === generatorPath;
-    });
+    const alreadyExists = modelData.generators.some(
+      (gen: string | { generator: string }) => {
+        const existingName = typeof gen === 'string' ? gen : gen.generator;
+        return existingName === generatorName || existingName === generatorPath;
+      }
+    );
 
     if (alreadyExists) {
       ui.warn(
@@ -560,13 +562,15 @@ export async function deleteGenerator(
       const modelData = require(modelPath);
 
       if (modelData.generators) {
-        modelData.generators = modelData.generators.filter((gen: string | { generator: string }) => {
-          const genName = typeof gen === 'string' ? gen : gen.generator;
-          return (
-            genName !== selectedGenerator!.name &&
-            !genName.endsWith(`/${selectedGenerator!.name}`)
-          );
-        });
+        modelData.generators = modelData.generators.filter(
+          (gen: string | { generator: string }) => {
+            const genName = typeof gen === 'string' ? gen : gen.generator;
+            return (
+              genName !== selectedGenerator!.name &&
+              !genName.endsWith(`/${selectedGenerator!.name}`)
+            );
+          }
+        );
 
         fs.writeFileSync(modelPath, JSON.stringify(modelData, null, 2));
         ui.info(

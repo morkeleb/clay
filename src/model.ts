@@ -10,20 +10,23 @@ function executeMixins(model: ClayModel): void {
   if (!model.mixins || model.mixins.length === 0) return;
 
   // Build a map of mixin functions
-  const mixins: Record<string, Function> = model.mixins.reduce((map, obj: MixinDefinition) => {
-    if (typeof obj.function === 'string') {
-      // eslint-disable-next-line no-eval
-      map[obj.name] = eval(obj.function);
-    } else {
-      map[obj.name] = obj.function;
-    }
-    return map;
-  }, {} as Record<string, Function>);
+  const mixins: Record<string, Function> = model.mixins.reduce(
+    (map, obj: MixinDefinition) => {
+      if (typeof obj.function === 'string') {
+        // eslint-disable-next-line no-eval
+        map[obj.name] = eval(obj.function);
+      } else {
+        map[obj.name] = obj.function;
+      }
+      return map;
+    },
+    {} as Record<string, Function>
+  );
 
   // Recursively check and apply mixins
   const check = (m: any): void => {
     if (m === null || m === undefined) return;
-    
+
     if (Object.prototype.hasOwnProperty.call(m, 'mixin')) {
       const mixinKeys = m.mixin as string[];
       mixinKeys.forEach((mixin_key) => {
@@ -70,11 +73,13 @@ function executeMixins(model: ClayModel): void {
 function executeIncludes(model: any, modelPath: string): void {
   const check = (m: any): void => {
     if (m === null || m === undefined) return;
-    
+
     if (Object.prototype.hasOwnProperty.call(m, 'include')) {
-      const includePath = path.resolve(path.join(path.dirname(modelPath), m.include));
+      const includePath = path.resolve(
+        path.join(path.dirname(modelPath), m.include)
+      );
       const includeData = require(includePath);
-      
+
       for (const key in includeData) {
         if (Object.prototype.hasOwnProperty.call(includeData, key)) {
           m[key] = includeData[key];
@@ -114,16 +119,16 @@ function executeIncludes(model: any, modelPath: string): void {
 /**
  * Load a Clay model from a file path
  * Processes includes and mixins
- * 
+ *
  * @param modelPath - Path to the model JSON file
  * @returns The loaded and processed model
  */
 export function load(modelPath: string): ClayModel {
   const resolvedPath = path.resolve(modelPath);
   const model = requireNew(resolvedPath) as ClayModel;
-  
+
   executeIncludes(model, modelPath);
   executeMixins(model);
-  
+
   return model;
 }

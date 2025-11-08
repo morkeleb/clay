@@ -3,7 +3,7 @@ import path from 'path';
 /**
  * Require a module and clear it from the cache first
  * This ensures you always get a fresh copy of the module
- * 
+ *
  * @param modulePath - Path to the module to require
  * @returns The required module
  */

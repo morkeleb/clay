@@ -10,7 +10,6 @@
     "declaration": true,
     "declarationMap": true,
     
-    // Strict Type-Checking Options
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -20,30 +19,28 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     
-    // Additional Checks
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     
-    // Module Resolution Options
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
     
-    // Advanced Options
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
   "include": [
     "src/**/*",
-    "index.ts"
+    "index.ts",
+    "test/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "test",
-    "coverage"
+    "coverage",
+    "test/samples"
   ]
 }

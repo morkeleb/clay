@@ -68,9 +68,7 @@ function resolve_generator(
   return requireNew('./generator').load(generator_path[0], output, indexFile);
 }
 
-const generateModels = async (
-  modelsToExecute: ModelIndex[]
-): Promise<void> => {
+const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
   await Promise.all(
     modelsToExecute.map(async (modelIndex) => {
       const model = modelIndex.load();

@@ -15,7 +15,7 @@ function recursive_parents(
   cleanModelClone: any
 ): void {
   if (!element) return;
-  
+
   element.value['clay_json_key'] = jsonpath[jsonpath.length - 1];
   element['clay_json_key'] = element.value['clay_json_key'];
 
@@ -25,7 +25,7 @@ function recursive_parents(
   let parent_path: string;
   let parent: JsonPathNode[];
   let have_result: any;
-  
+
   do {
     jsonpath.pop();
     parent_path = jp.stringify(jsonpath);
@@ -33,7 +33,7 @@ function recursive_parents(
     have_result =
       parent.length !== 0 && !Array.isArray(parent[0].value) && parent[0].value;
   } while (!have_result);
-  
+
   if (parent[0]) {
     if (jsonpath.length !== 1) {
       recursive_parents(model, parent[0].path, parent[0], cleanModelClone);
@@ -51,11 +51,11 @@ export function select(model: any, jsonpath: string): any[] {
 
     const result = jp.nodes(model, jsonpath) as JsonPathNode[];
     result.forEach((r) => recursive_parents(model, r.path, r, cleanModelClone));
-    
+
     if (result.length === 0) {
       ui.warn('No entries found for jsonpath', jsonpath);
     }
-    
+
     return result.map((f) => f.value);
   } catch (e) {
     ui.critical('Jsonpath not parseable', jsonpath);
