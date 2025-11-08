@@ -1,0 +1,27 @@
+# Source files (TypeScript)
+src/
+index.ts
+tsconfig.json
+*.ts
+!*.d.ts
+
+# Development files
+.gitignore
+.git/
+.vscode/
+.idea/
+
+# Tests
+test/
+coverage/
+.nyc_output/
+
+# Documentation (these are included via files field)
+*.md
+!README.md
+
+# Misc
+tmp/
+.clay
+generators/
+TYPESCRIPT_MIGRATION.md

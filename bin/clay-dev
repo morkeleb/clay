@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# Determine the directory where this script lives
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+# Check if we're in development mode (TypeScript source exists)
+if [ -f "$PROJECT_ROOT/index.ts" ]; then
+  # Development mode: use ts-node
+  exec node --require ts-node/register --require tsconfig-paths/register "$PROJECT_ROOT/index.ts" "$@"
+else
+  # Production mode: use compiled JavaScript
+  exec node "$PROJECT_ROOT/dist/index.js" "$@"
+fi

@@ -2,14 +2,25 @@
   "name": "clay-generator",
   "version": "0.2.9",
   "description": "a model and convention based source code generator",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "dev": "ts-node index.ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build && npm test",
     "test": "mocha",
     "test:watch": "mocha --watch"
   },
   "bin": {
-    "clay": "index.js"
+    "clay": "bin/clay-dev"
   },
+  "files": [
+    "dist/",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/morkeleb/clay.git"
@@ -48,6 +59,8 @@
     "mocha": "^8.3.2",
     "mock-require": "^3.0.3",
     "sinon": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   }
 }
