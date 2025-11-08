@@ -11,11 +11,15 @@ done
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Check if we're in development mode (TypeScript source exists)
-if [ -f "$PROJECT_ROOT/index.ts" ]; then
-  # Development mode: use ts-node
+# Prefer compiled version if it exists, otherwise try ts-node
+if [ -f "$PROJECT_ROOT/dist/index.js" ]; then
+  # Production mode or built dev: use compiled JavaScript
+  exec node "$PROJECT_ROOT/dist/index.js" "$@"
+elif [ -f "$PROJECT_ROOT/index.ts" ] && [ -f "$PROJECT_ROOT/node_modules/ts-node/register/index.js" ]; then
+  # Development mode with ts-node available: use ts-node
   exec node --require ts-node/register --require tsconfig-paths/register "$PROJECT_ROOT/index.ts" "$@"
 else
-  # Production mode: use compiled JavaScript
-  exec node "$PROJECT_ROOT/dist/index.js" "$@"
+  echo "Error: Neither dist/index.js nor TypeScript source with ts-node found"
+  echo "Run 'npm run build' to compile TypeScript"
+  exit 1
 fi
