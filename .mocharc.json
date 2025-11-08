@@ -9,5 +9,6 @@
   "ui": "bdd",
   "watch-files": ["src/**/*.js", "src/**/*.ts", "test/**/*.js", "test/**/*.ts"],
   "ignore": ["test/samples/**/*"],
-  "spec": ["test/**/*.test.ts"]
+  "spec": ["test/**/*.test.ts"],
+  "exit": true
 }
