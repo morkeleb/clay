@@ -29,6 +29,7 @@ export interface GeneratorStepCommand {
   runCommand: string;
   select?: string;
   npxCommand?: boolean;
+  verbose?: boolean;
 }
 
 /**
