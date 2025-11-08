@@ -3,9 +3,12 @@ import Handlebars from 'handlebars';
 import jp from 'jsonpath';
 import fs from 'fs';
 import path from 'path';
+// @ts-ignore - No type definitions available
 import groupBy from 'handlebars-group-by';
+// @ts-ignore - No type definitions available
 import lobars from 'lobars';
 import lodash from 'lodash';
+// @ts-ignore - No type definitions available
 import lodashInflection from 'lodash-inflection';
 
 // Extend lodash with inflection methods

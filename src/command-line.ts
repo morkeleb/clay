@@ -14,10 +14,20 @@ import type { DecoratedGenerator } from './types/generator';
 const commander = new Command();
 
 // Read version from package.json
-// In production (compiled), package.json is at ../package.json from dist/src/
-// In development (ts-node), package.json is at ../package.json from src/
-const packageJsonPath = path.join(__dirname, '../../package.json');
-const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+// Use a robust method to find package.json by searching up the directory tree
+function findPackageJson(): any {
+  let currentDir = __dirname;
+  while (currentDir !== path.parse(currentDir).root) {
+    const packagePath = path.join(currentDir, 'package.json');
+    if (fs.existsSync(packagePath)) {
+      return JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  throw new Error('Could not find package.json');
+}
+
+const packageJson = findPackageJson();
 
 commander.version(packageJson.version);
 

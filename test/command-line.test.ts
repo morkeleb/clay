@@ -33,7 +33,7 @@ describe('the command line interface', () => {
 
   describe('the generate command', () => {
     it('will generate using a specified model', async () => {
-      const cmdln = require('../src/command-line').default;
+      const cmdln = (await import('../src/command-line')).default;
 
       const result = cmdln.parse([
         'node',
@@ -43,7 +43,8 @@ describe('the command line interface', () => {
         'tmp/output',
       ]);
 
-      await Promise.all(result._actionResults);
+      // Wait for async actions to complete
+      await Promise.all((result as any)._actionResults || []);
 
       expect(
         fs.existsSync('./tmp/output/order.txt'),
@@ -52,7 +53,7 @@ describe('the command line interface', () => {
     });
 
     it('will throw exceptions if generator not found', async () => {
-      const cmdln = require('../src/command-line').default;
+      const cmdln = (await import('../src/command-line')).default;
 
       const args = [
         'node',
@@ -65,7 +66,8 @@ describe('the command line interface', () => {
       const result = cmdln.parse(args);
       let run = false;
       try {
-        await result._actionResults[1];
+        const actionResults = (result as any)._actionResults || [];
+        await actionResults[1];
         run = true;
       } catch (e) {
         expect(e).to.match(/.*generator not found.*/g);
@@ -74,7 +76,7 @@ describe('the command line interface', () => {
     });
 
     it('will supply the generator with a specified output if specified', async () => {
-      const cmdln = require('../src/command-line').default;
+      const cmdln = (await import('../src/command-line')).default;
 
       const result = cmdln.parse([
         'node',
@@ -84,7 +86,8 @@ describe('the command line interface', () => {
         'tmp/output',
       ]);
 
-      await result._actionResults[2];
+      const actionResults = (result as any)._actionResults || [];
+      await actionResults[2];
       await sleep(1);
       expect(
         fs.existsSync('./tmp/output/otheroutput/order.txt'),
@@ -146,8 +149,8 @@ describe('the command line interface', () => {
       }
     });
 
-    it('should create a generator.json file when initializing a generator', () => {
-      const cmdln = require('../src/command-line').default;
+    it('should create a generator.json file when initializing a generator', async () => {
+      const cmdln = (await import('../src/command-line')).default;
       const generatorName = 'myOwnGenerator';
       const generatorPath = path.join('clay', 'generators', generatorName);
       const generatorFilePath = path.join(generatorPath, 'generator.json');
