@@ -24,6 +24,7 @@
     "fs-extra": "^9.1.0",
     "handlebars": "^4.7.7",
     "handlebars-group-by": "https://github.com/jonasalfthan/handlebars-group-by",
+    "inquirer": "^8.2.6",
     "jsonpath": "^1.1.1",
     "lobars": "^1.2.0",
     "lodash": "^4.17.21",

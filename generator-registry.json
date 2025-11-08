@@ -1,0 +1,49 @@
+{
+  "name": "Clay Generator Registry",
+  "description": "A registry of known Clay generators available for installation",
+  "version": "1.0.0",
+  "generators": {
+    "clay-model-documentation": {
+      "name": "Clay Model Documentation",
+      "description": "Generates documentation for Clay models",
+      "repository": "https://github.com/morkeleb/clay-model-documentation",
+      "tags": ["documentation", "markdown"],
+      "author": "morkeleb"
+    },
+    "clay-java-entities": {
+      "name": "Java Entity Generator",
+      "description": "Generates Java entity classes from Clay models",
+      "repository": "https://github.com/morkeleb/clay-java-entities",
+      "tags": ["java", "entities", "jpa"],
+      "author": "morkeleb"
+    },
+    "clay-typescript-interfaces": {
+      "name": "TypeScript Interface Generator",
+      "description": "Generates TypeScript interfaces and types from Clay models",
+      "repository": "https://github.com/morkeleb/clay-typescript-interfaces",
+      "tags": ["typescript", "interfaces", "types"],
+      "author": "morkeleb"
+    },
+    "clay-react-components": {
+      "name": "React Component Generator",
+      "description": "Generates React components with forms and displays from Clay models",
+      "repository": "https://github.com/morkeleb/clay-react-components",
+      "tags": ["react", "components", "forms"],
+      "author": "morkeleb"
+    },
+    "clay-sql-schema": {
+      "name": "SQL Schema Generator",
+      "description": "Generates SQL DDL statements for database schemas from Clay models",
+      "repository": "https://github.com/morkeleb/clay-sql-schema",
+      "tags": ["sql", "database", "schema"],
+      "author": "morkeleb"
+    },
+    "clay-api-routes": {
+      "name": "API Routes Generator",
+      "description": "Generates REST API routes and controllers from Clay models",
+      "repository": "https://github.com/morkeleb/clay-api-routes",
+      "tags": ["api", "rest", "routes", "express"],
+      "author": "morkeleb"
+    }
+  }
+}
