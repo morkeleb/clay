@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+/**
+ * Clay MCP Server Executable
+ *
+ * This script starts the Clay MCP (Model Context Protocol) server.
+ * It can be run globally after installing clay-generator.
+ */
+
+const path = require('path');
+const { spawn } = require('child_process');
+
+// Determine if we're in development (source files exist) or production (dist files)
+const isDev = require('fs').existsSync(path.join(__dirname, '../mcp/index.ts'));
+
+if (isDev) {
+  // Development mode - use tsx for TypeScript support
+  console.error('Starting Clay MCP server in development mode...');
+  const mcpPath = path.join(__dirname, '../mcp/index.ts');
+
+  // Try tsx first (better ESM support), fall back to requiring build
+  const tsxPath = path.join(__dirname, '../mcp/node_modules/.bin/tsx');
+  const hasTsx = require('fs').existsSync(tsxPath);
+
+  if (hasTsx) {
+    const tsxProcess = spawn(tsxPath, [mcpPath], {
+      stdio: 'inherit',
+      shell: false,
+    });
+
+    tsxProcess.on('exit', (code) => {
+      process.exit(code || 0);
+    });
+  } else {
+    console.error('ERROR: Development dependencies not installed.');
+    console.error('Please run: cd mcp && npm install');
+    console.error('Or build the MCP server: cd mcp && npm run build');
+    process.exit(1);
+  }
+} else {
+  // Production mode - use compiled JavaScript
+  const mcpPath = path.join(__dirname, '../mcp/dist/index.js');
+
+  if (!require('fs').existsSync(mcpPath)) {
+    console.error('ERROR: Clay MCP server not found.');
+    console.error('Expected at:', mcpPath);
+    console.error('Please ensure clay-generator is properly installed.');
+    process.exit(1);
+  }
+
+  require(mcpPath);
+}

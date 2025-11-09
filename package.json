@@ -4,7 +4,7 @@
   "description": "a model and convention based source code generator",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cd mcp && npm install && npm run build && cd ..",
     "build:watch": "tsc --watch",
     "dev": "ts-node index.ts",
     "prepare": "npm run build",
@@ -17,11 +17,14 @@
     "format:check": "prettier --check 'src/**/*.ts' 'test/**/*.ts' 'index.ts'"
   },
   "bin": {
-    "clay": "bin/clay-dev"
+    "clay": "bin/clay-dev",
+    "clay-mcp": "bin/clay-mcp"
   },
   "files": [
     "dist/",
     "bin/",
+    "mcp/dist/",
+    "mcp/package.json",
     "README.md",
     "LICENSE"
   ],
