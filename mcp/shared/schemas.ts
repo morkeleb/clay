@@ -267,3 +267,52 @@ export const ListHelpersOutputSchema = z.object({
 
 export type ListHelpersInput = z.infer<typeof ListHelpersInputSchema>;
 export type ListHelpersOutput = z.infer<typeof ListHelpersOutputSchema>;
+
+// ============================================================================
+// clay_explain_concepts schemas
+// ============================================================================
+
+export const ExplainConceptsInputSchema = z
+  .object({
+    topic: z
+      .enum([
+        'overview',
+        'models',
+        'generators',
+        'templates',
+        'context-variables',
+        'jsonpath',
+        'mixins',
+        'all',
+      ])
+      .optional()
+      .describe('Specific topic to explain (defaults to overview)'),
+    include_examples: z
+      .boolean()
+      .default(true)
+      .describe('Include code examples'),
+  })
+  .describe('Get comprehensive Clay documentation and best practices');
+
+export const ExplainConceptsOutputSchema = z.object({
+  success: z.boolean(),
+  topic: z.string().optional(),
+  title: z.string().optional(),
+  content: z.string().optional(),
+  concepts: z
+    .array(
+      z.object({
+        topic: z.string(),
+        title: z.string(),
+        content: z.string(),
+      })
+    )
+    .optional(),
+  available_topics: z.array(z.string()),
+  related_tools: z.array(z.string()).optional(),
+  note: z.string().optional(),
+  message: z.string().optional(),
+});
+
+export type ExplainConceptsInput = z.infer<typeof ExplainConceptsInputSchema>;
+export type ExplainConceptsOutput = z.infer<typeof ExplainConceptsOutputSchema>;

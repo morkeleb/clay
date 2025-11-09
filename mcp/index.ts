@@ -18,6 +18,7 @@ import { initTool } from './tools/init.js';
 import { listGeneratorsTool } from './tools/list-generators.js';
 import { getModelStructureTool } from './tools/get-model-structure.js';
 import { listHelpersTool } from './tools/list-helpers.js';
+import { explainConceptsTool } from './tools/explain-concepts.js';
 
 // Import utilities
 import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
@@ -227,6 +228,36 @@ class ClayMCPServer {
             },
           },
         },
+        {
+          name: 'clay_explain_concepts',
+          description:
+            'Get comprehensive Clay documentation explaining how to create models, generators, and templates. Essential for understanding Clay capabilities including hidden features like clay_key, clay_parent, and other template context variables.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              topic: {
+                type: 'string',
+                enum: [
+                  'overview',
+                  'models',
+                  'generators',
+                  'templates',
+                  'context-variables',
+                  'jsonpath',
+                  'mixins',
+                  'all',
+                ],
+                description:
+                  'Specific topic to explain: overview (Clay basics), models (creating models), generators (creating generators), templates (writing templates), context-variables (clay_key, clay_parent, etc.), jsonpath (selectors), mixins (model transformations), or all (everything)',
+              },
+              include_examples: {
+                type: 'boolean',
+                default: true,
+                description: 'Include code examples in explanations',
+              },
+            },
+          },
+        },
       ],
     }));
 
@@ -250,6 +281,8 @@ class ClayMCPServer {
             return await getModelStructureTool(args || {});
           case 'clay_list_helpers':
             return await listHelpersTool(args || {});
+          case 'clay_explain_concepts':
+            return await explainConceptsTool(args || {});
           default:
             throw new Error(`Unknown tool: ${name}`);
         }

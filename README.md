@@ -1282,6 +1282,7 @@ The MCP server acts as a bridge between AI assistants and Clay, providing:
 5. **`clay_list_generators`** - List all generators in project
 6. **`clay_get_model_structure`** - Inspect model structure and metadata
 7. **`clay_list_helpers`** - List all available Handlebars helpers with syntax and examples
+8. **`clay_explain_concepts`** - Get comprehensive documentation on creating models, generators, and templates (includes hidden features like clay_key, clay_parent context variables)
 
 ### Quick Start
 
@@ -1393,12 +1394,31 @@ Claude calls: `clay_list_helpers({ include_examples: true })`
 
 Claude calls: `clay_list_helpers({ category: "string", include_examples: true })`
 
+**Learn how to create generators:**
+
+> "Explain how to create a Clay generator"
+
+Claude calls: `clay_explain_concepts({ topic: "generators", include_examples: true })`
+
+**Understand template context variables:**
+
+> "What are clay_key and clay_parent? How do I use them?"
+
+Claude calls: `clay_explain_concepts({ topic: "context-variables" })`
+
+**Get complete Clay documentation:**
+
+> "Show me everything about Clay"
+
+Claude calls: `clay_explain_concepts({ topic: "all" })`
+
 ### Benefits
 
 ✅ **No more hallucinated parameters** - AI uses exact tool schemas  
 ✅ **Context-aware** - Works with your project's .clay file automatically  
 ✅ **Reliable** - Type-safe validation before execution  
 ✅ **Efficient** - Regenerate all models with zero parameters
+✅ **Self-documenting** - AI can learn how to create generators and models on-demand
 
 ### Documentation
 
