@@ -17,10 +17,14 @@ export async function cleanTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: validation.error,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: validation.error,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -35,9 +39,13 @@ export async function cleanTool(args: unknown) {
 
     const workingDir = context.workingDirectory;
 
-    const commandArgs = input.model_path && input.output_path
-      ? [resolvePath(workingDir, input.model_path), resolvePath(workingDir, input.output_path)]
-      : [];
+    const commandArgs =
+      input.model_path && input.output_path
+        ? [
+            resolvePath(workingDir, input.model_path),
+            resolvePath(workingDir, input.output_path),
+          ]
+        : [];
 
     const result = executeClayCommand('clean', commandArgs, workingDir);
 
@@ -46,31 +54,41 @@ export async function cleanTool(args: unknown) {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              success: false,
-              message: `Failed to clean: ${result.error}`,
-              output: result.output,
-            }, null, 2),
+            text: JSON.stringify(
+              {
+                success: false,
+                message: `Failed to clean: ${result.error}`,
+                output: result.output,
+              },
+              null,
+              2
+            ),
           },
         ],
       };
     }
 
-    const clayData = context.hasClayFile ? readClayFile(context.clayFilePath) : null;
+    const clayData = context.hasClayFile
+      ? readClayFile(context.clayFilePath)
+      : null;
     const modelsCount = input.model_path ? 1 : (clayData?.models.length ?? 0);
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: true,
-            message: 'Successfully cleaned generated files',
-            models_cleaned: modelsCount,
-            total_files_removed: 0, // Would need to parse output
-            details: [],
-            raw_output: result.output,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: true,
+              message: 'Successfully cleaned generated files',
+              models_cleaned: modelsCount,
+              total_files_removed: 0, // Would need to parse output
+              details: [],
+              raw_output: result.output,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -80,10 +98,14 @@ export async function cleanTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: `Error: ${errorMessage}`,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: `Error: ${errorMessage}`,
+            },
+            null,
+            2
+          ),
         },
       ],
     };

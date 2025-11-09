@@ -40,5 +40,5 @@ export type ReturnType<T extends (...args: any) => any> = T extends (
   ...args: any
 ) => infer R
   ? R
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  : any;
+  : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any;

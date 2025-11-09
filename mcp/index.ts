@@ -17,6 +17,7 @@ import { testPathTool } from './tools/test-path.js';
 import { initTool } from './tools/init.js';
 import { listGeneratorsTool } from './tools/list-generators.js';
 import { getModelStructureTool } from './tools/get-model-structure.js';
+import { listHelpersTool } from './tools/list-helpers.js';
 
 // Import utilities
 import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
@@ -26,7 +27,7 @@ import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
  */
 class ClayMCPServer {
   private server: Server;
-  
+
   constructor() {
     this.server = new Server(
       {
@@ -53,38 +54,45 @@ class ClayMCPServer {
       tools: [
         {
           name: 'clay_generate',
-          description: 'Generate code from Clay models. Call without parameters to regenerate all models tracked in .clay file, or specify model_path and output_path for a specific model.',
+          description:
+            'Generate code from Clay models. Call without parameters to regenerate all models tracked in .clay file, or specify model_path and output_path for a specific model.',
           inputSchema: {
             type: 'object',
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory containing .clay file (defaults to current working directory)',
+                description:
+                  'Directory containing .clay file (defaults to current working directory)',
               },
               model_path: {
                 type: 'string',
-                description: 'Path to model.json file (optional - if omitted, all models in .clay are regenerated)',
+                description:
+                  'Path to model.json file (optional - if omitted, all models in .clay are regenerated)',
               },
               output_path: {
                 type: 'string',
-                description: 'Output directory for generated files (required if model_path is specified)',
+                description:
+                  'Output directory for generated files (required if model_path is specified)',
               },
             },
           },
         },
         {
           name: 'clay_clean',
-          description: 'Clean up generated files tracked in the .clay file. Removes all tracked files or files from a specific model.',
+          description:
+            'Clean up generated files tracked in the .clay file. Removes all tracked files or files from a specific model.',
           inputSchema: {
             type: 'object',
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory containing .clay file (defaults to current working directory)',
+                description:
+                  'Directory containing .clay file (defaults to current working directory)',
               },
               model_path: {
                 type: 'string',
-                description: 'Optional: clean only files from this specific model',
+                description:
+                  'Optional: clean only files from this specific model',
               },
               output_path: {
                 type: 'string',
@@ -95,13 +103,15 @@ class ClayMCPServer {
         },
         {
           name: 'clay_test_path',
-          description: 'Test JSONPath expressions against a Clay model to see what data they select.',
+          description:
+            'Test JSONPath expressions against a Clay model to see what data they select.',
           inputSchema: {
             type: 'object',
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory containing .clay file (defaults to current working directory)',
+                description:
+                  'Directory containing .clay file (defaults to current working directory)',
               },
               model_path: {
                 type: 'string',
@@ -109,7 +119,8 @@ class ClayMCPServer {
               },
               json_path: {
                 type: 'string',
-                description: 'JSONPath expression to test (e.g., "$.model.types[*].name")',
+                description:
+                  'JSONPath expression to test (e.g., "$.model.types[*].name")',
               },
             },
             required: ['model_path', 'json_path'],
@@ -117,19 +128,22 @@ class ClayMCPServer {
         },
         {
           name: 'clay_init',
-          description: 'Initialize a Clay project (create .clay file) or a new generator structure.',
+          description:
+            'Initialize a Clay project (create .clay file) or a new generator structure.',
           inputSchema: {
             type: 'object',
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory where to create .clay file or generator (defaults to current working directory)',
+                description:
+                  'Directory where to create .clay file or generator (defaults to current working directory)',
               },
               type: {
                 type: 'string',
                 enum: ['project', 'generator'],
                 default: 'project',
-                description: 'What to initialize: project creates .clay file, generator creates generator structure',
+                description:
+                  'What to initialize: project creates .clay file, generator creates generator structure',
               },
               name: {
                 type: 'string',
@@ -146,34 +160,69 @@ class ClayMCPServer {
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory containing .clay file (defaults to current working directory)',
+                description:
+                  'Directory containing .clay file (defaults to current working directory)',
               },
               show_details: {
                 type: 'boolean',
                 default: false,
-                description: 'Include detailed information about generator steps',
+                description:
+                  'Include detailed information about generator steps',
               },
             },
           },
         },
         {
           name: 'clay_get_model_structure',
-          description: 'Get the structure of Clay models in the project. Shows model metadata and optionally the full structure.',
+          description:
+            'Get the structure of Clay models in the project. Shows model metadata and optionally the full structure.',
           inputSchema: {
             type: 'object',
             properties: {
               working_directory: {
                 type: 'string',
-                description: 'Directory containing .clay file (defaults to current working directory)',
+                description:
+                  'Directory containing .clay file (defaults to current working directory)',
               },
               model_path: {
                 type: 'string',
-                description: 'Specific model to inspect (if omitted, shows all models)',
+                description:
+                  'Specific model to inspect (if omitted, shows all models)',
               },
               include_mixins: {
                 type: 'boolean',
                 default: false,
                 description: 'Execute mixins before returning model structure',
+              },
+            },
+          },
+        },
+        {
+          name: 'clay_list_helpers',
+          description:
+            'List all available Handlebars helpers for Clay templates. Helps when creating or modifying templates by showing available helpers, their syntax, and usage examples.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              category: {
+                type: 'string',
+                enum: [
+                  'string',
+                  'comparison',
+                  'logic',
+                  'iteration',
+                  'formatting',
+                  'math',
+                  'type-check',
+                  'utility',
+                ],
+                description:
+                  'Filter helpers by category (optional - returns all if not specified)',
+              },
+              include_examples: {
+                type: 'boolean',
+                default: false,
+                description: 'Include usage examples for each helper',
               },
             },
           },
@@ -199,19 +248,26 @@ class ClayMCPServer {
             return await listGeneratorsTool(args || {});
           case 'clay_get_model_structure':
             return await getModelStructureTool(args || {});
+          case 'clay_list_helpers':
+            return await listHelpersTool(args || {});
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         return {
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                success: false,
-                message: `Error executing ${name}: ${errorMessage}`,
-              }, null, 2),
+              text: JSON.stringify(
+                {
+                  success: false,
+                  message: `Error executing ${name}: ${errorMessage}`,
+                },
+                null,
+                2
+              ),
             },
           ],
         };
@@ -240,7 +296,9 @@ class ClayMCPServer {
     // Check if Clay is available
     if (!isClayAvailable()) {
       console.error('ERROR: Clay CLI is not available in PATH');
-      console.error('Please install Clay globally: npm install -g clay-generator');
+      console.error(
+        'Please install Clay globally: npm install -g clay-generator'
+      );
       process.exit(1);
     }
 

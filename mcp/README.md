@@ -8,7 +8,7 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 
 ## Features
 
-### 6 Core Tools
+### 7 Core Tools
 
 - **`clay_generate`** - Generate code from models (supports parameterless all-model regeneration)
 - **`clay_clean`** - Clean up generated files tracked in .clay
@@ -16,6 +16,7 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 - **`clay_init`** - Initialize Clay projects or generators
 - **`clay_list_generators`** - List all generators in project
 - **`clay_get_model_structure`** - Inspect model structure and metadata
+- **`clay_list_helpers`** - List all available Handlebars helpers with syntax and examples
 
 ### Key Benefits
 
@@ -23,7 +24,7 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 ✅ **Working directory context** - Automatically uses project's .clay file  
 ✅ **Input validation** - Prevents invalid parameters before execution  
 ✅ **Structured responses** - Consistent JSON output for all operations  
-✅ **Error handling** - Clear, actionable error messages  
+✅ **Error handling** - Clear, actionable error messages
 
 ## Prerequisites
 
@@ -86,7 +87,7 @@ Add the Clay MCP server:
 
 ### Step 3: Restart Claude Desktop
 
-The MCP server will now be available. Claude can see and call all 6 Clay tools.
+The MCP server will now be available. Claude can see and call all 7 Clay tools.
 
 ## Setup with Cline (VS Code Extension)
 
@@ -122,14 +123,17 @@ The Clay tools will be available in Cline within your workspace.
 ### Example 1: Regenerate All Models
 
 **You say to Claude:**
+
 > "Regenerate all my Clay models"
 
 **Claude calls:**
+
 ```json
 clay_generate({})
 ```
 
 **Result:**
+
 ```json
 {
   "success": true,
@@ -142,9 +146,11 @@ clay_generate({})
 ### Example 2: Generate Specific Model
 
 **You:**
+
 > "Generate code for the users model"
 
 **Claude:**
+
 ```json
 clay_generate({
   "model_path": "./clay/users-model.json",
@@ -155,9 +161,11 @@ clay_generate({
 ### Example 3: Test JSONPath
 
 **You:**
+
 > "Show me all array-type parameters in my model"
 
 **Claude:**
+
 ```json
 clay_test_path({
   "model_path": "./clay/model.json",
@@ -168,9 +176,11 @@ clay_test_path({
 ### Example 4: Initialize New Project
 
 **You:**
+
 > "Set up a new Clay project"
 
 **Claude:**
+
 ```json
 clay_init({
   "type": "project"
@@ -184,11 +194,13 @@ clay_init({
 Generate code from Clay models.
 
 **Parameters:**
+
 - `working_directory` (optional): Directory containing .clay file
 - `model_path` (optional): Specific model to generate
 - `output_path` (optional): Output directory (required if model_path given)
 
 **Behavior:**
+
 - No parameters: Regenerates ALL models from .clay file
 - With model_path: Generates that specific model
 
@@ -197,6 +209,7 @@ Generate code from Clay models.
 Clean up generated files.
 
 **Parameters:**
+
 - `working_directory` (optional): Directory containing .clay file
 - `model_path` (optional): Clean only this model's files
 - `output_path` (optional): Required if model_path given
@@ -206,6 +219,7 @@ Clean up generated files.
 Test JSONPath expressions.
 
 **Parameters:**
+
 - `working_directory` (optional): Directory containing .clay file
 - `model_path` (required): Path to model.json
 - `json_path` (required): JSONPath expression to test
@@ -215,6 +229,7 @@ Test JSONPath expressions.
 Initialize Clay project or generator.
 
 **Parameters:**
+
 - `working_directory` (optional): Where to initialize
 - `type` (optional): 'project' or 'generator' (default: 'project')
 - `name` (optional): Generator name (required if type='generator')
@@ -224,6 +239,7 @@ Initialize Clay project or generator.
 List all generators in project.
 
 **Parameters:**
+
 - `working_directory` (optional): Directory containing .clay file
 - `show_details` (optional): Include generator step details (default: false)
 
@@ -232,9 +248,32 @@ List all generators in project.
 Get model structure and metadata.
 
 **Parameters:**
+
 - `working_directory` (optional): Directory containing .clay file
 - `model_path` (optional): Specific model to inspect
 - `include_mixins` (optional): Execute mixins first (default: false)
+
+### `clay_list_helpers`
+
+List all available Handlebars helpers for templates. Essential for LLMs when creating or modifying Clay templates.
+
+**Parameters:**
+
+- `category` (optional): Filter by category (string, comparison, logic, iteration, formatting, math, type-check, utility)
+- `include_examples` (optional): Include usage examples (default: false)
+
+**Returns:**
+
+- Complete list of 47+ Handlebars helpers
+- Syntax and descriptions for each helper
+- Available categories
+- Clay-specific context variables (clay_model, clay_parent, clay_key, clay_json_key)
+
+**Example Use Cases:**
+
+- "What helpers can I use for string manipulation?"
+- "Show me all comparison helpers with examples"
+- "List all available helpers in the logic category"
 
 ## Development
 
@@ -255,6 +294,27 @@ npm run build:watch
 ```bash
 npm run dev
 ```
+
+### Testing
+
+The MCP server is tested as part of Clay's test suite. Tests verify:
+
+- ✅ Server starts without errors
+- ✅ Responds to initialization requests
+- ✅ Lists all 7 tools correctly
+- ✅ Handles JSON-RPC protocol correctly
+
+Run tests from the main Clay directory:
+
+```bash
+# Run all tests including MCP server tests
+npm test
+
+# Run only MCP server tests
+npm test -- --grep "MCP Server"
+```
+
+The tests use the `clay-mcp` binary in development mode, ensuring both source and compiled versions work correctly.
 
 ## Troubleshooting
 
@@ -295,6 +355,7 @@ The `clay watch` command is intentionally **not included** in the MCP server bec
 - LLMs can instruct users to run `clay watch` manually when needed
 
 **To use watch mode:**
+
 - Run `clay watch` in a separate terminal
 - Or create a VS Code task for it
 
@@ -314,7 +375,8 @@ mcp/
     ├── test-path.ts
     ├── init.ts
     ├── list-generators.ts
-    └── get-model-structure.ts
+    ├── get-model-structure.ts
+    └── list-helpers.ts
 ```
 
 ## License

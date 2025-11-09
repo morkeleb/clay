@@ -13,10 +13,14 @@ export async function getModelStructureTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: validation.error,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: validation.error,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -40,18 +44,22 @@ export async function getModelStructureTool(args: unknown) {
 
     // If specific model requested, filter
     const filteredModels = input.model_path
-      ? models.filter(m => m.path === input.model_path)
+      ? models.filter((m) => m.path === input.model_path)
       : models;
 
     return {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: true,
-            models: filteredModels,
-            total_models: clayData.models.length,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: true,
+              models: filteredModels,
+              total_models: clayData.models.length,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -61,10 +69,14 @@ export async function getModelStructureTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: `Error: ${errorMessage}`,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: `Error: ${errorMessage}`,
+            },
+            null,
+            2
+          ),
         },
       ],
     };

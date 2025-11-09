@@ -21,7 +21,7 @@ export function executeClayCommand(
   try {
     const argString = args.join(' ');
     const fullCommand = `clay ${command} ${argString}`.trim();
-    
+
     const output = execSync(fullCommand, {
       cwd: workingDirectory,
       encoding: 'utf8',

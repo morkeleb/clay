@@ -14,7 +14,9 @@ export interface WorkspaceContext {
  * Get the workspace context for a given directory
  */
 export function getWorkspaceContext(workingDir?: string): WorkspaceContext {
-  const workingDirectory = workingDir ? path.resolve(workingDir) : process.cwd();
+  const workingDirectory = workingDir
+    ? path.resolve(workingDir)
+    : process.cwd();
   const clayFilePath = path.join(workingDirectory, '.clay');
   const hasClayFile = fs.existsSync(clayFilePath);
 
@@ -30,14 +32,14 @@ export function getWorkspaceContext(workingDir?: string): WorkspaceContext {
  */
 export function requireClayFile(workingDir?: string): WorkspaceContext {
   const context = getWorkspaceContext(workingDir);
-  
+
   if (!context.hasClayFile) {
     throw new Error(
       `.clay file not found in ${context.workingDirectory}. ` +
-      'Run clay_init to create one.'
+        'Run clay_init to create one.'
     );
   }
-  
+
   return context;
 }
 
@@ -51,7 +53,10 @@ export function resolvePath(workingDir: string, relativePath: string): string {
 /**
  * Validate that a path exists
  */
-export function validatePathExists(filePath: string, description: string): void {
+export function validatePathExists(
+  filePath: string,
+  description: string
+): void {
   if (!fs.existsSync(filePath)) {
     throw new Error(`${description} not found: ${filePath}`);
   }

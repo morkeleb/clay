@@ -3,7 +3,10 @@
  */
 import { validateInput, validateJSONPath } from '../shared/validation.js';
 import { TestPathInputSchema } from '../shared/schemas.js';
-import { getWorkspaceContext, resolvePath } from '../shared/workspace-manager.js';
+import {
+  getWorkspaceContext,
+  resolvePath,
+} from '../shared/workspace-manager.js';
 import { executeClayCommand } from '../shared/clay-wrapper.js';
 
 export async function testPathTool(args: unknown) {
@@ -13,10 +16,14 @@ export async function testPathTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: validation.error,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: validation.error,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -31,10 +38,14 @@ export async function testPathTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: `Invalid JSONPath: ${jsonPathValidation.error}`,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: `Invalid JSONPath: ${jsonPathValidation.error}`,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -56,11 +67,15 @@ export async function testPathTool(args: unknown) {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              success: false,
-              message: `Failed to test path: ${result.error}`,
-              output: result.output,
-            }, null, 2),
+            text: JSON.stringify(
+              {
+                success: false,
+                message: `Failed to test path: ${result.error}`,
+                output: result.output,
+              },
+              null,
+              2
+            ),
           },
         ],
       };
@@ -70,12 +85,16 @@ export async function testPathTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: true,
-            results: [], // Would need to parse output
-            count: 0,
-            formatted_output: result.output,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: true,
+              results: [], // Would need to parse output
+              count: 0,
+              formatted_output: result.output,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -85,10 +104,14 @@ export async function testPathTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: `Error: ${errorMessage}`,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: `Error: ${errorMessage}`,
+            },
+            null,
+            2
+          ),
         },
       ],
     };

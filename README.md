@@ -925,6 +925,82 @@ Splits a string and returns the word at the given index.
 {{splitAndUseWord 'foo-bar-baz' '-' 1}} <!-- Outputs: bar -->
 ```
 
+### 15. `group`
+
+Groups items in an array by a specified property. This is particularly useful for organizing data by categories, dates, or any other property.
+
+**Basic Usage:**
+
+```handlebars
+{{#group posts by='category'}}
+  <h2>{{value}}</h2>
+  {{#each items}}
+    <p>{{title}}: {{body}}</p>
+  {{/each}}
+{{/group}}
+```
+
+**Nested Property Grouping:**
+
+You can group by nested properties using dot notation:
+
+```handlebars
+{{#group posts by='date.year'}}
+  <h1>{{value}}</h1>
+  {{#each items}}
+    <h2>{{title}}</h2>
+    <p>{{body}}</p>
+  {{/each}}
+{{/group}}
+```
+
+**Context Variables:**
+
+Within the `{{#group}}` block, you have access to:
+
+- `value` - The grouping key (the value of the property you're grouping by)
+- `items` - Array of items in this group
+
+**Example:**
+
+Given this data:
+
+```json
+{
+  "posts": [
+    { "date": { "year": 2014 }, "title": "foo", "body": "foo bar" },
+    { "date": { "year": 2015 }, "title": "bat", "body": "bat qux" },
+    { "date": { "year": 2014 }, "title": "bar", "body": "bar baz" }
+  ]
+}
+```
+
+This template:
+
+```handlebars
+{{#group posts by='date.year'}}
+  <h1>{{value}}</h1>
+  {{#each items}}
+    <h2>{{title}}</h2>
+    <p>{{body}}</p>
+  {{/each}}
+{{/group}}
+```
+
+Produces:
+
+```html
+<h1>2014</h1>
+<h2>foo</h2>
+<p>foo bar</p>
+<h2>bar</h2>
+<p>bar baz</p>
+
+<h1>2015</h1>
+<h2>bat</h2>
+<p>bat qux</p>
+```
+
 ---
 
 These helpers can be used in any template or partial. For more advanced string manipulation, you can also use [lobars](https://github.com/zeke/lobars) and lodash helpers directly in your templates.
@@ -1119,6 +1195,163 @@ After adding the copilot instructions, you can ask Copilot to help with tasks li
 - "Help me write a JSONPath expression to select all array type parameters"
 
 This integration will make Clay development more efficient and help maintain consistency across your generated code.
+
+## AI Assistant Integration (MCP Server)
+
+Clay includes a Model Context Protocol (MCP) server that enables reliable integration with AI assistants like Claude and Cline. The MCP server provides type-safe, validated tool calls that eliminate parameter hallucination and errors.
+
+### What is the MCP Server?
+
+The MCP server acts as a bridge between AI assistants and Clay, providing:
+
+- **7 structured tools** for all Clay operations
+- **Type-safe validation** preventing invalid parameters
+- **Working directory context** - automatically uses your project's .clay file
+- **Zero-parameter operations** - call `clay_generate({})` to regenerate everything
+- **Helper discovery** - list all available Handlebars helpers for template development
+- **Clear error messages** that guide the AI to correct usage
+
+### Available Tools
+
+1. **`clay_generate`** - Generate code from models (supports parameterless all-model regeneration)
+2. **`clay_clean`** - Clean up generated files tracked in .clay
+3. **`clay_test_path`** - Test JSONPath expressions against models
+4. **`clay_init`** - Initialize Clay projects or generators
+5. **`clay_list_generators`** - List all generators in project
+6. **`clay_get_model_structure`** - Inspect model structure and metadata
+7. **`clay_list_helpers`** - List all available Handlebars helpers with syntax and examples
+
+### Quick Start
+
+#### For Claude Desktop Users
+
+1. **Install Clay globally (if not already installed):**
+
+   ```bash
+   npm install -g clay-generator
+   ```
+
+2. **Configure Claude Desktop:**
+
+   Edit your Claude config file:
+   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%/Claude/claude_desktop_config.json`
+   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+   Add:
+
+   ```json
+   {
+     "mcpServers": {
+       "clay": {
+         "command": "clay-mcp",
+         "args": []
+       }
+     }
+   }
+   ```
+
+3. **Restart Claude Desktop**
+
+#### For VS Code + GitHub Copilot Users
+
+VS Code has built-in support for MCP servers starting from version 1.102.
+
+1. **Install Clay globally (if not already installed):**
+
+   ```bash
+   npm install -g clay-generator
+   ```
+
+2. **Add MCP server configuration:**
+
+   Create or edit the workspace MCP configuration file:
+   - Use Command Palette: `MCP: Open Workspace Folder Configuration`
+   - Or create `.vscode/mcp.json` in your project
+
+   Add the following configuration:
+
+   ```json
+   {
+     "servers": {
+       "clay": {
+         "type": "stdio",
+         "command": "clay-mcp",
+         "args": []
+       }
+     }
+   }
+   ```
+
+3. **Trust and start the server:**
+   - VS Code will prompt you to trust the server when it starts
+   - The server will automatically start when you use Copilot Chat
+   - Or manually start it via Command Palette: `MCP: List Servers` → `clay` → `Start Server`
+
+4. **Use Clay tools in Copilot Chat:**
+   - Tools are automatically available in agent mode
+   - Reference tools explicitly with `#clay_generate`, `#clay_test_path`, etc.
+   - View available tools in the Chat view's Tools picker
+
+### Usage Examples
+
+**Regenerate all models:**
+
+> "Regenerate all my Clay models"
+
+Claude calls: `clay_generate({})`
+
+**Generate specific model:**
+
+> "Generate code for the users model"
+
+Claude calls: `clay_generate({ model_path: "./clay/users-model.json", output_path: "./src" })`
+
+**Test JSONPath:**
+
+> "Show me all array-type parameters"
+
+Claude calls: `clay_test_path({ model_path: "./clay/model.json", json_path: "$.model.types[*].commands[*].parameters[?(@.type=='array')]" })`
+
+**Initialize project:**
+
+> "Set up a new Clay project"
+
+Claude calls: `clay_init({ type: "project" })`
+
+**List available helpers:**
+
+> "What Handlebars helpers can I use in Clay templates?"
+
+Claude calls: `clay_list_helpers({ include_examples: true })`
+
+**Get helpers for a specific category:**
+
+> "Show me all string manipulation helpers"
+
+Claude calls: `clay_list_helpers({ category: "string", include_examples: true })`
+
+### Benefits
+
+✅ **No more hallucinated parameters** - AI uses exact tool schemas  
+✅ **Context-aware** - Works with your project's .clay file automatically  
+✅ **Reliable** - Type-safe validation before execution  
+✅ **Efficient** - Regenerate all models with zero parameters
+
+### Documentation
+
+For complete setup instructions, troubleshooting, and advanced usage:
+
+- [MCP Server README](mcp/README.md)
+- [Implementation Plan](MCP_SERVER_PLAN.md)
+
+### Why No Watch Mode in MCP?
+
+The `clay watch` command is intentionally **not included** in the MCP server because watch is a long-running background process that doesn't fit the MCP request-response model. Instead:
+
+- Run `clay watch` directly in a terminal for better control
+- Or create a VS Code task to manage the watch process
+- The AI can guide you to set this up manually
 
 ### Changes
 

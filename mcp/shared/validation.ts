@@ -11,16 +11,18 @@ export function validateInput<T>(
   input: unknown
 ): { success: true; data: T } | { success: false; error: string } {
   const result = schema.safeParse(input);
-  
+
   if (result.success) {
     return { success: true, data: result.data };
   }
-  
-  const errorMessages = result.error.errors.map(err => {
-    const path = err.path.join('.');
-    return `${path}: ${err.message}`;
-  }).join('; ');
-  
+
+  const errorMessages = result.error.errors
+    .map((err) => {
+      const path = err.path.join('.');
+      return `${path}: ${err.message}`;
+    })
+    .join('; ');
+
   return {
     success: false,
     error: `Validation failed: ${errorMessages}`,
@@ -30,7 +32,10 @@ export function validateInput<T>(
 /**
  * Create a standardized error response
  */
-export function createErrorResponse(message: string, details?: unknown): {
+export function createErrorResponse(
+  message: string,
+  details?: unknown
+): {
   success: false;
   message: string;
   details?: unknown;
@@ -39,11 +44,11 @@ export function createErrorResponse(message: string, details?: unknown): {
     success: false,
     message,
   };
-  
+
   if (details !== undefined) {
     response.details = details;
   }
-  
+
   return response;
 }
 
@@ -70,19 +75,22 @@ export function createSuccessResponse<T extends Record<string, unknown>>(
 /**
  * Validate JSONPath expression
  */
-export function validateJSONPath(jsonPath: string): { valid: boolean; error?: string } {
+export function validateJSONPath(jsonPath: string): {
+  valid: boolean;
+  error?: string;
+} {
   try {
     // Basic validation - check for common JSONPath syntax
     if (!jsonPath.startsWith('$')) {
       return { valid: false, error: 'JSONPath must start with $' };
     }
-    
+
     // More thorough validation could use a JSONPath parser
     // For now, basic checks
     if (jsonPath.includes('..') && jsonPath.includes('[')) {
       // Valid recursive descent with filter
     }
-    
+
     return { valid: true };
   } catch (error) {
     return {

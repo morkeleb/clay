@@ -13,10 +13,14 @@ export async function listGeneratorsTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: validation.error,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: validation.error,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -43,12 +47,16 @@ export async function listGeneratorsTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: true,
-            generators: [],
-            message: `Found ${clayData.models.length} models in project`,
-            raw_data: clayData,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: true,
+              generators: [],
+              message: `Found ${clayData.models.length} models in project`,
+              raw_data: clayData,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
@@ -58,10 +66,14 @@ export async function listGeneratorsTool(args: unknown) {
       content: [
         {
           type: 'text',
-          text: JSON.stringify({
-            success: false,
-            message: `Error: ${errorMessage}`,
-          }, null, 2),
+          text: JSON.stringify(
+            {
+              success: false,
+              message: `Error: ${errorMessage}`,
+            },
+            null,
+            2
+          ),
         },
       ],
     };
