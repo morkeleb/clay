@@ -1091,11 +1091,40 @@ For a full list of available helpers, see the [lodash documentation](https://lod
 
 ## GitHub Copilot Integration
 
-To enhance your development workflow with Clay, you can integrate it with GitHub Copilot by adding instructions to your project's `copilot-instructions.md` file. This will help Copilot understand Clay's concepts and assist you with model creation, template development, and generator configuration.
+GitHub Copilot can work with Clay in two ways: through the **MCP server** (recommended) or through custom instructions. The MCP server provides reliable, type-safe access to Clay operations directly within Copilot Chat.
 
-### Setting Up Copilot Instructions
+### Option 1: MCP Server Integration (Recommended)
 
-Create a `copilot-instructions.md` file in your project root and add the following content to help Copilot understand how to work with Clay:
+The Clay MCP server provides the most reliable way to work with Clay in VS Code + GitHub Copilot. See the [AI Assistant Integration (MCP Server)](#ai-assistant-integration-mcp-server) section above for complete setup instructions.
+
+**Benefits:**
+
+- ✅ Type-safe tool calls - no hallucinated parameters
+- ✅ Direct access to all Clay operations
+- ✅ Automatic validation before execution
+- ✅ Discover available Handlebars helpers on-demand
+- ✅ Test JSONPath expressions interactively
+
+**Quick Setup:**
+
+1. Install Clay globally: `npm install -g clay-generator`
+2. Create `.vscode/mcp.json` in your project:
+   ```json
+   {
+     "servers": {
+       "clay": {
+         "type": "stdio",
+         "command": "clay-mcp",
+         "args": []
+       }
+     }
+   }
+   ```
+3. Start using Clay tools in Copilot Chat with `#clay_generate`, `#clay_list_helpers`, etc.
+
+### Option 2: Custom Copilot Instructions
+
+If you prefer traditional Copilot instruction-based assistance (for model/template creation, not execution), you can add instructions to your project's `copilot-instructions.md` file:
 
 ```markdown
 # Clay Generator Instructions for GitHub Copilot
@@ -1128,6 +1157,21 @@ Clay is a template-focused code generator that uses JSON models and Handlebars t
 - Support dynamic file paths using model data
 - Include lobars helpers for string manipulation (camelCase, kebabCase, etc.)
 
+### Available Handlebars Helpers
+
+Clay provides 47+ Handlebars helpers across 8 categories:
+
+- String manipulation: pascalCase, camelCase, kebabCase, snakeCase, etc.
+- Comparison: eq, ne, lt, gt, lte, gte
+- Logic: if, and, or, switch/case, ifCond
+- Iteration: each, eachUnique, eachUniqueJSONPath, times, group
+- Formatting: markdown, json
+- Math: inc
+- Type checking: isArray, isString, isNumber, isBoolean, etc.
+- Utility: split, includes, startsWith, endsWith, parseInt
+
+**Note:** Use the clay_list_helpers MCP tool to get the complete list with examples when needed.
+
 ## Common Tasks
 
 ### Creating Models
@@ -1147,6 +1191,8 @@ When creating Handlebars templates:
 - Leverage partials for reusable components
 - Use conditional logic: `{{#if condition}}...{{/if}}`
 - Iterate with: `{{#each items}}...{{/each}}`
+- Access root model: `{{clay_model.name}}`
+- Access parent: `{{clay_parent.name}}`
 
 ### Configuring Generators
 
@@ -1155,46 +1201,62 @@ When setting up generator.json:
 - Order steps logically (dependencies first)
 - Use JSONPath selectors to target specific model parts
 - Include formatters for code quality
-- Test with `clay test-path` command
+- Test JSONPath expressions using clay_test_path MCP tool
 
-## Available Commands
+## Working with the MCP Server
 
-- `clay generate <model_path> <output_path>` - Generate code
-- `clay clean <model_path> <output_path>` - Clean generated files
-- `clay watch <model_path> <output_path>` - Watch for changes
-- `clay test-path <model_path> <json_path>` - Test JSONPath selectors
-- `clay init` - Initialize Clay project
+When the Clay MCP server is configured, you can:
+
+- **Generate code**: Use `#clay_generate` to regenerate all models or specific ones
+- **Clean files**: Use `#clay_clean` to remove generated files
+- **Test paths**: Use `#clay_test_path` to validate JSONPath expressions
+- **List helpers**: Use `#clay_list_helpers` to discover available Handlebars helpers
+- **Get model structure**: Use `#clay_get_model_structure` to inspect models
+- **Initialize projects**: Use `#clay_init` to set up Clay projects or generators
 
 ## Best Practices
 
-- Use semantic naming for models and generators
+- Use the MCP server tools for executing Clay operations
 - Keep templates focused and modular
-- Test JSONPath expressions before using in generators
 - Use the .clay file for tracking generated files
 - Leverage mixins for common model transformations
+- Test JSONPath expressions before using in generators
 ```
 
 ### Benefits of Copilot Integration
 
-With these instructions, GitHub Copilot will be able to:
+With the MCP server, GitHub Copilot can:
+
+1. **Execute Clay operations reliably** using type-safe tool calls
+2. **Discover available helpers** on-demand when writing templates
+3. **Test JSONPath expressions** interactively before using them
+4. **Generate and regenerate code** without manual command-line usage
+5. **Inspect model structures** to understand the data being transformed
+6. **Initialize projects** and set up generators correctly
+
+With custom instructions, Copilot can additionally:
 
 1. **Suggest appropriate model structures** based on your domain requirements
 2. **Generate Handlebars templates** with correct syntax and helper usage
-3. **Help configure generator.json files** with proper step ordering and JSONPath selectors
-4. **Recommend Clay commands** for common development tasks
-5. **Assist with template debugging** using available helpers and partials
-6. **Suggest best practices** for organizing Clay projects
+3. **Help configure generator.json files** with proper step ordering
+4. **Recommend best practices** for organizing Clay projects
 
 ### Example Usage
 
-After adding the copilot instructions, you can ask Copilot to help with tasks like:
+**With MCP Server (Recommended):**
+
+- "Use clay_generate to regenerate all my models"
+- "Show me what helpers are available for string manipulation"
+- "Test this JSONPath: $.model.types[*].commands[*].parameters"
+- "What's the structure of my user model?"
+
+**With Custom Instructions:**
 
 - "Create a Clay model for a user management system"
 - "Generate a Handlebars template for a REST API controller"
 - "Set up a generator that creates both frontend and backend files"
-- "Help me write a JSONPath expression to select all array type parameters"
 
-This integration will make Clay development more efficient and help maintain consistency across your generated code.
+The MCP server integration provides the most reliable and efficient way to work with Clay in your development workflow.
 
 ## AI Assistant Integration (MCP Server)
 
