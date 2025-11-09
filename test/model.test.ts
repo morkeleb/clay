@@ -1,3 +1,9 @@
+/**
+ * Model tests
+ * Note: Uses `any` types for test data
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { expect } from 'chai';
 import * as model from '../src/model';
 

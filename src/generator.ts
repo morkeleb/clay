@@ -1,3 +1,12 @@
+/**
+ * Generator module for processing templates and executing generation steps
+ * Note: Uses `any` types for:
+ * - Dynamic model data structures that vary based on user input
+ * - Formatter module interfaces that may have varying APIs
+ * - Template contexts and error handling for external modules
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import fs from 'fs-extra';
 import path from 'path';
 import handlebars from './template-engine';
@@ -140,7 +149,6 @@ async function applyFormatters(
       };
     }
   );
-  console.log('formatters', formatterSpecs);
 
   // Load all formatter modules
   const loadedFormatters: FormatterModule[] = formatterSpecs.map(({ pkg }) =>
@@ -163,11 +171,9 @@ async function applyFormatters(
     try {
       // Pass options into apply if supported
       if (isNewFormatter) {
-        console.log('applying formatter new', formatter.apply);
         // new signature: apply(file, content, options, step)
         result = await formatter.apply(file_name, result, options, step);
       } else {
-        console.log('applying formatter old', formatter.apply);
         // old signature: apply(file, content)
         result = await formatter.apply(file_name, result);
       }

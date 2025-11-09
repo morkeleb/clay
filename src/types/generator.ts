@@ -53,7 +53,9 @@ export interface Generator {
  * Decorated generator with execution methods
  */
 export interface DecoratedGenerator extends Generator {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   generate: (model: any, outputDir: string) => Promise<void>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clean: (model: any, outputDir: string) => void;
 }
 

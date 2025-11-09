@@ -1,3 +1,9 @@
+/**
+ * Command-line interface tests
+ * Note: Uses `any` types for test data and mocks
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { expect } from 'chai';
 import fs from 'fs-extra';
 import decache from 'decache';

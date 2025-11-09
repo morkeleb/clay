@@ -1,3 +1,10 @@
+/**
+ * JSONPath helper module for querying and manipulating model data
+ * Note: Uses `any` types because JSONPath queries return dynamically-typed data
+ * that can be of any structure depending on the model being processed
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import jp from 'jsonpath';
 import _ from 'lodash';
 import * as ui from './output';
@@ -57,7 +64,7 @@ export function select(model: any, jsonpath: string): any[] {
     }
 
     return result.map((f) => f.value);
-  } catch (e) {
+  } catch {
     ui.critical('Jsonpath not parseable', jsonpath);
     return [];
   }

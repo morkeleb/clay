@@ -1,3 +1,9 @@
+/**
+ * Output tests
+ * Note: Uses `any` types for sinon stubs
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import sinon from 'sinon';
 import { expect } from 'chai';
 import * as output from '../src/output';

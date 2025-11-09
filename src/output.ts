@@ -1,7 +1,14 @@
+/**
+ * Output and logging utilities for Clay
+ * Note: Uses `any` types for console.log parameters which accept any values
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import chalk from 'chalk';
 
-// Extend the NodeJS.Process interface to include isCLI
+// Extend the global Process interface to include isCLI
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace NodeJS {
     interface Process {
       isCLI?: boolean;

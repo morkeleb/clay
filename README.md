@@ -470,7 +470,6 @@ The `generator.json` file contains the following main sections:
 Each step in the `steps` array can perform one of the following actions:
 
 1. **Run a Command**
-
    - **Parameters**:
      - `runCommand` (string): The shell command to execute.
      - `npxCommand` (boolean, optional): Whether to run the command using `npx`.
@@ -483,7 +482,6 @@ Each step in the `steps` array can perform one of the following actions:
      ```
 
 2. **Generate Handlebar Template**
-
    - **Parameters**:
      - `generate` (string): Path to the handlebar template.
      - `select` (string, optional): JSONPath to filter the model.
@@ -792,7 +790,7 @@ Renders a string as HTML using Markdown.
 Checks if a property exists in any object in a context.
 
 ```handlebars
-{{#if (propertyExists this "fieldName")}}
+{{#if (propertyExists this 'fieldName')}}
   Property exists!
 {{/if}}
 ```
@@ -826,7 +824,7 @@ Increments a number by 1 (useful for 1-based indexes).
 Pluralizes a word.
 
 ```handlebars
-{{pluralize "category"}}
+{{pluralize 'category'}}
 ```
 
 ### 7. `singularize`
@@ -834,7 +832,7 @@ Pluralizes a word.
 Singularizes a word.
 
 ```handlebars
-{{singularize "categories"}}
+{{singularize 'categories'}}
 ```
 
 ### 8. `switch`, `case`, `default`
@@ -843,10 +841,10 @@ Implements switch/case/default logic.
 
 ```handlebars
 {{#switch type}}
-  {{#case "admin"}}
+  {{#case 'admin'}}
     Admin user
   {{/case}}
-  {{#case "user"}}
+  {{#case 'user'}}
     Regular user
   {{/case}}
   {{#default}}
@@ -871,7 +869,7 @@ Repeats a block N times.
 Conditional logic with operators.
 
 ```handlebars
-{{#ifCond value "==" 10}}
+{{#ifCond value '==' 10}}
   Value is 10
 {{else}}
   Value is not 10
@@ -904,7 +902,7 @@ Iterates over unique values in an array or object.
 Or, to get unique by a property:
 
 ```handlebars
-{{#eachUnique items "id"}}
+{{#eachUnique items 'id'}}
   {{this.name}}
 {{/eachUnique}}
 ```
@@ -914,7 +912,7 @@ Or, to get unique by a property:
 Iterates over unique values selected by a JSONPath.
 
 ```handlebars
-{{#eachUniqueJSONPath model "$.types[*].name"}}
+{{#eachUniqueJSONPath model '$.types[*].name'}}
   {{this}}
 {{/eachUniqueJSONPath}}
 ```
@@ -924,7 +922,7 @@ Iterates over unique values selected by a JSONPath.
 Splits a string and returns the word at the given index.
 
 ```handlebars
-{{splitAndUseWord "foo-bar-baz" "-" 1}} <!-- Outputs: bar -->
+{{splitAndUseWord 'foo-bar-baz' '-' 1}} <!-- Outputs: bar -->
 ```
 
 ---

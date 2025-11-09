@@ -1,3 +1,9 @@
+/**
+ * Generator tests
+ * Note: Uses `any` types for test data and mocks
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import * as generator from '../src/generator';
 import { expect } from 'chai';
 import sinon from 'sinon';

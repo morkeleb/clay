@@ -1,3 +1,10 @@
+/**
+ * Model loading and processing module
+ * Note: Uses `any` types for dynamic model data structures and mixin functions
+ * which can have arbitrary signatures defined by the user
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import path from 'path';
 import { requireNew } from './require-helper';
 import type { ClayModel, MixinDefinition } from './types/model';
@@ -10,17 +17,16 @@ function executeMixins(model: ClayModel): void {
   if (!model.mixins || model.mixins.length === 0) return;
 
   // Build a map of mixin functions
-  const mixins: Record<string, Function> = model.mixins.reduce(
+  const mixins: Record<string, (...args: any[]) => any> = model.mixins.reduce(
     (map, obj: MixinDefinition) => {
       if (typeof obj.function === 'string') {
-        // eslint-disable-next-line no-eval
         map[obj.name] = eval(obj.function);
       } else {
         map[obj.name] = obj.function;
       }
       return map;
     },
-    {} as Record<string, Function>
+    {} as Record<string, (...args: any[]) => any>
   );
 
   // Recursively check and apply mixins

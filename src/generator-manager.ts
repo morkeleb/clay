@@ -1,3 +1,12 @@
+/**
+ * Generator manager module for installing and managing clay generators
+ * Note: Uses `any` types for:
+ * - HTTP response data parsing (JSON from GitHub)
+ * - Dynamic package.json and registry file structures
+ * - Inquirer prompt responses which can vary
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import fs from 'fs-extra';
 import path from 'path';
 import inquirer from 'inquirer';
@@ -104,7 +113,7 @@ function loadRegistryCache(): GeneratorRegistry | null {
     if (fs.existsSync(cachePath)) {
       return JSON.parse(fs.readFileSync(cachePath, 'utf8'));
     }
-  } catch (error) {
+  } catch {
     // Cache is invalid or corrupted
   }
   return null;
@@ -142,7 +151,7 @@ export async function loadGeneratorRegistry(): Promise<GeneratorRegistry> {
         ui.info('Using local registry file');
         return require(localRegistryPath);
       }
-    } catch (localError) {
+    } catch {
       // Ignore
     }
 

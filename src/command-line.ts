@@ -1,3 +1,9 @@
+/**
+ * Command-line interface for Clay code generator
+ * Note: Uses `any` types for dynamic model data and generator configurations
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Command } from 'commander';
 import requireNew from './require-helper';
 import path from 'path';

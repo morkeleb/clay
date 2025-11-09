@@ -1,13 +1,15 @@
 /**
  * Type definitions for Clay models
+ * Note: Uses `any` types for dynamic model data structures
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Mixin definition in a Clay model
  */
 export interface MixinDefinition {
   name: string;
-  function: string | Function;
+  function: string | ((...args: any[]) => any);
 }
 
 /**

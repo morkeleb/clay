@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 // Store CLI detection for use in other modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 (process as any).isCLI = require.main === module;
 
 import commander from './src/command-line';

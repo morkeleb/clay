@@ -4,7 +4,7 @@ const prettierConfig = require('eslint-config-prettier');
 
 module.exports = [
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '**/*.js', 'test/samples/'],
+    ignores: ['dist/', 'node_modules/', 'coverage/', '**/*.js', 'test/samples/', 'external-modules.d.ts'],
   },
   {
     files: ['**/*.ts'],
@@ -46,6 +46,9 @@ module.exports = [
         },
       ],
       'no-console': 'off',
+      'no-unused-expressions': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
 ];

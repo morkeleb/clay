@@ -25,12 +25,14 @@ This document tracks the completed migration of the Clay code generator from Jav
 ### Phase 1: Setup & Configuration ✅
 
 **Task 1: TypeScript Configuration** (Commit: 1c2af1a)
+
 - Installed TypeScript 5.9.3
 - Added all @types packages (node, lodash, handlebars, etc.)
 - Created tsconfig.json with strict mode
 - Configured ES2020 target with CommonJS modules
 
 **Task 2: Build Scripts** (Commit: 459d77e)
+
 - Installed ts-node for development
 - Created bin/clay-dev wrapper (auto-detects dev vs production)
 - Added build, build:watch, dev scripts
@@ -39,6 +41,7 @@ This document tracks the completed migration of the Clay code generator from Jav
 ### Phase 2: Type Definitions ✅
 
 **Task 3: Type Definitions** (Commit: c9fab0a)
+
 - Created src/types/ directory structure
 - Defined Generator, GeneratorStep types with type guards
 - Defined ClayModel, ClayFile, ModelIndex types
@@ -48,20 +51,24 @@ This document tracks the completed migration of the Clay code generator from Jav
 ### Phase 3: Source Migration ✅
 
 **Task 4: Utility Modules** (Commit: d6e9ca4)
+
 - Migrated jsonpath-helper.ts
 - Migrated require-helper.ts
 - Migrated output.ts with colored console functions
 
 **Task 5: Core Modules** (Commits: 9ab6b00, 73b3587)
+
 - Migrated model.ts (model loading, mixins, includes)
 - Migrated template-engine.ts (~300 lines, 20+ helpers)
 - Migrated generator.ts (~500 lines, step execution)
 
 **Task 6: Infrastructure** (Commit: be76b23 partial)
+
 - Migrated clay_file.ts (.clay file management)
 - Migrated generator-manager.ts (registry, install/delete)
 
 **Task 7: CLI** (Commit: be76b23)
+
 - Migrated command-line.ts (all commands with types)
 - Migrated index.ts (entry point with shebang)
 - Added DecoratedGenerator interface
@@ -70,24 +77,28 @@ This document tracks the completed migration of the Clay code generator from Jav
 ### Phase 4: Quality & Documentation ✅
 
 **Task 8: Test Suite** (Commit: 391bf13)
+
 - Installed @types/mocha, @types/chai, @types/sinon
 - Updated .mocharc.json for TypeScript support
 - Migrated 7 test files to TypeScript
 - Results: 93 passing, 10 minor failures
 
 **Task 9: Linting & Formatting** (Commit: cb3e342)
+
 - Configured ESLint 9 with flat config
 - Added Prettier with ESLint integration
 - Formatted all TypeScript files
 - Added lint, lint:fix, format, format:check scripts
 
 **Task 10: Documentation** (Commit: [current])
+
 - Updated README.md with TypeScript development section
 - Created CONTRIBUTING.md with detailed guidelines
 - Documented development workflow
 - Explained TypeScript setup and project structure
 
 **Task 11: Verification** (Status: Ready)
+
 - All TypeScript files compile successfully
 - Development workflow tested with npm link
 - Build scripts functional

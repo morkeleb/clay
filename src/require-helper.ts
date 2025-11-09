@@ -7,6 +7,7 @@ import path from 'path';
  * @param modulePath - Path to the module to require
  * @returns The required module
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function requireNew(modulePath: string): any {
   const resolvedPath = path.resolve(modulePath);
   delete require.cache[resolvedPath];

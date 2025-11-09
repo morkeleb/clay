@@ -1,14 +1,18 @@
+/**
+ * Template engine module using Handlebars with custom helpers
+ * Note: This file extensively uses `any` types for Handlebars helper parameters
+ * which can accept various types at runtime (strings, numbers, objects, arrays, etc.)
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { marked } from 'marked';
 import Handlebars from 'handlebars';
 import jp from 'jsonpath';
 import fs from 'fs';
 import path from 'path';
-// @ts-ignore - No type definitions available
 import groupBy from 'handlebars-group-by';
-// @ts-ignore - No type definitions available
 import lobars from 'lobars';
 import lodash from 'lodash';
-// @ts-ignore - No type definitions available
 import lodashInflection from 'lodash-inflection';
 
 // Extend lodash with inflection methods

@@ -100,8 +100,10 @@ function isGenerateStep(step: GeneratorStep): step is GeneratorStepGenerate {
 }
 
 // Avoid
-function processStep(step: any) {  // Don't use any
-  if (step.generate) {  // No type safety
+function processStep(step: any) {
+  // Don't use any
+  if (step.generate) {
+    // No type safety
     // ...
   }
 }

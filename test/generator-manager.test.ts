@@ -84,7 +84,7 @@ describe('generator-manager', () => {
     if (modelDir.includes('test-registry/models') && fs.existsSync(modelDir)) {
       try {
         fs.rmdirSync(modelDir); // Only works if empty
-      } catch (e) {
+      } catch {
         // Directory not empty, that's okay
       }
     }

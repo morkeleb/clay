@@ -23,8 +23,10 @@ export type DeepPartial<T> = {
 /**
  * Extract function parameter types
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Parameters<T extends (...args: any) => any> = T extends (
   ...args: infer P
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ) => any
   ? P
   : never;
@@ -32,8 +34,11 @@ export type Parameters<T extends (...args: any) => any> = T extends (
 /**
  * Extract function return type
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ReturnType<T extends (...args: any) => any> = T extends (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ...args: any
 ) => infer R
   ? R
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   : any;

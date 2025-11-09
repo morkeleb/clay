@@ -25,6 +25,7 @@ export interface ClayModelEntry {
   setFileCheckSum: (filePath: string, md5: string) => void;
   getFileCheckSum: (filePath: string) => string | null;
   delFileCheckSum: (filePath: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   load: () => any;
 }
 
@@ -37,10 +38,9 @@ export interface ClayFile {
 
 /**
  * Model index returned by getModelIndex
+ * Extends ClayModelEntry with all its properties and methods
  */
-export interface ModelIndex extends ClayModelEntry {
-  // Inherits all ClayModelEntry properties and methods
-}
+export type ModelIndex = ClayModelEntry;
 
 /**
  * Clay file management interface

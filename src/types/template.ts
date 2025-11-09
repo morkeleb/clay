@@ -1,6 +1,8 @@
 /**
  * Type definitions for template engine and Handlebars context
+ * Note: Uses `any` types for dynamic template data and Handlebars helpers
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import type { ClayModel } from './model';
 
@@ -22,7 +24,7 @@ export interface ClayTemplateContext {
 export interface TemplateEngineConfig {
   partials?: string[];
   helpers?: {
-    [name: string]: Function;
+    [name: string]: (...args: any[]) => any;
   };
 }
 
