@@ -1,0 +1,1 @@
+{"version":3,"file":"require-helper.js","sourceRoot":"","sources":["../../src/require-helper.ts"],"names":[],"mappings":";;;;;AAUA,gCAIC;AAdD,gDAAwB;AAUxB,SAAgB,UAAU,CAAC,UAAkB;IAC3C,MAAM,YAAY,GAAG,cAAI,CAAC,OAAO,CAAC,UAAU,CAAC,CAAC;IAC9C,OAAO,OAAO,CAAC,KAAK,CAAC,YAAY,CAAC,CAAC;IACnC,OAAO,OAAO,CAAC,UAAU,CAAC,CAAC;AAC7B,CAAC;AAED,kBAAe,UAAU,CAAC"}

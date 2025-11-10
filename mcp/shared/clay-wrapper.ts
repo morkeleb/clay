@@ -3,6 +3,7 @@
  */
 import { execSync } from 'child_process';
 import path from 'path';
+import fs from 'fs';
 
 export interface CommandResult {
   success: boolean;
@@ -22,10 +23,16 @@ export function executeClayCommand(
     const argString = args.join(' ');
     const fullCommand = `clay ${command} ${argString}`.trim();
 
-    const output = execSync(fullCommand, {
+    // Use shell execution with output redirection to capture output
+    // while still allowing child processes to execute properly
+    const output = execSync(`${fullCommand} 2>&1`, {
       cwd: workingDirectory,
       encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: '/bin/bash',
+      env: {
+        ...process.env,
+        VERBOSE: 'true',
+      },
     });
 
     return {
@@ -33,7 +40,12 @@ export function executeClayCommand(
       output: output.toString(),
     };
   } catch (error: unknown) {
-    const err = error as { stdout?: Buffer; stderr?: Buffer; message?: string };
+    const err = error as {
+      stdout?: Buffer;
+      stderr?: Buffer;
+      message?: string;
+      status?: number;
+    };
     return {
       success: false,
       output: err.stdout?.toString() || '',
@@ -79,17 +91,25 @@ export function parseGenerateOutput(output: string): {
   filesGenerated: number;
   filesUpdated: number;
   filesUnchanged: number;
+  filesCopied: number;
+  filesMoved: number;
 } {
-  // Clay outputs file operation results
-  // This is a simplified parser - adjust based on actual Clay output format
-  const generated = (output.match(/generated/gi) || []).length;
-  const updated = (output.match(/updated/gi) || []).length;
-  const unchanged = (output.match(/unchanged/gi) || []).length;
+  // Clay outputs different colored messages for file operations:
+  // - "writing: " for generated/updated files
+  // - "copying: " for copied files
+  // - "moving: " for moved files
+  // Count occurrences of these patterns
+  
+  const writing = (output.match(/writing:/gi) || []).length;
+  const copying = (output.match(/copying:/gi) || []).length;
+  const moving = (output.match(/moving:/gi) || []).length;
 
   return {
-    filesGenerated: generated,
-    filesUpdated: updated,
-    filesUnchanged: unchanged,
+    filesGenerated: writing,
+    filesUpdated: 0, // Clay doesn't distinguish between new and updated in output
+    filesUnchanged: 0, // Clay doesn't output unchanged files
+    filesCopied: copying,
+    filesMoved: moving,
   };
 }
 
@@ -104,7 +124,6 @@ export function readClayFile(clayFilePath: string): {
     last_generated?: string;
   }>;
 } {
-  const fs = require('fs');
   const content = fs.readFileSync(clayFilePath, 'utf8');
   return JSON.parse(content);
 }

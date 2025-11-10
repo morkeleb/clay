@@ -1,0 +1,1 @@
+{"version":3,"file":"generator.js","sourceRoot":"","sources":["../../../src/types/generator.ts"],"names":[],"mappings":";;AAgEA,wCAIC;AAED,gCAEC;AAED,sCAIC;AAdD,SAAgB,cAAc,CAC5B,IAAmB;IAEnB,OAAO,UAAU,IAAI,IAAI,CAAC;AAC5B,CAAC;AAED,SAAgB,UAAU,CAAC,IAAmB;IAC5C,OAAO,MAAM,IAAI,IAAI,CAAC;AACxB,CAAC;AAED,SAAgB,aAAa,CAC3B,IAAmB;IAEnB,OAAO,YAAY,IAAI,IAAI,CAAC;AAC9B,CAAC"}

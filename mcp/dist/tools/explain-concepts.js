@@ -7,20 +7,15 @@
  * - Use template context variables (clay_key, clay_parent, etc.)
  * - Leverage all available features
  */
-
 import { validateInput } from '../shared/validation.js';
-import {
-  ExplainConceptsInput,
-  ExplainConceptsInputSchema,
-} from '../shared/schemas.js';
-
+import { ExplainConceptsInputSchema, } from '../shared/schemas.js';
 /**
  * Comprehensive Clay documentation for LLMs
  */
 const concepts = {
-  overview: {
-    title: 'Clay Overview',
-    content: `Clay is a template-focused code generator that transforms JSON models into code using Handlebars templates.
+    overview: {
+        title: 'Clay Overview',
+        content: `Clay is a template-focused code generator that transforms JSON models into code using Handlebars templates.
 
 **Core Components:**
 1. Models (model.json) - Define your domain structure
@@ -33,11 +28,10 @@ const concepts = {
 2. Reference generators in the model
 3. Generators execute steps (generate templates, run commands, copy files)
 4. Clay tracks everything in .clay file for easy regeneration/cleanup`,
-  },
-
-  models: {
-    title: 'Creating Models',
-    content: `Models are JSON files that describe your domain structure.
+    },
+    models: {
+        title: 'Creating Models',
+        content: `Models are JSON files that describe your domain structure.
 
 **Basic Structure:**
 \`\`\`json
@@ -99,11 +93,10 @@ const concepts = {
 - Use mixins for common patterns (timestamps, audit fields, etc.)
 - Split large models using includes
 - Keep models focused on domain structure, not implementation`,
-  },
-
-  generators: {
-    title: 'Creating Generators',
-    content: `Generators define the steps to transform models into code.
+    },
+    generators: {
+        title: 'Creating Generators',
+        content: `Generators define the steps to transform models into code.
 
 **generator.json Structure:**
 \`\`\`json
@@ -177,11 +170,10 @@ Use in templates: \`{{>header}}\`
 
 **Formatters:**
 External tools to format generated code (e.g., prettier, eslint --fix)`,
-  },
-
-  templates: {
-    title: 'Writing Templates',
-    content: `Templates use Handlebars syntax with 47+ helpers.
+    },
+    templates: {
+        title: 'Writing Templates',
+        content: `Templates use Handlebars syntax with 47+ helpers.
 
 **Basic Template:**
 \`\`\`handlebars
@@ -229,11 +221,10 @@ output/{{kebabCase name}}/{{snakeCase name}}.model.ts
 - Utility: \`json\`, \`markdown\`, \`inc\`, \`propertyExists\`
 
 Use \`clay_list_helpers\` tool to get complete list with examples.`,
-  },
-
-  'context-variables': {
-    title: 'Template Context Variables (Hidden Capabilities)',
-    content: `Clay automatically adds special variables to template contexts when using JSONPath selectors.
+    },
+    'context-variables': {
+        title: 'Template Context Variables (Hidden Capabilities)',
+        content: `Clay automatically adds special variables to template contexts when using JSONPath selectors.
 
 **Available Context Variables:**
 
@@ -343,11 +334,10 @@ export function createUserHandler() {
 - They provide powerful navigation capabilities without manual passing
 - They enable templates to be context-aware and make intelligent decisions
 - Use them to avoid hardcoding and enable dynamic template behavior`,
-  },
-
-  jsonpath: {
-    title: 'JSONPath Selectors',
-    content: `JSONPath expressions select parts of the model for processing.
+    },
+    jsonpath: {
+        title: 'JSONPath Selectors',
+        content: `JSONPath expressions select parts of the model for processing.
 
 **Syntax:**
 
@@ -404,11 +394,10 @@ clay_test_path({
 \`\`\`
 
 This runs the template once for each matching element.`,
-  },
-
-  mixins: {
-    title: 'Mixins - Model Transformations',
-    content: `Mixins are JavaScript functions that transform parts of the model.
+    },
+    mixins: {
+        title: 'Mixins - Model Transformations',
+        content: `Mixins are JavaScript functions that transform parts of the model.
 
 **Use Cases:**
 - Add conventional fields (timestamps, audit fields)
@@ -494,100 +483,87 @@ This mixin automatically generates CRUD commands based on the type's fields.
 - Document what each mixin does
 - Test mixins with different model structures
 - Use mixins to enforce conventions`,
-  },
+    },
 };
-
 /**
  * Get comprehensive Clay documentation
  */
-export async function explainConcepts(input: ExplainConceptsInput) {
-  const topic = input.topic || 'overview';
-  const includeExamples = input.include_examples;
-
-  if (topic === 'all') {
-    // Return all concepts
+export async function explainConcepts(input) {
+    const topic = input.topic || 'overview';
+    const includeExamples = input.include_examples;
+    if (topic === 'all') {
+        // Return all concepts
+        return {
+            success: true,
+            concepts: Object.entries(concepts).map(([key, value]) => ({
+                topic: key,
+                ...value,
+            })),
+            available_topics: Object.keys(concepts),
+            note: 'This provides comprehensive documentation for creating generators and models. Use specific topics for focused information.',
+        };
+    }
+    const concept = concepts[topic];
+    if (!concept) {
+        return {
+            success: false,
+            message: `Unknown topic: ${topic}`,
+            available_topics: Object.keys(concepts),
+        };
+    }
     return {
-      success: true,
-      concepts: Object.entries(concepts).map(([key, value]) => ({
-        topic: key,
-        ...value,
-      })),
-      available_topics: Object.keys(concepts),
-      note: 'This provides comprehensive documentation for creating generators and models. Use specific topics for focused information.',
+        success: true,
+        topic,
+        ...concept,
+        available_topics: Object.keys(concepts),
+        related_tools: getRelatedTools(topic),
     };
-  }
-
-  const concept = concepts[topic as keyof typeof concepts];
-  if (!concept) {
-    return {
-      success: false,
-      message: `Unknown topic: ${topic}`,
-      available_topics: Object.keys(concepts),
-    };
-  }
-
-  return {
-    success: true,
-    topic,
-    ...concept,
-    available_topics: Object.keys(concepts),
-    related_tools: getRelatedTools(topic),
-  };
 }
-
 /**
  * Get related MCP tools for a topic
  */
-function getRelatedTools(topic: string): string[] {
-  const toolMap: Record<string, string[]> = {
-    overview: ['clay_init', 'clay_generate', 'clay_get_model_structure'],
-    models: ['clay_get_model_structure', 'clay_test_path', 'clay_init'],
-    generators: ['clay_list_generators', 'clay_init'],
-    templates: ['clay_list_helpers', 'clay_test_path'],
-    'context-variables': ['clay_test_path', 'clay_get_model_structure'],
-    jsonpath: ['clay_test_path'],
-    mixins: ['clay_get_model_structure'],
-  };
-
-  return toolMap[topic] || [];
+function getRelatedTools(topic) {
+    const toolMap = {
+        overview: ['clay_init', 'clay_generate', 'clay_get_model_structure'],
+        models: ['clay_get_model_structure', 'clay_test_path', 'clay_init'],
+        generators: ['clay_list_generators', 'clay_init'],
+        templates: ['clay_list_helpers', 'clay_test_path'],
+        'context-variables': ['clay_test_path', 'clay_get_model_structure'],
+        jsonpath: ['clay_test_path'],
+        mixins: ['clay_get_model_structure'],
+    };
+    return toolMap[topic] || [];
 }
-
 /**
  * MCP tool handler
  */
-export async function explainConceptsTool(args: unknown) {
-  const validation = validateInput(ExplainConceptsInputSchema, args);
-  if (!validation.success) {
-    return {
-      content: [
-        {
-          type: 'text',
-          text: JSON.stringify(
-            {
-              success: false,
-              message: validation.error,
-            },
-            null,
-            2
-          ),
-        },
-      ],
+export async function explainConceptsTool(args) {
+    const validation = validateInput(ExplainConceptsInputSchema, args);
+    if (!validation.success) {
+        return {
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify({
+                        success: false,
+                        message: validation.error,
+                    }, null, 2),
+                },
+            ],
+        };
+    }
+    const input = {
+        ...validation.data,
+        include_examples: validation.data.include_examples ?? true,
     };
-  }
-
-  const input = {
-    ...validation.data,
-    include_examples: validation.data.include_examples ?? true,
-  };
-
-  const result = await explainConcepts(input);
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: JSON.stringify(result, null, 2),
-      },
-    ],
-  };
+    const result = await explainConcepts(input);
+    return {
+        content: [
+            {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+            },
+        ],
+    };
 }
+//# sourceMappingURL=explain-concepts.js.map

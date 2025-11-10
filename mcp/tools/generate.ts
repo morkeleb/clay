@@ -9,7 +9,11 @@ import {
   requireClayFile,
   resolvePath,
 } from '../shared/workspace-manager.js';
-import { executeClayCommand, readClayFile } from '../shared/clay-wrapper.js';
+import {
+  executeClayCommand,
+  readClayFile,
+  parseGenerateOutput,
+} from '../shared/clay-wrapper.js';
 
 export async function generateTool(args: unknown) {
   // Validate input
@@ -73,6 +77,8 @@ export async function generateTool(args: unknown) {
         };
       }
 
+      const stats = parseGenerateOutput(result.output);
+
       return {
         content: [
           {
@@ -82,16 +88,18 @@ export async function generateTool(args: unknown) {
                 success: true,
                 message: 'Successfully generated code for model',
                 models_processed: 1,
-                total_files_generated: 0, // Parse from output
-                total_files_updated: 0,
-                total_files_unchanged: 0,
+                total_files_generated: stats.filesGenerated,
+                total_files_updated: stats.filesUpdated,
+                total_files_unchanged: stats.filesUnchanged,
+                total_files_copied: stats.filesCopied,
+                total_files_moved: stats.filesMoved,
                 details: [
                   {
                     model_path: input.model_path,
                     output_path: input.output_path,
-                    files_generated: 0,
-                    files_updated: 0,
-                    files_unchanged: 0,
+                    files_generated: stats.filesGenerated,
+                    files_copied: stats.filesCopied,
+                    files_moved: stats.filesMoved,
                   },
                 ],
                 raw_output: result.output,
@@ -146,6 +154,7 @@ export async function generateTool(args: unknown) {
 
       // Read .clay file to get model count
       const clayData = readClayFile(context.clayFilePath);
+      const stats = parseGenerateOutput(result.output);
 
       return {
         content: [
@@ -156,15 +165,15 @@ export async function generateTool(args: unknown) {
                 success: true,
                 message: `Successfully regenerated all models`,
                 models_processed: clayData.models.length,
-                total_files_generated: 0, // Would need to parse output
-                total_files_updated: 0,
-                total_files_unchanged: 0,
+                total_files_generated: stats.filesGenerated,
+                total_files_updated: stats.filesUpdated,
+                total_files_unchanged: stats.filesUnchanged,
+                total_files_copied: stats.filesCopied,
+                total_files_moved: stats.filesMoved,
                 details: clayData.models.map((m) => ({
                   model_path: m.path,
                   output_path: m.output,
-                  files_generated: 0,
-                  files_updated: 0,
-                  files_unchanged: 0,
+                  // Per-model file counts not available when generating all models together
                 })),
                 raw_output: result.output,
               },
