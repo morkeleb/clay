@@ -262,25 +262,7 @@
     }
 }
 
-/* Philosophy page styles */
-.page-title {
-    color: var(--glow-blue);
-    font-size: 32px;
-    margin-bottom: 10px;
-    text-shadow: 0 0 15px var(--glow-blue);
-}
-
-.page-subtitle {
-    color: var(--text-color);
-    font-size: 16px;
-    margin-bottom: 30px;
-    opacity: 0.9;
-}
-
-.doc-section {
-    margin-bottom: 50px;
-}
-
+/* Philosophy page specific styles */
 .benefit-item,
 .challenge-item,
 .best-practice {
@@ -374,37 +356,7 @@
     color: var(--primary-blue);
 }
 
-.doc-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 60px;
-    padding-top: 30px;
-    border-top: 2px solid var(--primary-blue);
-}
-
-.footer-link {
-    color: var(--primary-blue);
-    text-decoration: none;
-    padding: 10px 20px;
-    border: 1px solid var(--primary-blue);
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.footer-link:hover {
-    border-color: var(--glow-blue);
-    color: var(--glow-blue);
-    text-shadow: 0 0 10px var(--glow-blue);
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
-}
-
 @media (max-width: 768px) {
-    .doc-footer {
-        flex-direction: column;
-        gap: 15px;
-    }
-    
     .use-case-grid {
         grid-template-columns: 1fr;
     }
