@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+    <div class="doc-container">
+        <a href="../index.html" class="back-home">← Back to Home</a>
+        
+        <div class="doc-header">
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <span>›</span>
+                <span>Getting Started</span>
+            </div>
+            <h1>Getting Started</h1>
+            <div class="subtitle">Install Clay and create your first code generator</div>
+        </div>
+
+        <div class="doc-content">
+            <h2>Installation</h2>
+            <p>Clay is a globally installed command-line tool. Install it using npm:</p>
+            <pre><code>npm install -g clay-generator</code></pre>
+            
+            <p>Verify the installation by running:</p>
+            <pre><code>clay --version</code></pre>
+
+            <h2>Prerequisites</h2>
+            <ul>
+                <li>Node.js 14 or higher</li>
+                <li>npm 7 or higher</li>
+                <li>Basic understanding of JSON</li>
+                <li>Familiarity with Handlebars templates (helpful but not required)</li>
+            </ul>
+
+            <h2>Quick Start</h2>
+            
+            <h3>1. Initialize a Project</h3>
+            <p>Navigate to your project directory and initialize Clay:</p>
+            <pre><code>cd my-project
+clay init</code></pre>
+            
+            <p>This creates a <code>.clay</code> file that tracks all generated files.</p>
+
+            <h3>2. Create a Model</h3>
+            <p>Create a directory for your Clay configuration and model:</p>
+            <pre><code>mkdir -p clay
+cat > clay/model.json << 'EOF'
+{
+  "name": "user-service",
+  "generators": ["./generators/api"],
+  "model": {
+    "types": [
+      {
+        "name": "User",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "email", "type": "string" },
+          { "name": "name", "type": "string" }
+        ]
+      }
+    ]
+  }
+}
+EOF</code></pre>
+
+            <h3>3. Create a Generator</h3>
+            <p>Create a simple generator that creates a model file:</p>
+            <pre><code>mkdir -p clay/generators/api/templates
+cat > clay/generators/api/generator.json << 'EOF'
+{
+  "partials": [],
+  "steps": [
+    {
+      "generate": "templates/model.js",
+      "select": "$.model.types[*]",
+      "target": "src/models/{{kebabCase name}}.model.js"
+    }
+  ],
+  "formatters": []
+}
+EOF</code></pre>
+
+            <h3>4. Create a Template</h3>
+            <p>Create a Handlebars template for the generated files:</p>
+            <pre><code>cat > clay/generators/api/templates/model.js << 'EOF'
+// Generated Model: {{name}}
+
+class {{pascalCase name}} {
+  constructor(data) {
+{{#each fields}}
+    this.{{name}} = data.{{name}};
+{{/each}}
+  }
+
+  toJSON() {
+    return {
+{{#each fields}}
+      {{name}}: this.{{name}},
+{{/each}}
+    };
+  }
+}
+
+module.exports = {{pascalCase name}};
+EOF</code></pre>
+
+            <h3>5. Generate Code</h3>
+            <p>Now generate your code:</p>
+            <pre><code>clay generate clay/model.json ./</code></pre>
+
+            <p>Or, since you have a <code>.clay</code> file, you can simply run:</p>
+            <pre><code>clay generate</code></pre>
+
+            <p>This creates <code>src/models/user.model.js</code> based on your model!</p>
+
+            <h2>Project Structure</h2>
+            <p>A typical Clay project looks like this:</p>
+            <pre><code>.
+├── .clay                      # Tracks generated files
+├── clay/                      # Clay configuration
+│   ├── model.json            # Your domain model
+│   └── generators/           # Custom generators
+│       └── api/
+│           ├── generator.json
+│           └── templates/
+│               └── model.js
+└── src/                      # Generated code appears here
+    └── models/
+        └── user.model.js
+</code></pre>
+
+            <h2>Basic Commands</h2>
+            
+            <h3>Generate</h3>
+            <p>Generate code from your model:</p>
+            <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
+clay generate  # Uses .clay file</code></pre>
+
+            <h3>Clean</h3>
+            <p>Remove all generated files:</p>
+            <pre><code>clay clean &lt;model_path&gt; &lt;output_path&gt;
+clay clean  # Uses .clay file</code></pre>
+
+            <h3>Watch</h3>
+            <p>Automatically regenerate when files change:</p>
+            <pre><code>clay watch &lt;model_path&gt; &lt;output_path&gt;
+clay watch  # Uses .clay file</code></pre>
+
+            <h3>Test Path</h3>
+            <p>Test JSONPath expressions against your model:</p>
+            <pre><code>clay test-path &lt;model_path&gt; "$.model.types[*].fields[*]"</code></pre>
+
+            <div class="note">
+                <strong>💡 Pro Tip:</strong> Use the <code>watch</code> command during development to automatically regenerate code as you modify your model or templates!
+            </div>
+
+            <h2>Next Steps</h2>
+            <ul>
+                <li><a href="models.html">Learn about Models</a> - Structure your domain models</li>
+                <li><a href="generators.html">Learn about Generators</a> - Configure generation steps</li>
+                <li><a href="templates.html">Learn about Templates</a> - Write Handlebars templates</li>
+                <li><a href="cli.html">CLI Reference</a> - Complete command reference</li>
+            </ul>
+        </div>
+
+        <div class="doc-nav">
+            <a href="../index.html" class="doc-nav-item">
+                <div class="nav-label">← Previous</div>
+                <div class="nav-title">Home</div>
+            </a>
+            <a href="models.html" class="doc-nav-item">
+                <div class="nav-label">Next →</div>
+                <div class="nav-title">Models</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+</body>
+</html>

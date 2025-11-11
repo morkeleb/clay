@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Integration - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+    <div class="doc-container">
+        <a href="../index.html" class="back-home">← Back to Home</a>
+        
+        <div class="doc-header">
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <span>›</span>
+                <span>AI Integration</span>
+            </div>
+            <h1>AI Integration (MCP Server)</h1>
+            <div class="subtitle">Use Clay with Claude, GitHub Copilot, and other AI assistants</div>
+        </div>
+
+        <div class="doc-content">
+            <h2>What is the MCP Server?</h2>
+            <p>The Model Context Protocol (MCP) server enables reliable integration between Clay and AI assistants. It provides type-safe, validated tool calls that eliminate parameter hallucination and errors.</p>
+
+            <h2>Benefits</h2>
+            <ul>
+                <li>✅ Type-safe tool calls - no hallucinated parameters</li>
+                <li>✅ Direct access to all Clay operations</li>
+                <li>✅ Automatic validation before execution</li>
+                <li>✅ Discover available Handlebars helpers on-demand</li>
+                <li>✅ Test JSONPath expressions interactively</li>
+                <li>✅ Zero-parameter operations (regenerate everything with one call)</li>
+            </ul>
+
+            <h2>Available Tools</h2>
+            <p>The MCP server provides 8 tools:</p>
+            <ul>
+                <li><code>clay_generate</code> - Generate code from models</li>
+                <li><code>clay_clean</code> - Clean up generated files</li>
+                <li><code>clay_test_path</code> - Test JSONPath expressions</li>
+                <li><code>clay_init</code> - Initialize projects or generators</li>
+                <li><code>clay_list_generators</code> - List all generators</li>
+                <li><code>clay_get_model_structure</code> - Inspect model structure</li>
+                <li><code>clay_list_helpers</code> - List Handlebars helpers with examples</li>
+                <li><code>clay_explain_concepts</code> - Get comprehensive documentation</li>
+            </ul>
+
+            <h2>Setup for Claude Desktop</h2>
+            
+            <h3>1. Install Clay</h3>
+            <pre><code>npm install -g clay-generator</code></pre>
+
+            <h3>2. Configure Claude</h3>
+            <p>Edit your Claude config file:</p>
+            <ul>
+                <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+                <li><strong>Windows:</strong> <code>%APPDATA%/Claude/claude_desktop_config.json</code></li>
+                <li><strong>Linux:</strong> <code>~/.config/Claude/claude_desktop_config.json</code></li>
+            </ul>
+
+            <p>Add this configuration:</p>
+            <pre><code>{
+  "mcpServers": {
+    "clay": {
+      "command": "clay-mcp",
+      "args": []
+    }
+  }
+}</code></pre>
+
+            <h3>3. Restart Claude Desktop</h3>
+            <p>The MCP server will start automatically when Claude launches.</p>
+
+            <h2>Setup for VS Code + GitHub Copilot</h2>
+            
+            <h3>1. Install Clay</h3>
+            <pre><code>npm install -g clay-generator</code></pre>
+
+            <h3>2. Create MCP Configuration</h3>
+            <p>Create <code>.vscode/mcp.json</code> in your project:</p>
+            <pre><code>{
+  "servers": {
+    "clay": {
+      "type": "stdio",
+      "command": "clay-mcp",
+      "args": []
+    }
+  }
+}</code></pre>
+
+            <p>Or use the Command Palette: <code>MCP: Open Workspace Folder Configuration</code></p>
+
+            <h3>3. Trust the Server</h3>
+            <p>VS Code will prompt you to trust the server when it starts. You can also manage servers via:</p>
+            <ul>
+                <li><code>MCP: List Servers</code> - View all configured servers</li>
+                <li><code>MCP: Start Server</code> - Manually start the Clay server</li>
+            </ul>
+
+            <h3>4. Use in Copilot Chat</h3>
+            <p>Reference Clay tools in Copilot Chat:</p>
+            <pre><code># List available helpers
+#clay_list_helpers
+
+# Generate code
+#clay_generate
+
+# Test a JSONPath
+#clay_test_path</code></pre>
+
+            <h2>Usage Examples</h2>
+
+            <h3>Regenerate All Models</h3>
+            <p><strong>User:</strong> "Regenerate all my Clay models"</p>
+            <p><strong>AI calls:</strong> <code>clay_generate({})</code></p>
+
+            <h3>Generate Specific Model</h3>
+            <p><strong>User:</strong> "Generate code for the users model"</p>
+            <p><strong>AI calls:</strong> <code>clay_generate({ model_path: "./clay/users-model.json", output_path: "./src" })</code></p>
+
+            <h3>Test JSONPath</h3>
+            <p><strong>User:</strong> "Show me all array-type parameters"</p>
+            <p><strong>AI calls:</strong> <code>clay_test_path({ model_path: "./clay/model.json", json_path: "$.model.types[*].commands[*].parameters[?(@.type=='array')]" })</code></p>
+
+            <h3>List Helpers</h3>
+            <p><strong>User:</strong> "What Handlebars helpers can I use?"</p>
+            <p><strong>AI calls:</strong> <code>clay_list_helpers({ include_examples: true })</code></p>
+
+            <h3>Get Helper by Category</h3>
+            <p><strong>User:</strong> "Show me string manipulation helpers"</p>
+            <p><strong>AI calls:</strong> <code>clay_list_helpers({ category: "string", include_examples: true })</code></p>
+
+            <h3>Learn About Generators</h3>
+            <p><strong>User:</strong> "How do I create a generator?"</p>
+            <p><strong>AI calls:</strong> <code>clay_explain_concepts({ topic: "generators", include_examples: true })</code></p>
+
+            <h3>Understand Context Variables</h3>
+            <p><strong>User:</strong> "What are clay_key and clay_parent?"</p>
+            <p><strong>AI calls:</strong> <code>clay_explain_concepts({ topic: "context-variables" })</code></p>
+
+            <h2>AI Workflow Examples</h2>
+
+            <h3>Creating a New Generator</h3>
+            <pre><code>You: "Help me create a REST API generator for my user model"
+
+AI: *Calls clay_get_model_structure to inspect your model*
+    *Calls clay_list_helpers to see available helpers*
+    *Creates generator.json with appropriate steps*
+    *Creates templates using discovered helpers*
+    *Calls clay_generate to test the generator*</code></pre>
+
+            <h3>Debugging JSONPath</h3>
+            <pre><code>You: "Why isn't my generator selecting the right fields?"
+
+AI: *Calls clay_test_path with your current selector*
+    *Analyzes the results*
+    *Suggests corrected JSONPath expression*
+    *Calls clay_test_path again to verify*</code></pre>
+
+            <h3>Template Development</h3>
+            <pre><code>You: "I need a template that converts field names to PascalCase"
+
+AI: *Calls clay_list_helpers with category: "string"*
+    *Shows you the pascalCase helper*
+    *Creates example template using {{pascalCase name}}*</code></pre>
+
+            <h2>Why No Watch Mode?</h2>
+            <p>The <code>clay watch</code> command is intentionally not included in the MCP server because it's a long-running background process that doesn't fit the MCP request-response model.</p>
+
+            <p><strong>Instead:</strong></p>
+            <ul>
+                <li>Run <code>clay watch</code> directly in a terminal</li>
+                <li>Or create a VS Code task to manage the watch process</li>
+                <li>The AI can guide you to set this up manually</li>
+            </ul>
+
+            <h2>Troubleshooting</h2>
+
+            <h3>Server Not Starting</h3>
+            <p>Verify Clay is installed globally:</p>
+            <pre><code>which clay-mcp
+# Should show: /usr/local/bin/clay-mcp or similar</code></pre>
+
+            <h3>Tools Not Appearing</h3>
+            <p>Check the server status in your AI assistant:</p>
+            <ul>
+                <li><strong>Claude:</strong> Look for the 🔌 icon in the chat</li>
+                <li><strong>VS Code:</strong> Use <code>MCP: List Servers</code></li>
+            </ul>
+
+            <h3>Command Failures</h3>
+            <p>The MCP server requires a <code>.clay</code> file for parameterless commands. Initialize if needed:</p>
+            <pre><code>clay init</code></pre>
+
+            <div class="note">
+                <strong>💡 Pro Tip:</strong> Use the MCP server's <code>clay_explain_concepts</code> tool to get detailed documentation on any Clay topic directly in your AI chat!
+            </div>
+
+            <h2>Advanced Usage</h2>
+
+            <h3>Custom Working Directory</h3>
+            <p>The MCP server uses your current working directory. To work with a different project:</p>
+            <pre><code>cd /path/to/your/project
+# Then use AI assistant normally</code></pre>
+
+            <h3>Multiple Projects</h3>
+            <p>Each project can have its own <code>.clay</code> file. The server uses the one in your current directory.</p>
+
+            <h3>CI/CD Integration</h3>
+            <p>The MCP server is designed for interactive use. For CI/CD, use the CLI directly:</p>
+            <pre><code>clay generate
+clay test-path ./clay/model.json "$.model.types[*]"</code></pre>
+        </div>
+
+        <div class="doc-nav">
+            <a href="templates.html" class="doc-nav-item">
+                <div class="nav-label">← Previous</div>
+                <div class="nav-title">Templates</div>
+            </a>
+            <a href="cli.html" class="doc-nav-item">
+                <div class="nav-label">Next →</div>
+                <div class="nav-title">CLI Reference</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+</body>
+</html>

@@ -1,50 +1,352 @@
-> The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander
+> The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander> The original Greek word "model" means "misshapen ball of clay", and I try to think about that every time I go in front of the camera. - Derek Zoolander
 
-# What is Clay
 
-Clay is a template focused code generator. Used to take a model represented in JSON and konvert it to actual code matching the model through a set of generators using handlebar templates, shell commands and file operations.
 
-The goal is to have a consistent implementation of all model related operations in a system. Similar to how Ruby On Rails scaffolds work but backed using files, so you can with confident change the model and have all files updated.
+``````
 
-**Built with TypeScript** - Clay is written in TypeScript, providing type safety and excellent IDE support for both the core tool and custom generator development.
+   _____ _                  _____ _               
 
-## Talks
+  / ____| |                / ____| |              
 
-- [A short concept overview in Swedish @ Agila sverige 2019](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)
+ | |    | | __ _ _   _   | |    | | __ _ _   _  
 
-# Usage
+ | |    | |/ _` | | | |  | |    | |/ _` | | | | 
 
-## Installation
+ | |____| | (_| | |_| |  | |____| | (_| | |_| | 
 
-I use clay as a globally installed commandline tool.
+  \_____|_|\__,_|\__, |   \_____|_|\__,_|\__, | 
+
+                  __/ |                   __/ | 
+
+                 |___/                   |___/  
+
+``````
+
+
+
+# Clay - Template-Focused Code Generator# Clay - Template-Focused Code Generator
+
+
+
+**Clay transforms JSON models into actual code** using Handlebars templates, shell commands, and file operations. Built with TypeScript for type safety and reliability.**Clay transforms JSON models into actual code** using Handlebars templates, shell commands, and file operations. Built with TypeScript for type safety and reliability.
+
+
+
+**📚 [View Full Documentation](https://morkeleb.github.io/clay/)****📚 [View Full Documentation](https://morkeleb.github.io/clay/)**
+
+
+
+## Quick Start## Quick Start
+
+
+
+```bash```bash
+
+# Install globally# Install globally
+
+npm install -g clay-generatornpm install -g clay-generator
+
+
+
+# Initialize a project# Initialize a project
+
+clay initclay init
+
+
+
+# Generate code# Generate code
+
+clay generate ./clay/model.json ./outputclay generate ./clay/model.json ./output
+
+``````
+
+
+
+## Why Clay?## Why Clay?
+
+
+
+- ✅ **Consistent Code** - Update your model, regenerate everything- ✅ **Consistent Code** - Update your model, regenerate everything
+
+- ✅ **Type-Safe** - Built with TypeScript- ✅ **Type-Safe** - Built with TypeScript
+
+- ✅ **Flexible** - Templates, commands, and file operations- ✅ **Flexible** - Templates, commands, and file operations
+
+- ✅ **47+ Helpers** - Extensive Handlebars helpers for formatting- ✅ **47+ Helpers** - Extensive Handlebars helpers for formatting
+
+- ✅ **AI-Powered** - MCP server for Claude & GitHub Copilot- ✅ **AI-Powered** - MCP server for Claude & GitHub Copilot
+
+
+
+## Documentation## Documentation
+
+
+
+- **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** - Installation and first project- **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** - Installation and first project
+
+- **[Models](https://morkeleb.github.io/clay/pages/models.html)** - Define domain models- **[Models](https://morkeleb.github.io/clay/pages/models.html)** - Define domain models
+
+- **[Generators](https://morkeleb.github.io/clay/pages/generators.html)** - Configure generation steps- **[Generators](https://morkeleb.github.io/clay/pages/generators.html)** - Configure generation steps
+
+- **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars templates and helpers- **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars templates and helpers
+
+- **[AI Integration](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server setup- **[AI Integration](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server setup
+
+- **[CLI Reference](https://morkeleb.github.io/clay/pages/cli.html)** - Command-line guide- **[CLI Reference](https://morkeleb.github.io/clay/pages/cli.html)** - Command-line guide
+
+
+
+## Features at a Glance## Features at a Glance
+
+
+
+### Template-Based Generation### Template-Based Generation
+
+Generate files from Handlebars templates with access to your full model data.Generate files from Handlebars templates with access to your full model data.
+
+
+
+### Command Execution### Command Execution
+
+Run shell commands as part of the generation process.Run shell commands as part of the generation process.
+
+
+
+### File Operations### File Operations
+
+Copy entire directory structures or individual files.Copy entire directory structures or individual files.
+
+
+
+### Watch Mode### Watch Mode
+
+Automatically regenerate when models or templates change.Automatically regenerate when models or templates change.
+
+
+
+### JSONPath Selectors### JSONPath Selectors
+
+Target specific parts of your model for precise generation.Target specific parts of your model for precise generation.
+
+
+
+## Example## Example
+
+
+
+**Model (`clay/model.json`):****Model (`clay/model.json`):**
+
+```json```json
+
+{{
+
+  "name": "user-service",  "name": "user-service",
+
+  "generators": ["./generators/api"],  "generators": ["./generators/api"],
+
+  "model": {  "model": {
+
+    "types": [    "types": [
+
+      {      {
+
+        "name": "User",        "name": "User",
+
+        "fields": [        "fields": [
+
+          { "name": "id", "type": "string" },          { "name": "id", "type": "string" },
+
+          { "name": "email", "type": "string" }          { "name": "email", "type": "string" }
+
+        ]        ]
+
+      }      }
+
+    ]    ]
+
+  }  }
+
+}}
+
+``````
+
+
+
+**Template (`generators/api/templates/model.js`):****Template (`generators/api/templates/model.js`):**
+
+```javascript```javascript
+
+class {{pascalCase name}} {class {{pascalCase name}} {
+
+  constructor(data) {  constructor(data) {
+
+{{#each fields}}{{#each fields}}
+
+    this.{{name}} = data.{{name}};    this.{{name}} = data.{{name}};
+
+{{/each}}{{/each}}
+
+  }  }
+
+}}
+
+``````
+
+
+
+**Generated (`src/models/user.model.js`):****Generated (`src/models/user.model.js`):**
+
+```javascript```javascript
+
+class User {class User {
+
+  constructor(data) {  constructor(data) {
+
+    this.id = data.id;    this.id = data.id;
+
+    this.email = data.email;    this.email = data.email;
+
+  }  }
+
+}}
+
+``````
+
+
+
+## Commands## Commands
+
+
+
+```bash```bash
+
+clay generate [model] [output]  # Generate codeclay generate [model] [output]  # Generate code
+
+clay clean [model] [output]     # Remove generated filesclay clean [model] [output]     # Remove generated files
+
+clay watch [model] [output]     # Watch and regenerateclay watch [model] [output]     # Watch and regenerate
+
+clay test-path <model> <path>   # Test JSONPath expressionsclay test-path <model> <path>   # Test JSONPath expressions
+
+clay init [type] [name]         # Initialize project or generatorclay init [type] [name]         # Initialize project or generator
+
+``````
+
+
+
+## AI Integration (MCP Server)## AI Integration (MCP Server)
+
+
+
+Clay includes an MCP server for seamless integration with AI assistants like Claude and GitHub Copilot.Clay includes an MCP server for seamless integration with AI assistants like Claude and GitHub Copilot.
+
+
+
+**Setup for Claude Desktop:****Setup for Claude Desktop:**
+
+```json```json
+
+{{
+
+  "mcpServers": {  "mcpServers": {
+
+    "clay": {    "clay": {
+
+      "command": "clay-mcp",      "command": "clay-mcp",
+
+      "args": []      "args": []
+
+    }    }
+
+  }  }
+
+}}
+
+``````
+
+
+
+**Setup for VS Code (.vscode/mcp.json):****Setup for VS Code (.vscode/mcp.json):**
+
+```json```json
+
+{{
+
+  "servers": {  "servers": {
+
+    "clay": {    "clay": {
+
+      "type": "stdio",      "type": "stdio",
+
+      "command": "clay-mcp",      "command": "clay-mcp",
+
+      "args": []      "args": []
+
+    }    }
+
+  }  }
+
+}}
+
+``````
+
+
+
+[Learn more about AI Integration →](https://morkeleb.github.io/clay/pages/mcp-server.html)[Learn more about AI Integration →](https://morkeleb.github.io/clay/pages/mcp-server.html)
+
+
+
+## Contributing## Contributing
+
+
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+
+
+
+**Quick setup for contributors:**## Development
 
 ```bash
-npm install -g clay-generator
+
+git clone https://github.com/morkeleb/clay.git### Prerequisites
+
+cd clay
+
+npm install- Node.js 14 or higher
+
+npm link  # Uses ts-node for development- npm 7 or higher
+
 ```
-
-Running `clay` will display its available commands.
-
-## Development
-
-### Prerequisites
-
-- Node.js 14 or higher
-- npm 7 or higher
 
 ### Getting Started for Contributors
 
+## Resources
+
 1. **Clone the repository**
 
-```bash
-git clone https://github.com/morkeleb/clay.git
-cd clay
+- 📦 [NPM Package](https://www.npmjs.com/package/clay-generator)
+
+- 📚 [Full Documentation](https://morkeleb.github.io/clay/)```bash
+
+- 🎥 [Concept Overview (Swedish)](https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand)git clone https://github.com/morkeleb/clay.git
+
+- 🐛 [Issue Tracker](https://github.com/morkeleb/clay/issues)cd clay
+
 ```
+
+## License
 
 2. **Install dependencies**
 
+MIT
+
 ```bash
-npm install
+
+---npm install
+
 ```
+
+**[View Full Documentation →](https://morkeleb.github.io/clay/)**
 
 3. **Build the project**
 

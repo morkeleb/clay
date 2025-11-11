@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+    <div class="doc-container">
+        <a href="../index.html" class="back-home">← Back to Home</a>
+        
+        <div class="doc-header">
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <span>›</span>
+                <span>Templates</span>
+            </div>
+            <h1>Templates & Helpers</h1>
+            <div class="subtitle">Write powerful Handlebars templates with 47+ built-in helpers</div>
+        </div>
+
+        <div class="doc-content">
+            <h2>Overview</h2>
+            <p>Clay uses Handlebars templates to generate code. Templates can access your model data and use a rich set of helpers for formatting, logic, and iteration.</p>
+
+            <h2>Basic Template Syntax</h2>
+            <p>Templates use double curly braces to output values:</p>
+            <pre><code>// {{name}} Model
+class {{pascalCase name}} {
+  constructor() {
+    this.id = null;
+  }
+}</code></pre>
+
+            <h2>Context Variables</h2>
+            <p>Clay automatically adds special context variables to help you navigate your model:</p>
+            
+            <h3>clay_model</h3>
+            <p>Access the complete root model from anywhere in your template:</p>
+            <pre><code>&lt;!-- Access model name from anywhere --&gt;
+&lt;h1&gt;{{clay_model.name}}&lt;/h1&gt;
+
+&lt;!-- Count total types --&gt;
+&lt;p&gt;Total types: {{clay_model.model.types.length}}&lt;/p&gt;</code></pre>
+
+            <h3>clay_parent</h3>
+            <p>Reference the parent element in the JSON structure:</p>
+            <pre><code>&lt;p&gt;Parent name: {{clay_parent.name}}&lt;/p&gt;
+&lt;p&gt;Parent path: {{clay_parent.json_path}}&lt;/p&gt;</code></pre>
+
+            <h3>clay_key</h3>
+            <p>The JSON property name of the current element:</p>
+            <pre><code>&lt;p&gt;Current property: {{clay_key}}&lt;/p&gt;</code></pre>
+
+            <h2>String Helpers</h2>
+            <p>Clay provides extensive string manipulation helpers:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Helper</th>
+                        <th>Example</th>
+                        <th>Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>pascalCase</code></td>
+                        <td><code>{{pascalCase "user name"}}</code></td>
+                        <td>UserName</td>
+                    </tr>
+                    <tr>
+                        <td><code>camelCase</code></td>
+                        <td><code>{{camelCase "user name"}}</code></td>
+                        <td>userName</td>
+                    </tr>
+                    <tr>
+                        <td><code>kebabCase</code></td>
+                        <td><code>{{kebabCase "userName"}}</code></td>
+                        <td>user-name</td>
+                    </tr>
+                    <tr>
+                        <td><code>snakeCase</code></td>
+                        <td><code>{{snakeCase "userName"}}</code></td>
+                        <td>user_name</td>
+                    </tr>
+                    <tr>
+                        <td><code>upperCase</code></td>
+                        <td><code>{{upperCase "hello"}}</code></td>
+                        <td>HELLO</td>
+                    </tr>
+                    <tr>
+                        <td><code>lowerCase</code></td>
+                        <td><code>{{lowerCase "HELLO"}}</code></td>
+                        <td>hello</td>
+                    </tr>
+                    <tr>
+                        <td><code>pluralize</code></td>
+                        <td><code>{{pluralize "category"}}</code></td>
+                        <td>categories</td>
+                    </tr>
+                    <tr>
+                        <td><code>singularize</code></td>
+                        <td><code>{{singularize "users"}}</code></td>
+                        <td>user</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>Logic Helpers</h2>
+            
+            <h3>Conditionals</h3>
+            <pre><code>{{#if isActive}}
+  Active user
+{{else}}
+  Inactive user
+{{/if}}
+
+{{#ifCond age '>=' 18}}
+  Adult
+{{else}}
+  Minor
+{{/ifCond}}</code></pre>
+
+            <h3>Switch/Case</h3>
+            <pre><code>{{#switch type}}
+  {{#case 'admin'}}
+    Administrator
+  {{/case}}
+  {{#case 'user'}}
+    Regular User
+  {{/case}}
+  {{#default}}
+    Unknown
+  {{/default}}
+{{/switch}}</code></pre>
+
+            <h3>Comparison Helpers</h3>
+            <pre><code>{{#if (eq status 'active')}}Active{{/if}}
+{{#if (ne count 0)}}Has items{{/if}}
+{{#if (gt age 18)}}Adult{{/if}}
+{{#if (and isActive isPremium)}}Premium Active User{{/if}}
+{{#if (or isAdmin isModerator)}}Staff{{/if}}</code></pre>
+
+            <h2>Iteration Helpers</h2>
+            
+            <h3>Basic Each</h3>
+            <pre><code>{{#each users}}
+  - {{name}} ({{email}})
+{{/each}}</code></pre>
+
+            <h3>Each with Unique Values</h3>
+            <pre><code>{{#eachUnique items 'category'}}
+  Category: {{this.category}}
+{{/eachUnique}}</code></pre>
+
+            <h3>Group By</h3>
+            <pre><code>{{#group posts by='category'}}
+  &lt;h2&gt;{{value}}&lt;/h2&gt;
+  {{#each items}}
+    &lt;p&gt;{{title}}&lt;/p&gt;
+  {{/each}}
+{{/group}}</code></pre>
+
+            <h3>Times (Repeat N times)</h3>
+            <pre><code>{{#times 3}}
+  Index: {{@index}}
+{{/times}}</code></pre>
+
+            <h2>Utility Helpers</h2>
+            
+            <h3>JSON Output</h3>
+            <pre><code>&lt;pre&gt;{{{json this}}}&lt;/pre&gt;</code></pre>
+
+            <h3>Markdown Rendering</h3>
+            <pre><code>{{{markdown description}}}</code></pre>
+
+            <h3>Increment</h3>
+            <pre><code>Step {{inc @index}}</code></pre>
+
+            <h3>Split String</h3>
+            <pre><code>{{splitAndUseWord 'foo-bar-baz' '-' 1}}  &lt;!-- Output: bar --&gt;</code></pre>
+
+            <h2>Partials</h2>
+            <p>Reuse template fragments with partials. Define them in your generator:</p>
+            <pre><code>{
+  "partials": ["partials/header.hbs"],
+  "steps": [...]
+}</code></pre>
+
+            <p>Use in templates:</p>
+            <pre><code>{{&gt; header}}
+&lt;div class="content"&gt;
+  {{name}}
+&lt;/div&gt;</code></pre>
+
+            <h2>Complete Helper List</h2>
+            <p>Clay includes 47+ helpers across 8 categories:</p>
+            <ul>
+                <li><strong>String:</strong> camelCase, pascalCase, kebabCase, snakeCase, upperCase, lowerCase, capitalize, startCase, pluralize, singularize</li>
+                <li><strong>Comparison:</strong> eq, ne, lt, gt, lte, gte</li>
+                <li><strong>Logic:</strong> if, and, or, switch/case, ifCond</li>
+                <li><strong>Iteration:</strong> each, eachUnique, eachUniqueJSONPath, times, group</li>
+                <li><strong>Type Check:</strong> isArray, isString, isNumber, isBoolean, isEmpty, isNull, isUndefined</li>
+                <li><strong>Utility:</strong> json, markdown, inc, split, includes, startsWith, endsWith, parseInt</li>
+                <li><strong>String Utilities:</strong> pad, repeat, replace, truncate, words</li>
+                <li><strong>Property:</strong> propertyExists</li>
+            </ul>
+
+            <div class="note">
+                <strong>💡 Pro Tip:</strong> Use the MCP server's <code>clay_list_helpers</code> tool to get detailed examples of all helpers when working with AI assistants!
+            </div>
+
+            <h2>Best Practices</h2>
+            <ul>
+                <li>Use case helpers (pascalCase, camelCase, etc.) for consistent naming</li>
+                <li>Leverage partials for reusable components like headers and footers</li>
+                <li>Use <code>clay_model</code> to access the full model when needed</li>
+                <li>Test complex logic in smaller templates first</li>
+                <li>Use formatters (like Prettier) to clean up generated code</li>
+            </ul>
+        </div>
+
+        <div class="doc-nav">
+            <a href="generators.html" class="doc-nav-item">
+                <div class="nav-label">← Previous</div>
+                <div class="nav-title">Generators</div>
+            </a>
+            <a href="mcp-server.html" class="doc-nav-item">
+                <div class="nav-label">Next →</div>
+                <div class="nav-title">AI Integration</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+</body>
+</html>

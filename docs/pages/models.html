@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Models - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+    <div class="doc-container">
+        <a href="../index.html" class="back-home">← Back to Home</a>
+        
+        <div class="doc-header">
+            <div class="breadcrumb">
+                <a href="../index.html">Home</a>
+                <span>›</span>
+                <span>Models</span>
+            </div>
+            <h1>Models</h1>
+            <div class="subtitle">Define your domain models in JSON</div>
+        </div>
+
+        <div class="doc-content">
+            <h2>What are Models?</h2>
+            <p>Models are JSON files that describe your domain. Clay reads these models and uses them with templates to generate code. Think of models as the blueprint for what you want to build.</p>
+
+            <h2>Basic Model Structure</h2>
+            <pre><code>{
+  "name": "user-service",
+  "generators": ["./generators/api"],
+  "model": {
+    "types": [
+      {
+        "name": "User",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "email", "type": "string" },
+          { "name": "name", "type": "string" }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+
+            <h2>Model Properties</h2>
+            
+            <h3>name (required)</h3>
+            <p>The name of your model/project:</p>
+            <pre><code>"name": "user-service"</code></pre>
+
+            <h3>generators (required)</h3>
+            <p>Array of generators to run on this model:</p>
+            <pre><code>"generators": [
+  "./generators/api",
+  "./generators/frontend",
+  "clay-model-documentation"
+]</code></pre>
+
+            <h3>model (required)</h3>
+            <p>Your actual domain model structure. Can be any JSON structure:</p>
+            <pre><code>"model": {
+  "types": [...],
+  "services": [...],
+  "config": {...}
+}</code></pre>
+
+            <h2>Special Properties</h2>
+
+            <h3>mixin</h3>
+            <p>Apply JavaScript functions to transform parts of your model:</p>
+            <pre><code>{
+  "name": "order-service",
+  "mixins": ["mixins/add-timestamps.js"],
+  "model": {
+    "types": [
+      {
+        "name": "Order",
+        "mixin": ["add-timestamps"],
+        "fields": [...]
+      }
+    ]
+  }
+}</code></pre>
+
+            <p>Mixin file example (<code>mixins/add-timestamps.js</code>):</p>
+            <pre><code>module.exports = function(type) {
+  type.fields = type.fields || [];
+  type.fields.push(
+    { name: 'createdAt', type: 'timestamp' },
+    { name: 'updatedAt', type: 'timestamp' }
+  );
+  return type;
+};</code></pre>
+
+            <h3>include</h3>
+            <p>Split large models into multiple files:</p>
+            <pre><code>{
+  "name": "my-app",
+  "model": {
+    "types": [
+      { "include": "entities/user.json" },
+      { "include": "entities/order.json" }
+    ],
+    "events": [
+      { "include": "events/user-events.json" }
+    ]
+  }
+}</code></pre>
+
+            <p>Included file (<code>entities/user.json</code>):</p>
+            <pre><code>{
+  "name": "User",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "email", "type": "string" }
+  ]
+}</code></pre>
+
+            <h2>Model Organization</h2>
+            <p>Recommended directory structure:</p>
+            <pre><code>clay/
+├── model.json              # Main model file
+├── mixins/                 # Reusable transformations
+│   ├── timestamps.js
+│   └── validation.js
+├── entities/               # Split model files
+│   ├── user.json
+│   ├── order.json
+│   └── product.json
+└── generators/             # Custom generators
+    └── api/
+        ├── generator.json
+        └── templates/</code></pre>
+
+            <h2>JSONPath Selectors</h2>
+            <p>Generators use JSONPath to select parts of your model. Common patterns:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pattern</th>
+                        <th>Selects</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>$.model.types[*]</code></td>
+                        <td>All types</td>
+                    </tr>
+                    <tr>
+                        <td><code>$.model.types[*].fields[*]</code></td>
+                        <td>All fields of all types</td>
+                    </tr>
+                    <tr>
+                        <td><code>$.model.types[?(@.isActive)]</code></td>
+                        <td>Types where isActive is true</td>
+                    </tr>
+                    <tr>
+                        <td><code>$.model.types[*].fields[?(@.type=='array')]</code></td>
+                        <td>Array-type fields</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>Test JSONPath expressions with:</p>
+            <pre><code>clay test-path ./clay/model.json "$.model.types[*].fields[*]"</code></pre>
+
+            <h2>Example: E-commerce Model</h2>
+            <pre><code>{
+  "name": "ecommerce",
+  "generators": ["./generators/api", "./generators/frontend"],
+  "mixins": ["mixins/timestamps.js", "mixins/validation.js"],
+  "model": {
+    "types": [
+      {
+        "name": "Product",
+        "mixin": ["timestamps", "validation"],
+        "fields": [
+          { "name": "id", "type": "string", "required": true },
+          { "name": "name", "type": "string", "required": true },
+          { "name": "price", "type": "number", "required": true },
+          { "name": "description", "type": "string" },
+          { "name": "category", "type": "string", "required": true }
+        ],
+        "commands": [
+          {
+            "name": "updatePrice",
+            "parameters": [
+              { "name": "newPrice", "type": "number" }
+            ],
+            "raises": "price_updated"
+          }
+        ]
+      },
+      {
+        "name": "Order",
+        "mixin": ["timestamps"],
+        "fields": [
+          { "name": "id", "type": "string", "required": true },
+          { "name": "userId", "type": "string", "required": true },
+          { "name": "items", "type": "array", "required": true },
+          { "name": "total", "type": "number", "required": true },
+          { "name": "status", "type": "string", "required": true }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+
+            <h2>Best Practices</h2>
+            <ul>
+                <li>Keep models focused on domain concepts, not implementation</li>
+                <li>Use <code>include</code> to split large models into manageable files</li>
+                <li>Use <code>mixin</code> for common properties (timestamps, audit fields, etc.)</li>
+                <li>Test JSONPath selectors before using them in generators</li>
+                <li>Version control your models alongside your code</li>
+                <li>Document complex model structures with comments in separate docs</li>
+            </ul>
+
+            <div class="note">
+                <strong>💡 Pro Tip:</strong> Use the <code>clay watch</code> command during development. It automatically regenerates code whenever you modify your model!
+            </div>
+        </div>
+
+        <div class="doc-nav">
+            <a href="getting-started.html" class="doc-nav-item">
+                <div class="nav-label">← Previous</div>
+                <div class="nav-title">Getting Started</div>
+            </a>
+            <a href="generators.html" class="doc-nav-item">
+                <div class="nav-label">Next →</div>
+                <div class="nav-title">Generators</div>
+            </a>
+        </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+</body>
+</html>

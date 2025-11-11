@@ -32,6 +32,7 @@
     "type": "git",
     "url": "https://github.com/morkeleb/clay.git"
   },
+  "homepage": "https://morkeleb.github.io/clay/",
   "author": "Morten Nielsen",
   "license": "ISC",
   "dependencies": {
