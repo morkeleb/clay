@@ -86,23 +86,13 @@ export async function generateTool(args: unknown) {
             text: JSON.stringify(
               {
                 success: true,
-                message: 'Successfully generated code for model',
-                models_processed: 1,
-                total_files_generated: stats.filesGenerated,
-                total_files_updated: stats.filesUpdated,
-                total_files_unchanged: stats.filesUnchanged,
-                total_files_copied: stats.filesCopied,
-                total_files_moved: stats.filesMoved,
-                details: [
-                  {
-                    model_path: input.model_path,
-                    output_path: input.output_path,
-                    files_generated: stats.filesGenerated,
-                    files_copied: stats.filesCopied,
-                    files_moved: stats.filesMoved,
-                  },
-                ],
-                raw_output: result.output,
+                message: 'Successfully generated code for all models',
+                output: result.output,
+                stats: {
+                  filesGenerated: stats.filesGenerated,
+                  filesCopied: stats.filesCopied,
+                  commandsExecuted: stats.commandsExecuted,
+                },
               },
               null,
               2
@@ -166,10 +156,8 @@ export async function generateTool(args: unknown) {
                 message: `Successfully regenerated all models`,
                 models_processed: clayData.models.length,
                 total_files_generated: stats.filesGenerated,
-                total_files_updated: stats.filesUpdated,
-                total_files_unchanged: stats.filesUnchanged,
                 total_files_copied: stats.filesCopied,
-                total_files_moved: stats.filesMoved,
+                total_commands_executed: stats.commandsExecuted,
                 details: clayData.models.map((m) => ({
                   model_path: m.path,
                   output_path: m.output,

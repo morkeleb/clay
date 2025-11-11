@@ -89,27 +89,23 @@ export function getClayVersion(): string | null {
  */
 export function parseGenerateOutput(output: string): {
   filesGenerated: number;
-  filesUpdated: number;
-  filesUnchanged: number;
   filesCopied: number;
-  filesMoved: number;
+  commandsExecuted: number;
 } {
-  // Clay outputs different colored messages for file operations:
-  // - "writing: " for generated/updated files
-  // - "copying: " for copied files
-  // - "moving: " for moved files
-  // Count occurrences of these patterns
+  // Clay outputs different colored messages for operations:
+  // - "writing: " for generated files (from generate steps)
+  // - "copying: " for copied files/directories (from copy steps)
+  // - "executing: " for executed commands (from runCommand steps)
+  // Note: "moving:" appears during copy operations with templated paths (internal operation)
 
   const writing = (output.match(/writing:/gi) || []).length;
   const copying = (output.match(/copying:/gi) || []).length;
-  const moving = (output.match(/moving:/gi) || []).length;
+  const executing = (output.match(/executing:/gi) || []).length;
 
   return {
     filesGenerated: writing,
-    filesUpdated: 0, // Clay doesn't distinguish between new and updated in output
-    filesUnchanged: 0, // Clay doesn't output unchanged files
     filesCopied: copying,
-    filesMoved: moving,
+    commandsExecuted: executing,
   };
 }
 
