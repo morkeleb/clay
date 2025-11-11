@@ -261,3 +261,151 @@
         flex-direction: column;
     }
 }
+
+/* Philosophy page styles */
+.page-title {
+    color: var(--glow-blue);
+    font-size: 32px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 15px var(--glow-blue);
+}
+
+.page-subtitle {
+    color: var(--text-color);
+    font-size: 16px;
+    margin-bottom: 30px;
+    opacity: 0.9;
+}
+
+.doc-section {
+    margin-bottom: 50px;
+}
+
+.benefit-item,
+.challenge-item,
+.best-practice {
+    background: rgba(0, 217, 255, 0.03);
+    border: 1px solid var(--primary-blue);
+    border-radius: 8px;
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.benefit-item:hover,
+.challenge-item:hover,
+.best-practice:hover {
+    border-color: var(--glow-blue);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+    transform: translateX(5px);
+}
+
+.benefit-item h3,
+.challenge-item h3,
+.best-practice h3 {
+    color: var(--glow-blue);
+    font-size: 18px;
+    margin-bottom: 15px;
+    text-shadow: 0 0 8px var(--glow-blue);
+}
+
+.benefit-item p,
+.challenge-item p,
+.best-practice p {
+    margin-bottom: 10px;
+    line-height: 1.8;
+}
+
+.benefit-item p:last-child,
+.challenge-item p:last-child,
+.best-practice p:last-child {
+    margin-bottom: 0;
+}
+
+.tip {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 217, 255, 0.2);
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.tip strong {
+    color: var(--glow-blue);
+}
+
+.use-case-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.use-case {
+    background: rgba(0, 217, 255, 0.03);
+    border: 1px solid var(--primary-blue);
+    border-radius: 8px;
+    padding: 25px;
+}
+
+.use-case h3 {
+    color: var(--glow-blue);
+    font-size: 18px;
+    margin-bottom: 15px;
+    text-shadow: 0 0 8px var(--glow-blue);
+}
+
+.use-case ul {
+    list-style: none;
+    padding: 0;
+}
+
+.use-case li {
+    padding: 8px 0;
+    padding-left: 25px;
+    position: relative;
+    color: var(--text-color);
+}
+
+.use-case li:before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--primary-blue);
+}
+
+.doc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 60px;
+    padding-top: 30px;
+    border-top: 2px solid var(--primary-blue);
+}
+
+.footer-link {
+    color: var(--primary-blue);
+    text-decoration: none;
+    padding: 10px 20px;
+    border: 1px solid var(--primary-blue);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.footer-link:hover {
+    border-color: var(--glow-blue);
+    color: var(--glow-blue);
+    text-shadow: 0 0 10px var(--glow-blue);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+}
+
+@media (max-width: 768px) {
+    .doc-footer {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .use-case-grid {
+        grid-template-columns: 1fr;
+    }
+}

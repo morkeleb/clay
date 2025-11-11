@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philosophy - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css">
+    <link rel="stylesheet" href="../css/docs.css">
+</head>
+<body>
+    <div class="scanline"></div>
+    <canvas id="particles"></canvas>
+    
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <span class="btn close"></span>
+                <span class="btn minimize"></span>
+                <span class="btn maximize"></span>
+            </div>
+            <span class="terminal-title">clay/docs/philosophy</span>
+        </div>
+        
+        <div class="terminal-body">
+            <div class="breadcrumb">
+                <a href="../index.html" class="breadcrumb-link">Home</a>
+                <span class="breadcrumb-separator">></span>
+                <span class="breadcrumb-current">Philosophy</span>
+            </div>
+
+            <div class="content">
+                <h1 class="page-title">Philosophy & Trade-offs</h1>
+                <p class="page-subtitle">Understanding the benefits and challenges of code generation</p>
+
+                <section class="doc-section">
+                    <h2 class="section-title">Why Code Generation?</h2>
+                    <p>Code generation fundamentally changes how we approach software development. Instead of carefully architecting every detail upfront, you can start quickly and iteratively refine patterns as they emerge.</p>
+                </section>
+
+                <section class="doc-section">
+                    <h2 class="section-title">Benefits</h2>
+                    
+                    <div class="benefit-item">
+                        <h3>🚀 Rapid Iteration</h3>
+                        <p>You don't need to think through everything beforehand. Just start and slowly chisel out a pattern. The ability to experiment freely and go all the way without fear is liberating.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>🔄 Global Changes</h3>
+                        <p>Found a bug or want to improve something? Change it once in the template, and it updates everywhere. This is especially powerful when you realize you need to refactor a pattern across dozens or hundreds of files.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>🎯 Consistent Quality</h3>
+                        <p>Generated code maintains even quality throughout. No "morning code vs afternoon code" inconsistencies. Every generated file follows the same standards and patterns.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>🧪 Reduced Testing Burden</h3>
+                        <p>When all UI components look and behave the same, testing becomes more efficient. Test one dropdown, and you've effectively tested them all. You can even generate tests if you want to.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>⚡ Lightning-Fast Implementation Changes</h3>
+                        <p>Want to swap out a select box implementation? With code generation, it's a quick template change rather than hunting through dozens of files.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>👥 Live Collaboration</h3>
+                        <p>Conduct meetings with live model changes while maintaining runnable code. The model becomes a living document that everyone can understand and modify together.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>✅ Enhanced Validation</h3>
+                        <p>We would never have achieved the level of input data validation we have today without code generation. Consistent patterns ensure nothing falls through the cracks.</p>
+                    </div>
+
+                    <div class="benefit-item">
+                        <h3>🎓 Learning Curve Similar to TDD</h3>
+                        <p>Like Test-Driven Development, code generation has a learning curve. But once you get into it, it doesn't feel scary anymore. It becomes a natural part of your workflow.</p>
+                    </div>
+                </section>
+
+                <section class="doc-section">
+                    <h2 class="section-title">Trade-offs & Challenges</h2>
+                    
+                    <div class="challenge-item">
+                        <h3>⚠️ Overwrites Custom Code</h3>
+                        <p>Generated code will overwrite files on regeneration. You need to be careful about where you put custom logic. For example, if you modify a generated file like <code>rest.mixin.js</code>, your changes will be lost on the next generation.</p>
+                        <p class="tip"><strong>Solution:</strong> Use mixins, partials, and separate files for custom logic that won't be overwritten.</p>
+                    </div>
+
+                    <div class="challenge-item">
+                        <h3>🔧 Heavier Change Process</h3>
+                        <p>Making changes becomes a bit more involved since you need to modify templates rather than individual files. This can feel slower initially but pays off when the same change needs to propagate everywhere.</p>
+                    </div>
+
+                    <div class="challenge-item">
+                        <h3>📝 Template DRYness</h3>
+                        <p>It's harder to keep template files DRY (Don't Repeat Yourself). There's a temptation for copy-paste between templates, which can lead to maintenance issues.</p>
+                        <p class="tip"><strong>Solution:</strong> Use partials extensively and extract common patterns into reusable components.</p>
+                    </div>
+
+                    <div class="challenge-item">
+                        <h3>💅 Output Polish</h3>
+                        <p>It's easy to neglect making your templates beautiful, resulting in output that sometimes looks "generated". If we had linted our templates more rigorously, we might have avoided some of these issues.</p>
+                        <p class="tip"><strong>Solution:</strong> Use formatters like Prettier and treat your templates with the same care as production code.</p>
+                    </div>
+                </section>
+
+                <section class="doc-section">
+                    <h2 class="section-title">Best Practices</h2>
+                    
+                    <div class="best-practice">
+                        <h3>Embrace the Learning Curve</h3>
+                        <p>Give yourself time to adapt. Like TDD, code generation feels unfamiliar at first but becomes natural with practice.</p>
+                    </div>
+
+                    <div class="best-practice">
+                        <h3>Design for Generation</h3>
+                        <p>Structure your projects with clear boundaries between generated and custom code. Use mixins and hooks for customization points.</p>
+                    </div>
+
+                    <div class="best-practice">
+                        <h3>Keep Templates Clean</h3>
+                        <p>Treat templates as first-class code. Use linters, formatters, and code review. The quality of your templates directly impacts the quality of your generated code.</p>
+                    </div>
+
+                    <div class="best-practice">
+                        <h3>Iterate Fearlessly</h3>
+                        <p>One of the biggest advantages is the ability to experiment. Don't be afraid to try new patterns—you can always regenerate if something doesn't work out.</p>
+                    </div>
+
+                    <div class="best-practice">
+                        <h3>Use Version Control</h3>
+                        <p>Commit your templates and models separately from generated code. This makes it easy to track what changed and why.</p>
+                    </div>
+                </section>
+
+                <section class="doc-section">
+                    <h2 class="section-title">When to Use Code Generation</h2>
+                    
+                    <div class="use-case-grid">
+                        <div class="use-case good">
+                            <h3>✅ Good Fit</h3>
+                            <ul>
+                                <li>Repetitive patterns across many files</li>
+                                <li>CRUD applications with consistent structure</li>
+                                <li>API clients and server endpoints</li>
+                                <li>Database models and migrations</li>
+                                <li>Form validation and UI components</li>
+                                <li>Documentation that mirrors code</li>
+                            </ul>
+                        </div>
+
+                        <div class="use-case caution">
+                            <h3>⚠️ Use with Caution</h3>
+                            <ul>
+                                <li>Highly unique business logic</li>
+                                <li>Frequently changing requirements</li>
+                                <li>Small projects with few files</li>
+                                <li>Code that needs extensive customization</li>
+                                <li>Performance-critical implementations</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="doc-footer">
+                    <a href="getting-started.html" class="footer-link">← Getting Started</a>
+                    <a href="../index.html" class="footer-link">Back to Home</a>
+                    <a href="models.html" class="footer-link">Models →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+</body>
+</html>

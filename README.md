@@ -43,6 +43,7 @@ clay generate ./clay/model.json ./output
 ## Documentation
 
 - **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** - Installation, setup, and your first project
+- **[Philosophy](https://morkeleb.github.io/clay/pages/philosophy.html)** - Benefits and trade-offs of code generation
 - **[Models](https://morkeleb.github.io/clay/pages/models.html)** - Define domain models in JSON with mixins and includes
 - **[Generators](https://morkeleb.github.io/clay/pages/generators.html)** - Configure generation steps and workflows
 - **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars templates with 47+ helpers
