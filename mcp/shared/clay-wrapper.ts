@@ -99,7 +99,7 @@ export function parseGenerateOutput(output: string): {
   // - "copying: " for copied files
   // - "moving: " for moved files
   // Count occurrences of these patterns
-  
+
   const writing = (output.match(/writing:/gi) || []).length;
   const copying = (output.match(/copying:/gi) || []).length;
   const moving = (output.match(/moving:/gi) || []).length;

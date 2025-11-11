@@ -1,32 +1,36 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Generators - Clay Documentation</title>
-    <link rel="stylesheet" href="../css/terminal.css">
-    <link rel="stylesheet" href="../css/docs.css">
-</head>
-<body>
+    <link rel="stylesheet" href="../css/terminal.css" />
+    <link rel="stylesheet" href="../css/docs.css" />
+  </head>
+  <body>
     <div class="doc-container">
-        <a href="../index.html" class="back-home">← Back to Home</a>
-        
-        <div class="doc-header">
-            <div class="breadcrumb">
-                <a href="../index.html">Home</a>
-                <span>›</span>
-                <span>Generators</span>
-            </div>
-            <h1>Generators</h1>
-            <div class="subtitle">Configure code generation steps</div>
+      <a href="../index.html" class="back-home">← Back to Home</a>
+
+      <div class="doc-header">
+        <div class="breadcrumb">
+          <a href="../index.html">Home</a>
+          <span>›</span>
+          <span>Generators</span>
         </div>
+        <h1>Generators</h1>
+        <div class="subtitle">Configure code generation steps</div>
+      </div>
 
-        <div class="doc-content">
-            <h2>What are Generators?</h2>
-            <p>Generators define a sequence of steps that transform your model into code. Each generator contains templates, partials, and configuration that tells Clay exactly what to generate.</p>
+      <div class="doc-content">
+        <h2>What are Generators?</h2>
+        <p>
+          Generators define a sequence of steps that transform your model into
+          code. Each generator contains templates, partials, and configuration
+          that tells Clay exactly what to generate.
+        </p>
 
-            <h2>Generator Structure</h2>
-            <pre><code>{
+        <h2>Generator Structure</h2>
+        <pre><code>{
   "partials": ["partials/header.hbs"],
   "steps": [
     {
@@ -38,83 +42,87 @@
   "formatters": ["clay-generator-formatter-prettier"]
 }</code></pre>
 
-            <h2>Generator Properties</h2>
+        <h2>Generator Properties</h2>
 
-            <h3>partials</h3>
-            <p>Array of Handlebars partial files to include:</p>
-            <pre><code>"partials": [
+        <h3>partials</h3>
+        <p>Array of Handlebars partial files to include:</p>
+        <pre><code>"partials": [
   "partials/header.hbs",
   "partials/footer.hbs"
 ]</code></pre>
 
-            <h3>steps</h3>
-            <p>Array of generation steps (run in order):</p>
-            <pre><code>"steps": [
+        <h3>steps</h3>
+        <p>Array of generation steps (run in order):</p>
+        <pre><code>"steps": [
   { "runCommand": "mkdir -p src/models" },
   { "generate": "templates/model.js", "select": "$.model.types[*]" },
   { "copy": "foundation", "target": "src/foundation" }
 ]</code></pre>
 
-            <h3>formatters</h3>
-            <p>Optional formatters to prettify generated code:</p>
-            <pre><code>"formatters": ["clay-generator-formatter-prettier"]</code></pre>
+        <h3>formatters</h3>
+        <p>Optional formatters to prettify generated code:</p>
+        <pre><code>"formatters": ["clay-generator-formatter-prettier"]</code></pre>
 
-            <h2>Step Types</h2>
+        <h2>Step Types</h2>
 
-            <h3>1. Generate (Template)</h3>
-            <p>Generate files from Handlebars templates:</p>
-            <pre><code>{
+        <h3>1. Generate (Template)</h3>
+        <p>Generate files from Handlebars templates:</p>
+        <pre><code>{
   "generate": "templates/model.js",
   "select": "$.model.types[*]",
   "target": "src/models/{{kebabCase name}}.model.js",
   "touch": false
 }</code></pre>
 
-            <p><strong>Parameters:</strong></p>
-            <ul>
-                <li><code>generate</code> - Path to template file</li>
-                <li><code>select</code> - JSONPath to select data (optional)</li>
-                <li><code>target</code> - Output path (can use Handlebars)</li>
-                <li><code>touch</code> - If true, only generate if file doesn't exist</li>
-            </ul>
+        <p><strong>Parameters:</strong></p>
+        <ul>
+          <li><code>generate</code> - Path to template file</li>
+          <li><code>select</code> - JSONPath to select data (optional)</li>
+          <li><code>target</code> - Output path (can use Handlebars)</li>
+          <li>
+            <code>touch</code> - If true, only generate if file doesn't exist
+          </li>
+        </ul>
 
-            <h3>2. Copy</h3>
-            <p>Copy files or directories:</p>
-            <pre><code>{
+        <h3>2. Copy</h3>
+        <p>Copy files or directories:</p>
+        <pre><code>{
   "copy": "foundation",
   "select": "$.model.types[*]",
   "target": "src/{{kebabCase name}}/foundation"
 }</code></pre>
 
-            <p><strong>Parameters:</strong></p>
-            <ul>
-                <li><code>copy</code> - Source path or git repo (e.g., "git+user/repo")</li>
-                <li><code>select</code> - JSONPath to iterate (optional)</li>
-                <li><code>target</code> - Destination path (can use Handlebars)</li>
-            </ul>
+        <p><strong>Parameters:</strong></p>
+        <ul>
+          <li>
+            <code>copy</code> - Source path or git repo (e.g., "git+user/repo")
+          </li>
+          <li><code>select</code> - JSONPath to iterate (optional)</li>
+          <li><code>target</code> - Destination path (can use Handlebars)</li>
+        </ul>
 
-            <h3>3. Run Command</h3>
-            <p>Execute shell commands:</p>
-            <pre><code>{
+        <h3>3. Run Command</h3>
+        <p>Execute shell commands:</p>
+        <pre><code>{
   "runCommand": "npm install",
   "npxCommand": false
 }</code></pre>
 
-            <p>With model data:</p>
-            <pre><code>{
+        <p>With model data:</p>
+        <pre><code>{
   "runCommand": "echo Generating {{name}}",
   "select": "$.model.types[*]"
 }</code></pre>
 
-            <p><strong>Parameters:</strong></p>
-            <ul>
-                <li><code>runCommand</code> - Shell command to execute</li>
-                <li><code>npxCommand</code> - If true, run with npx</li>
-                <li><code>select</code> - JSONPath to iterate (optional)</li>
-            </ul>
+        <p><strong>Parameters:</strong></p>
+        <ul>
+          <li><code>runCommand</code> - Shell command to execute</li>
+          <li><code>npxCommand</code> - If true, run with npx</li>
+          <li><code>select</code> - JSONPath to iterate (optional)</li>
+        </ul>
 
-            <h2>Complete Example</h2>
-            <pre><code>{
+        <h2>Complete Example</h2>
+        <pre><code>{
   "partials": [
     "partials/license-header.hbs",
     "partials/imports.hbs"
@@ -154,18 +162,18 @@
   "formatters": ["clay-generator-formatter-prettier"]
 }</code></pre>
 
-            <h2>Creating a Generator</h2>
+        <h2>Creating a Generator</h2>
 
-            <h3>Initialize</h3>
-            <pre><code>clay init generator my-generator</code></pre>
+        <h3>Initialize</h3>
+        <pre><code>clay init generator my-generator</code></pre>
 
-            <p>This creates:</p>
-            <pre><code>clay/generators/my-generator/
+        <p>This creates:</p>
+        <pre><code>clay/generators/my-generator/
 ├── generator.json
 └── templates/</code></pre>
 
-            <h3>Directory Structure</h3>
-            <pre><code>clay/generators/api/
+        <h3>Directory Structure</h3>
+        <pre><code>clay/generators/api/
 ├── generator.json          # Configuration
 ├── templates/              # Handlebars templates
 │   ├── model.js
@@ -177,35 +185,37 @@
 └── foundation/            # Files to copy
     └── config.js</code></pre>
 
-            <h2>Best Practices</h2>
-            <ul>
-                <li>Order steps logically (create directories before files)</li>
-                <li>Use <code>select</code> to iterate over model arrays</li>
-                <li>Use <code>touch: true</code> for files users might customize</li>
-                <li>Test JSONPath selectors with <code>clay test-path</code></li>
-                <li>Use partials for license headers, imports, etc.</li>
-                <li>Add formatters for consistent code style</li>
-                <li>Keep templates focused on single responsibilities</li>
-            </ul>
+        <h2>Best Practices</h2>
+        <ul>
+          <li>Order steps logically (create directories before files)</li>
+          <li>Use <code>select</code> to iterate over model arrays</li>
+          <li>Use <code>touch: true</code> for files users might customize</li>
+          <li>Test JSONPath selectors with <code>clay test-path</code></li>
+          <li>Use partials for license headers, imports, etc.</li>
+          <li>Add formatters for consistent code style</li>
+          <li>Keep templates focused on single responsibilities</li>
+        </ul>
 
-            <h2>Using Published Generators</h2>
-            <p>Install generators globally:</p>
-            <pre><code>npm install -g clay-model-documentation</code></pre>
+        <h2>Using Published Generators</h2>
+        <p>Install generators globally:</p>
+        <pre><code>npm install -g clay-model-documentation</code></pre>
 
-            <p>Reference in your model:</p>
-            <pre><code>{
+        <p>Reference in your model:</p>
+        <pre><code>{
   "name": "my-app",
   "generators": ["clay-model-documentation"],
   "model": {...}
 }</code></pre>
 
-            <div class="note">
-                <strong>💡 Pro Tip:</strong> Start with a simple generator that creates one file type, then expand it step by step. Use <code>clay watch</code> to see changes immediately!
-            </div>
+        <div class="note">
+          <strong>💡 Pro Tip:</strong> Start with a simple generator that
+          creates one file type, then expand it step by step. Use
+          <code>clay watch</code> to see changes immediately!
+        </div>
 
-            <h2>Publishing Generators</h2>
-            <p>Package your generator as an npm module:</p>
-            <pre><code>{
+        <h2>Publishing Generators</h2>
+        <p>Package your generator as an npm module:</p>
+        <pre><code>{
   "name": "clay-generator-myapi",
   "version": "1.0.0",
   "main": "generator.json",
@@ -216,22 +226,22 @@
   ]
 }</code></pre>
 
-            <p>Publish to npm:</p>
-            <pre><code>npm publish</code></pre>
-        </div>
+        <p>Publish to npm:</p>
+        <pre><code>npm publish</code></pre>
+      </div>
 
-        <div class="doc-nav">
-            <a href="models.html" class="doc-nav-item">
-                <div class="nav-label">← Previous</div>
-                <div class="nav-title">Models</div>
-            </a>
-            <a href="templates.html" class="doc-nav-item">
-                <div class="nav-label">Next →</div>
-                <div class="nav-title">Templates</div>
-            </a>
-        </div>
+      <div class="doc-nav">
+        <a href="models.html" class="doc-nav-item">
+          <div class="nav-label">← Previous</div>
+          <div class="nav-title">Models</div>
+        </a>
+        <a href="templates.html" class="doc-nav-item">
+          <div class="nav-label">Next →</div>
+          <div class="nav-title">Templates</div>
+        </a>
+      </div>
     </div>
 
     <script src="../js/terminal.js"></script>
-</body>
+  </body>
 </html>

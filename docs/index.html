@@ -1,29 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clay - Template-Focused Code Generator</title>
-    <link rel="stylesheet" href="css/terminal.css">
-</head>
-<body>
+    <link rel="stylesheet" href="css/terminal.css" />
+  </head>
+  <body>
     <div class="terminal-container">
-        <div class="terminal-header">
-            <div class="terminal-buttons">
-                <span class="btn close"></span>
-                <span class="btn minimize"></span>
-                <span class="btn maximize"></span>
-            </div>
-            <div class="terminal-title">clay@generator:~</div>
+      <div class="terminal-header">
+        <div class="terminal-buttons">
+          <span class="btn close"></span>
+          <span class="btn minimize"></span>
+          <span class="btn maximize"></span>
         </div>
-        
-        <div class="terminal-body">
-            <div class="terminal-output">
-                <div class="line">
-                    <span class="prompt">$</span> <span class="command typed">cat README.md</span>
-                </div>
-                <div class="content">
-                    <pre class="ascii-art">
+        <div class="terminal-title">clay@generator:~</div>
+      </div>
+
+      <div class="terminal-body">
+        <div class="terminal-output">
+          <div class="line">
+            <span class="prompt">$</span>
+            <span class="command typed">cat README.md</span>
+          </div>
+          <div class="content">
+            <pre class="ascii-art">
    _____ _               
   / ____| |              
  | |    | | __ _ _   _  
@@ -32,106 +33,139 @@
   \_____|_|\__,_|\__, | 
                   __/ | 
                  |___/  
-                    </pre>
-                    <div class="tagline glow">Template-Focused Code Generator</div>
-                    
-                    <p class="intro">
-                        Clay transforms JSON models into actual code using Handlebars templates, 
-                        shell commands, and file operations. Build consistent implementations across 
-                        your entire system.
-                    </p>
+                    </pre
+            >
+            <div class="tagline glow">Template-Focused Code Generator</div>
 
-                    <div class="quick-start">
-                        <div class="section-title">[QUICK START]</div>
-                        <div class="code-block">
-                            <span class="prompt">$</span> npm install -g clay-generator<br>
-                            <span class="prompt">$</span> clay init<br>
-                            <span class="prompt">$</span> clay generate ./model.json ./output
-                        </div>
-                    </div>
+            <p class="intro">
+              Clay transforms JSON models into actual code using Handlebars
+              templates, shell commands, and file operations. Build consistent
+              implementations across your entire system.
+            </p>
 
-                    <div class="features">
-                        <div class="section-title">[FEATURES]</div>
-                        <ul class="feature-list">
-                            <li><span class="icon">▸</span> <strong>Template-Based</strong> - Handlebars templates with 47+ helpers</li>
-                            <li><span class="icon">▸</span> <strong>Type-Safe</strong> - Built with TypeScript for reliability</li>
-                            <li><span class="icon">▸</span> <strong>Consistent</strong> - Update your model, regenerate everything</li>
-                            <li><span class="icon">▸</span> <strong>Flexible</strong> - Templates, commands, and file operations</li>
-                            <li><span class="icon">▸</span> <strong>AI-Powered</strong> - MCP server for Claude & GitHub Copilot</li>
-                        </ul>
-                    </div>
-
-                    <div class="navigation">
-                        <div class="section-title">[DOCUMENTATION]</div>
-                        <div class="nav-grid">
-                            <a href="pages/getting-started.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">Getting Started</div>
-                                    <div class="nav-desc">Installation, setup, and first project</div>
-                                </div>
-                            </a>
-                            <a href="pages/models.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">Models</div>
-                                    <div class="nav-desc">Define your domain models in JSON</div>
-                                </div>
-                            </a>
-                            <a href="pages/generators.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">Generators</div>
-                                    <div class="nav-desc">Configure generation steps</div>
-                                </div>
-                            </a>
-                            <a href="pages/templates.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">Templates</div>
-                                    <div class="nav-desc">Handlebars templates and helpers</div>
-                                </div>
-                            </a>
-                            <a href="pages/mcp-server.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">AI Integration</div>
-                                    <div class="nav-desc">MCP server for AI assistants</div>
-                                </div>
-                            </a>
-                            <a href="pages/cli.html" class="nav-item">
-                                <span class="nav-icon">►</span>
-                                <div class="nav-content">
-                                    <div class="nav-title">CLI Reference</div>
-                                    <div class="nav-desc">Command-line interface guide</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-
-                    <div class="links">
-                        <div class="section-title">[LINKS]</div>
-                        <div class="link-list">
-                            <a href="https://github.com/morkeleb/clay" target="_blank" class="link-item">
-                                <span class="link-icon">⧉</span> GitHub Repository
-                            </a>
-                            <a href="https://www.npmjs.com/package/clay-generator" target="_blank" class="link-item">
-                                <span class="link-icon">⧉</span> NPM Package
-                            </a>
-                            <a href="https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand" target="_blank" class="link-item">
-                                <span class="link-icon">⧉</span> Concept Overview (Swedish)
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="line cursor-line">
-                    <span class="prompt">$</span> <span class="cursor">█</span>
-                </div>
+            <div class="quick-start">
+              <div class="section-title">[QUICK START]</div>
+              <div class="code-block">
+                <span class="prompt">$</span> npm install -g clay-generator<br />
+                <span class="prompt">$</span> clay init<br />
+                <span class="prompt">$</span> clay generate ./model.json
+                ./output
+              </div>
             </div>
+
+            <div class="features">
+              <div class="section-title">[FEATURES]</div>
+              <ul class="feature-list">
+                <li>
+                  <span class="icon">▸</span> <strong>Template-Based</strong> -
+                  Handlebars templates with 47+ helpers
+                </li>
+                <li>
+                  <span class="icon">▸</span> <strong>Type-Safe</strong> - Built
+                  with TypeScript for reliability
+                </li>
+                <li>
+                  <span class="icon">▸</span> <strong>Consistent</strong> -
+                  Update your model, regenerate everything
+                </li>
+                <li>
+                  <span class="icon">▸</span> <strong>Flexible</strong> -
+                  Templates, commands, and file operations
+                </li>
+                <li>
+                  <span class="icon">▸</span> <strong>AI-Powered</strong> - MCP
+                  server for Claude & GitHub Copilot
+                </li>
+              </ul>
+            </div>
+
+            <div class="navigation">
+              <div class="section-title">[DOCUMENTATION]</div>
+              <div class="nav-grid">
+                <a href="pages/getting-started.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">Getting Started</div>
+                    <div class="nav-desc">
+                      Installation, setup, and first project
+                    </div>
+                  </div>
+                </a>
+                <a href="pages/models.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">Models</div>
+                    <div class="nav-desc">
+                      Define your domain models in JSON
+                    </div>
+                  </div>
+                </a>
+                <a href="pages/generators.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">Generators</div>
+                    <div class="nav-desc">Configure generation steps</div>
+                  </div>
+                </a>
+                <a href="pages/templates.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">Templates</div>
+                    <div class="nav-desc">Handlebars templates and helpers</div>
+                  </div>
+                </a>
+                <a href="pages/mcp-server.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">AI Integration</div>
+                    <div class="nav-desc">MCP server for AI assistants</div>
+                  </div>
+                </a>
+                <a href="pages/cli.html" class="nav-item">
+                  <span class="nav-icon">►</span>
+                  <div class="nav-content">
+                    <div class="nav-title">CLI Reference</div>
+                    <div class="nav-desc">Command-line interface guide</div>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+            <div class="links">
+              <div class="section-title">[LINKS]</div>
+              <div class="link-list">
+                <a
+                  href="https://github.com/morkeleb/clay"
+                  target="_blank"
+                  class="link-item"
+                >
+                  <span class="link-icon">⧉</span> GitHub Repository
+                </a>
+                <a
+                  href="https://www.npmjs.com/package/clay-generator"
+                  target="_blank"
+                  class="link-item"
+                >
+                  <span class="link-icon">⧉</span> NPM Package
+                </a>
+                <a
+                  href="https://agilasverige.solidtango.com/video/varfor-skriver-vi-repetativ-kod-for-hand"
+                  target="_blank"
+                  class="link-item"
+                >
+                  <span class="link-icon">⧉</span> Concept Overview (Swedish)
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="line cursor-line">
+            <span class="prompt">$</span> <span class="cursor">█</span>
+          </div>
         </div>
+      </div>
     </div>
 
     <script src="js/terminal.js"></script>
-</body>
+  </body>
 </html>

@@ -1,56 +1,58 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CLI Reference - Clay Documentation</title>
-    <link rel="stylesheet" href="../css/terminal.css">
-    <link rel="stylesheet" href="../css/docs.css">
-</head>
-<body>
+    <link rel="stylesheet" href="../css/terminal.css" />
+    <link rel="stylesheet" href="../css/docs.css" />
+  </head>
+  <body>
     <div class="doc-container">
-        <a href="../index.html" class="back-home">← Back to Home</a>
-        
-        <div class="doc-header">
-            <div class="breadcrumb">
-                <a href="../index.html">Home</a>
-                <span>›</span>
-                <span>CLI Reference</span>
-            </div>
-            <h1>CLI Reference</h1>
-            <div class="subtitle">Complete command-line interface guide</div>
-        </div>
+      <a href="../index.html" class="back-home">← Back to Home</a>
 
-        <div class="doc-content">
-            <h2>Global Options</h2>
-            <pre><code>clay [options] [command]
+      <div class="doc-header">
+        <div class="breadcrumb">
+          <a href="../index.html">Home</a>
+          <span>›</span>
+          <span>CLI Reference</span>
+        </div>
+        <h1>CLI Reference</h1>
+        <div class="subtitle">Complete command-line interface guide</div>
+      </div>
+
+      <div class="doc-content">
+        <h2>Global Options</h2>
+        <pre><code>clay [options] [command]
 
 Options:
   -V, --version     Output the version number
   -v, --verbose     Enable verbose output
   -h, --help        Display help information</code></pre>
 
-            <h2>Commands</h2>
+        <h2>Commands</h2>
 
-            <h3>init</h3>
-            <p>Initialize a Clay project or generator</p>
-            <pre><code>clay init [type] [name]</code></pre>
+        <h3>init</h3>
+        <p>Initialize a Clay project or generator</p>
+        <pre><code>clay init [type] [name]</code></pre>
 
-            <p><strong>Initialize a project:</strong></p>
-            <pre><code>clay init</code></pre>
-            <p>Creates a <code>.clay</code> file in the current directory.</p>
+        <p><strong>Initialize a project:</strong></p>
+        <pre><code>clay init</code></pre>
+        <p>Creates a <code>.clay</code> file in the current directory.</p>
 
-            <p><strong>Initialize a generator:</strong></p>
-            <pre><code>clay init generator my-generator</code></pre>
-            <p>Creates a new generator in <code>clay/generators/my-generator/</code></p>
+        <p><strong>Initialize a generator:</strong></p>
+        <pre><code>clay init generator my-generator</code></pre>
+        <p>
+          Creates a new generator in <code>clay/generators/my-generator/</code>
+        </p>
 
-            <h3>generate</h3>
-            <p>Generate code from your model</p>
-            <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
+        <h3>generate</h3>
+        <p>Generate code from your model</p>
+        <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
 clay generate  # Uses .clay file</code></pre>
 
-            <p><strong>Examples:</strong></p>
-            <pre><code># Explicit paths
+        <p><strong>Examples:</strong></p>
+        <pre><code># Explicit paths
 clay generate ./clay/model.json ./src
 
 # Using .clay file (recommended)
@@ -59,42 +61,47 @@ clay generate
 # Verbose output
 clay generate -v</code></pre>
 
-            <h3>clean</h3>
-            <p>Remove all generated files</p>
-            <pre><code>clay clean &lt;model_path&gt; &lt;output_path&gt;
+        <h3>clean</h3>
+        <p>Remove all generated files</p>
+        <pre><code>clay clean &lt;model_path&gt; &lt;output_path&gt;
 clay clean  # Uses .clay file</code></pre>
 
-            <p><strong>Examples:</strong></p>
-            <pre><code># Explicit paths
+        <p><strong>Examples:</strong></p>
+        <pre><code># Explicit paths
 clay clean ./clay/model.json ./src
 
 # Using .clay file
 clay clean</code></pre>
 
-            <div class="warning">
-                <strong>⚠️ Warning:</strong> The clean command permanently deletes generated files. Make sure you've committed any manual changes to version control first!
-            </div>
+        <div class="warning">
+          <strong>⚠️ Warning:</strong> The clean command permanently deletes
+          generated files. Make sure you've committed any manual changes to
+          version control first!
+        </div>
 
-            <h3>watch</h3>
-            <p>Watch for model changes and regenerate automatically</p>
-            <pre><code>clay watch &lt;model_path&gt; &lt;output_path&gt;
+        <h3>watch</h3>
+        <p>Watch for model changes and regenerate automatically</p>
+        <pre><code>clay watch &lt;model_path&gt; &lt;output_path&gt;
 clay watch  # Uses .clay file</code></pre>
 
-            <p><strong>Examples:</strong></p>
-            <pre><code># Watch the clay directory
+        <p><strong>Examples:</strong></p>
+        <pre><code># Watch the clay directory
 clay watch ./clay/model.json ./src
 
 # Using .clay file
 clay watch</code></pre>
 
-            <p>Clay will monitor the model directory and regenerate when files change.</p>
+        <p>
+          Clay will monitor the model directory and regenerate when files
+          change.
+        </p>
 
-            <h3>test-path</h3>
-            <p>Test JSONPath expressions against your model</p>
-            <pre><code>clay test-path &lt;model_path&gt; &lt;json_path&gt;</code></pre>
+        <h3>test-path</h3>
+        <p>Test JSONPath expressions against your model</p>
+        <pre><code>clay test-path &lt;model_path&gt; &lt;json_path&gt;</code></pre>
 
-            <p><strong>Examples:</strong></p>
-            <pre><code># Get all types
+        <p><strong>Examples:</strong></p>
+        <pre><code># Get all types
 clay test-path ./clay/model.json "$.model.types[*]"
 
 # Get all fields
@@ -106,11 +113,14 @@ clay test-path ./clay/model.json "$.model.types[?(@.isActive)]"
 # Get array-type fields
 clay test-path ./clay/model.json "$.model.types[*].fields[?(@.type=='array')]"</code></pre>
 
-            <h2>The .clay File</h2>
-            <p>The <code>.clay</code> file tracks generated files and stores configuration. It's created with <code>clay init</code>.</p>
+        <h2>The .clay File</h2>
+        <p>
+          The <code>.clay</code> file tracks generated files and stores
+          configuration. It's created with <code>clay init</code>.
+        </p>
 
-            <p><strong>Structure:</strong></p>
-            <pre><code>{
+        <p><strong>Structure:</strong></p>
+        <pre><code>{
   "model": "clay/model.json",
   "output": ".",
   "files": [
@@ -120,18 +130,18 @@ clay test-path ./clay/model.json "$.model.types[*].fields[?(@.type=='array')]"</
   ]
 }</code></pre>
 
-            <p><strong>Benefits:</strong></p>
-            <ul>
-                <li>Run commands without specifying paths every time</li>
-                <li>Track which files were generated (for clean command)</li>
-                <li>Prevent accidental modification of generated files</li>
-                <li>Share configuration across team members</li>
-            </ul>
+        <p><strong>Benefits:</strong></p>
+        <ul>
+          <li>Run commands without specifying paths every time</li>
+          <li>Track which files were generated (for clean command)</li>
+          <li>Prevent accidental modification of generated files</li>
+          <li>Share configuration across team members</li>
+        </ul>
 
-            <h2>Workflow Examples</h2>
+        <h2>Workflow Examples</h2>
 
-            <h3>Starting a New Project</h3>
-            <pre><code># 1. Create project directory
+        <h3>Starting a New Project</h3>
+        <pre><code># 1. Create project directory
 mkdir my-project && cd my-project
 
 # 2. Initialize Clay
@@ -152,8 +162,8 @@ EOF
 # 5. Generate code
 clay generate</code></pre>
 
-            <h3>Development Workflow</h3>
-            <pre><code># Terminal 1: Watch for changes
+        <h3>Development Workflow</h3>
+        <pre><code># Terminal 1: Watch for changes
 clay watch
 
 # Terminal 2: Edit model and templates
@@ -162,8 +172,8 @@ vim clay/generators/api/templates/model.js
 
 # Files regenerate automatically!</code></pre>
 
-            <h3>Testing JSONPath</h3>
-            <pre><code># Test a selector before using in generator
+        <h3>Testing JSONPath</h3>
+        <pre><code># Test a selector before using in generator
 clay test-path ./clay/model.json "$.model.types[*]"
 
 # Verify filtered results
@@ -172,73 +182,83 @@ clay test-path ./clay/model.json "$.model.types[?(@.isActive)]"
 # Check nested paths
 clay test-path ./clay/model.json "$.model.types[*].commands[*].parameters[*]"</code></pre>
 
-            <h3>Cleaning Up</h3>
-            <pre><code># Remove all generated files
+        <h3>Cleaning Up</h3>
+        <pre><code># Remove all generated files
 clay clean
 
 # Regenerate from scratch
 clay generate</code></pre>
 
-            <h2>Environment Variables</h2>
-            <p>Clay respects these environment variables:</p>
-            <ul>
-                <li><code>NODE_ENV</code> - Can affect formatter behavior</li>
-                <li><code>DEBUG</code> - Set to "clay:*" for debug output</li>
-            </ul>
+        <h2>Environment Variables</h2>
+        <p>Clay respects these environment variables:</p>
+        <ul>
+          <li><code>NODE_ENV</code> - Can affect formatter behavior</li>
+          <li><code>DEBUG</code> - Set to "clay:*" for debug output</li>
+        </ul>
 
-            <h2>Exit Codes</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Meaning</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>0</td>
-                        <td>Success</td>
-                    </tr>
-                    <tr>
-                        <td>1</td>
-                        <td>General error (invalid args, file not found, etc.)</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Template or generator error</td>
-                    </tr>
-                </tbody>
-            </table>
+        <h2>Exit Codes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>0</td>
+              <td>Success</td>
+            </tr>
+            <tr>
+              <td>1</td>
+              <td>General error (invalid args, file not found, etc.)</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Template or generator error</td>
+            </tr>
+          </tbody>
+        </table>
 
-            <h2>Tips & Tricks</h2>
-            <ul>
-                <li>Use <code>-v</code> flag to see detailed output during generation</li>
-                <li>Always test JSONPath expressions before adding to generators</li>
-                <li>Use <code>watch</code> during active development for instant feedback</li>
-                <li>Commit <code>.clay</code> to version control for team consistency</li>
-                <li>Add generated files to <code>.gitignore</code> if they're always regenerated</li>
-            </ul>
+        <h2>Tips & Tricks</h2>
+        <ul>
+          <li>
+            Use <code>-v</code> flag to see detailed output during generation
+          </li>
+          <li>Always test JSONPath expressions before adding to generators</li>
+          <li>
+            Use <code>watch</code> during active development for instant
+            feedback
+          </li>
+          <li>
+            Commit <code>.clay</code> to version control for team consistency
+          </li>
+          <li>
+            Add generated files to <code>.gitignore</code> if they're always
+            regenerated
+          </li>
+        </ul>
 
-            <div class="note">
-                <strong>💡 Pro Tip:</strong> Create shell aliases for common commands:
-                <pre><code>alias cg="clay generate"
+        <div class="note">
+          <strong>💡 Pro Tip:</strong> Create shell aliases for common commands:
+          <pre><code>alias cg="clay generate"
 alias cw="clay watch"
 alias cc="clay clean"</code></pre>
-            </div>
         </div>
+      </div>
 
-        <div class="doc-nav">
-            <a href="mcp-server.html" class="doc-nav-item">
-                <div class="nav-label">← Previous</div>
-                <div class="nav-title">AI Integration</div>
-            </a>
-            <a href="../index.html" class="doc-nav-item">
-                <div class="nav-label">Next →</div>
-                <div class="nav-title">Home</div>
-            </a>
-        </div>
+      <div class="doc-nav">
+        <a href="mcp-server.html" class="doc-nav-item">
+          <div class="nav-label">← Previous</div>
+          <div class="nav-title">AI Integration</div>
+        </a>
+        <a href="../index.html" class="doc-nav-item">
+          <div class="nav-label">Next →</div>
+          <div class="nav-title">Home</div>
+        </a>
+      </div>
     </div>
 
     <script src="../js/terminal.js"></script>
-</body>
+  </body>
 </html>

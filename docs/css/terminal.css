@@ -206,8 +206,7 @@ body::before {
     margin: 30px 0 15px;
     text-shadow: 0 0 10px var(--glow-blue);
     letter-spacing: 2px;
-    border-left: 3px solid var(--primary-blue);
-    padding-left: 15px;
+    padding-left: 0;
 }
 
 .quick-start {
@@ -343,7 +342,6 @@ body::before {
     color: var(--primary-blue);
     text-decoration: none;
     padding: 10px;
-    border-left: 2px solid var(--primary-blue);
     transition: all 0.3s ease;
     display: inline-flex;
     align-items: center;
@@ -351,7 +349,6 @@ body::before {
 }
 
 .link-item:hover {
-    border-left-color: var(--glow-blue);
     padding-left: 20px;
     text-shadow: 0 0 10px var(--glow-blue);
 }
