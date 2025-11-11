@@ -25,10 +25,12 @@ export function executeClayCommand(
 
     // Use shell execution with output redirection to capture output
     // while still allowing child processes to execute properly
+    // Increase maxBuffer to 10MB to handle large generation outputs
     const output = execSync(`${fullCommand} 2>&1`, {
       cwd: workingDirectory,
       encoding: 'utf8',
       shell: '/bin/bash',
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
       env: {
         ...process.env,
         VERBOSE: 'true',
