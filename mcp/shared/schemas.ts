@@ -180,10 +180,6 @@ export const GetModelStructureInputSchema = z
   .object({
     working_directory: WorkingDirectorySchema,
     model_path: ModelPathSchema.optional(),
-    include_mixins: z
-      .boolean()
-      .default(false)
-      .describe('Execute mixins before returning model structure'),
   })
   .describe('Get the structure of Clay models');
 
