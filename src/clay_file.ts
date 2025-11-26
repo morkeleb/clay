@@ -57,20 +57,24 @@ export function load(directory: string): ClayFileManager {
     }
 
     function getFileCheckSum(file: string): string | null {
-      return _.get(model, "generated_files['" + file + "'].md5", null);
+      const relFile = path.relative(process.cwd(), file);
+      return _.get(model, "generated_files['" + relFile + "'].md5", null);
     }
 
     function setFileCheckSum(file: string, md5: string): void {
+      const relFile = path.relative(process.cwd(), file);
       const date = new Date().toISOString();
-      _.set(model!, "generated_files['" + file + "'].md5", md5);
-      _.set(model!, "generated_files['" + file + "'].date", date);
+      _.set(model!, "generated_files['" + relFile + "'].md5", md5);
+      _.set(model!, "generated_files['" + relFile + "'].date", date);
       model!.last_generated = date;
     }
 
     model.setFileCheckSum = setFileCheckSum;
     model.getFileCheckSum = getFileCheckSum;
-    model.delFileCheckSum = (file: string) =>
-      delete model!.generated_files[file];
+    model.delFileCheckSum = (file: string) => {
+      const relFile = path.relative(process.cwd(), file);
+      delete model!.generated_files[relFile];
+    };
     model.load = () => require('./model').load(modelPath);
 
     return model;

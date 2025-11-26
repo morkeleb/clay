@@ -30,6 +30,56 @@ import type {
 } from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
 
+// Template compilation cache to avoid recompiling the same templates
+const templateCache = new Map<string, HandlebarsTemplateDelegate>();
+const MAX_TEMPLATE_CACHE_SIZE = 1000; // Prevent unbounded growth in long-running processes
+
+/**
+ * Clear the template cache. Useful for:
+ * - Long-running processes (MCP server) to prevent memory leaks
+ * - Development/watch mode when templates change
+ * - Testing scenarios
+ */
+export function clearTemplateCache(): void {
+  templateCache.clear();
+}
+
+function getCompiledTemplate(filePath: string): HandlebarsTemplateDelegate {
+  if (!templateCache.has(filePath)) {
+    // Prevent cache from growing unbounded
+    if (templateCache.size >= MAX_TEMPLATE_CACHE_SIZE) {
+      ui.warn(
+        `Template cache reached ${MAX_TEMPLATE_CACHE_SIZE} entries, clearing cache`
+      );
+      templateCache.clear();
+    }
+    const content = fs.readFileSync(filePath, 'utf8');
+    templateCache.set(filePath, handlebars.compile(content));
+  }
+  return templateCache.get(filePath)!;
+}
+
+function compileTemplate(
+  content: string,
+  cacheKey?: string
+): HandlebarsTemplateDelegate {
+  if (cacheKey && templateCache.has(cacheKey)) {
+    return templateCache.get(cacheKey)!;
+  }
+  const compiled = handlebars.compile(content);
+  if (cacheKey) {
+    // Prevent cache from growing unbounded
+    if (templateCache.size >= MAX_TEMPLATE_CACHE_SIZE) {
+      ui.warn(
+        `Template cache reached ${MAX_TEMPLATE_CACHE_SIZE} entries, clearing cache`
+      );
+      templateCache.clear();
+    }
+    templateCache.set(cacheKey, compiled);
+  }
+  return compiled;
+}
+
 const isValidJsonPath = (
   jsonPath: string
 ): { valid: boolean; error?: string } => {
@@ -207,34 +257,41 @@ async function generate_file(
   modelIndex: ClayModelEntry,
   step: GeneratorStepGenerate
 ): Promise<void> {
-  const template = handlebars.compile(
-    fs.readFileSync(path.join(directory, file), 'utf8')
+  const templatePath = path.join(directory, file);
+  const template = getCompiledTemplate(templatePath);
+  const fileNamePattern = path.join(outputDir, file);
+  const file_name_template = compileTemplate(
+    fileNamePattern,
+    `filename:${fileNamePattern}`
   );
-  const file_name = handlebars.compile(path.join(outputDir, file));
+
+  // First pass: generate all files that need updates (without formatting)
+  const filesToFormat: Array<{
+    filename: string;
+    relFilename: string;
+    content: string;
+    md5: string;
+  }> = [];
 
   await Promise.all(
     model_partial.map(async (m) => {
-      const filename = file_name(m);
-      if (step.touch && fs.existsSync(filename)) {
+      const filename = file_name_template(m);
+      const relFilename = path.relative(process.cwd(), filename);
+      if (step.touch && (await fs.pathExists(filename))) {
         ui.info('skipping touch file:', filename);
         return;
       }
       try {
         const preFormattedOutput = template(m);
-
         const md5 = getMd5ForContent(preFormattedOutput);
-        if (modelIndex.getFileCheckSum(filename) !== md5) {
-          const content = await applyFormatters(
-            generator,
+        // Only process files that have changed
+        if (modelIndex.getFileCheckSum(relFilename) !== md5) {
+          filesToFormat.push({
             filename,
-            preFormattedOutput,
-            step
-          );
-
-          write(filename, content);
-          if (!step.touch) {
-            modelIndex.setFileCheckSum(filename, md5);
-          }
+            relFilename,
+            content: preFormattedOutput,
+            md5,
+          });
         }
       } catch (e) {
         ui.critical(
@@ -247,6 +304,32 @@ async function generate_file(
       }
     })
   );
+
+  // Second pass: format and write files in parallel batches
+  // This allows formatters to potentially batch operations if they support it
+  const BATCH_SIZE = 10; // Process 10 files at a time to avoid overwhelming the formatter
+  for (let i = 0; i < filesToFormat.length; i += BATCH_SIZE) {
+    const batch = filesToFormat.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map(async ({ filename, relFilename, content, md5 }) => {
+        try {
+          const formattedContent = await applyFormatters(
+            generator,
+            filename,
+            content,
+            step
+          );
+          write(filename, formattedContent);
+          if (!step.touch) {
+            modelIndex.setFileCheckSum(relFilename, md5);
+          }
+        } catch (e) {
+          ui.critical('Failed to format/write file:', filename, e);
+          throw e;
+        }
+      })
+    );
+  }
 }
 
 function remove_file(modelIndex: ClayModelEntry, file: string): void {
@@ -254,7 +337,8 @@ function remove_file(modelIndex: ClayModelEntry, file: string): void {
   if (fs.existsSync(file)) {
     fs.removeSync(file);
   }
-  modelIndex.delFileCheckSum(file);
+  const relFile = path.relative(process.cwd(), file);
+  modelIndex.delFileCheckSum(relFile);
 }
 
 async function generate_directory(
@@ -372,7 +456,10 @@ function run_command(
   if (step.select === undefined) {
     execute(step.runCommand, output_dir, step.npxCommand, verbose);
   } else {
-    const command = handlebars.compile(step.runCommand);
+    const command = compileTemplate(
+      step.runCommand,
+      `command:${step.runCommand}`
+    );
     jph.select(model, step.select).forEach((m) => {
       execute(command(m), output_dir, step.npxCommand, verbose);
     });
@@ -380,8 +467,9 @@ function run_command(
 }
 
 function addToIndex(modelIndex: ClayModelEntry, file: string): void {
-  if (!modelIndex.generated_files[file]) {
-    modelIndex.generated_files[file] = {
+  const relFile = path.relative(process.cwd(), file);
+  if (!modelIndex.generated_files[relFile]) {
+    modelIndex.generated_files[relFile] = {
       md5: '',
       date: new Date().toISOString(),
     };
@@ -423,11 +511,13 @@ function copy(
     fs.copySync(source, out);
     addToIndex(modelIndex, out);
   } else {
+    const targetTemplate = step.target
+      ? compileTemplate(step.target, `copy-target:${step.target}`)
+      : null;
     jph.select(model, step.select).forEach((m) => {
       let out: string;
-      if (step.target) {
-        const target = handlebars.compile(step.target);
-        out = path.join(output_dir, target(m));
+      if (targetTemplate) {
+        out = path.join(output_dir, targetTemplate(m));
       } else {
         out = output_dir;
       }
@@ -442,7 +532,7 @@ function copy(
           if (fs.lstatSync(file).isDirectory()) {
             recursiveHandlebars(file);
           } else {
-            const template = handlebars.compile(file);
+            const template = compileTemplate(file, `copy-file:${file}`);
             ui.move(source, out);
             const template_path = template(m);
             if (file !== template_path) {
@@ -468,6 +558,10 @@ function decorate_generator(
   const decorated = g as DecoratedGenerator;
 
   decorated.generate = async (model: any, outputDir: string): Promise<void> => {
+    // Clear template cache at the start of each generation to ensure fresh templates
+    // This prevents stale cached templates when files change between generations
+    clearTemplateCache();
+
     const output = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials || [], dirname);
@@ -475,18 +569,11 @@ function decorate_generator(
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if ('generate' in step) {
-        await generate_template(
-          g,
-          step,
-          _.cloneDeep(model),
-          output,
-          dirname,
-          modelIndex
-        );
+        await generate_template(g, step, model, output, dirname, modelIndex);
       } else if ('runCommand' in step) {
-        run_command(step, _.cloneDeep(model), output, dirname);
+        run_command(step, model, output, dirname);
       } else if ('copy' in step) {
-        copy(step, _.cloneDeep(model), output, dirname, modelIndex);
+        copy(step, model, output, dirname, modelIndex);
       }
     }
   };
