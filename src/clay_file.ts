@@ -58,14 +58,18 @@ export function load(directory: string): ClayFileManager {
 
     function getFileCheckSum(file: string): string | null {
       const relFile = path.relative(process.cwd(), file);
-      return _.get(model, "generated_files['" + relFile + "'].md5", null);
+      // Normalize to forward slashes for cross-platform compatibility
+      const normalizedPath = relFile.split(path.sep).join('/');
+      return _.get(model, "generated_files['" + normalizedPath + "'].md5", null);
     }
 
     function setFileCheckSum(file: string, md5: string): void {
       const relFile = path.relative(process.cwd(), file);
+      // Normalize to forward slashes for cross-platform compatibility
+      const normalizedPath = relFile.split(path.sep).join('/');
       const date = new Date().toISOString();
-      _.set(model!, "generated_files['" + relFile + "'].md5", md5);
-      _.set(model!, "generated_files['" + relFile + "'].date", date);
+      _.set(model!, "generated_files['" + normalizedPath + "'].md5", md5);
+      _.set(model!, "generated_files['" + normalizedPath + "'].date", date);
       model!.last_generated = date;
     }
 
@@ -73,7 +77,9 @@ export function load(directory: string): ClayFileManager {
     model.getFileCheckSum = getFileCheckSum;
     model.delFileCheckSum = (file: string) => {
       const relFile = path.relative(process.cwd(), file);
-      delete model!.generated_files[relFile];
+      // Normalize to forward slashes for cross-platform compatibility
+      const normalizedPath = relFile.split(path.sep).join('/');
+      delete model!.generated_files[normalizedPath];
     };
     model.load = () => require('./model').load(modelPath);
 

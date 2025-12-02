@@ -260,9 +260,12 @@ async function generate_file(
   const templatePath = path.join(directory, file);
   const template = getCompiledTemplate(templatePath);
   const fileNamePattern = path.join(outputDir, file);
+  // Normalize path separators to forward slashes for Handlebars templates
+  // This prevents backslash escape issues on Windows
+  const normalizedPattern = fileNamePattern.split(path.sep).join('/');
   const file_name_template = compileTemplate(
-    fileNamePattern,
-    `filename:${fileNamePattern}`
+    normalizedPattern,
+    `filename:${normalizedPattern}`
   );
 
   // First pass: generate all files that need updates (without formatting)
@@ -275,7 +278,9 @@ async function generate_file(
 
   await Promise.all(
     model_partial.map(async (m) => {
-      const filename = file_name_template(m);
+      // Get filename from template and normalize to OS-specific path separators
+      const templateResult = file_name_template(m);
+      const filename = path.normalize(templateResult);
       const relFilename = path.relative(process.cwd(), filename);
       if (step.touch && (await fs.pathExists(filename))) {
         ui.info('skipping touch file:', filename);
@@ -337,8 +342,8 @@ function remove_file(modelIndex: ClayModelEntry, file: string): void {
   if (fs.existsSync(file)) {
     fs.removeSync(file);
   }
-  const relFile = path.relative(process.cwd(), file);
-  modelIndex.delFileCheckSum(relFile);
+  // delFileCheckSum will handle path normalization internally
+  modelIndex.delFileCheckSum(file);
 }
 
 async function generate_directory(
@@ -468,8 +473,10 @@ function run_command(
 
 function addToIndex(modelIndex: ClayModelEntry, file: string): void {
   const relFile = path.relative(process.cwd(), file);
-  if (!modelIndex.generated_files[relFile]) {
-    modelIndex.generated_files[relFile] = {
+  // Normalize to forward slashes for cross-platform compatibility
+  const normalizedPath = relFile.split(path.sep).join('/');
+  if (!modelIndex.generated_files[normalizedPath]) {
+    modelIndex.generated_files[normalizedPath] = {
       md5: '',
       date: new Date().toISOString(),
     };
@@ -517,7 +524,8 @@ function copy(
     jph.select(model, step.select).forEach((m) => {
       let out: string;
       if (targetTemplate) {
-        out = path.join(output_dir, targetTemplate(m));
+        // Normalize template result to OS-specific path separators
+        out = path.join(output_dir, path.normalize(targetTemplate(m)));
       } else {
         out = output_dir;
       }
@@ -532,9 +540,13 @@ function copy(
           if (fs.lstatSync(file).isDirectory()) {
             recursiveHandlebars(file);
           } else {
-            const template = compileTemplate(file, `copy-file:${file}`);
+            // Normalize path separators to forward slashes for Handlebars
+            const normalizedFile = file.split(path.sep).join('/');
+            const template = compileTemplate(normalizedFile, `copy-file:${normalizedFile}`);
             ui.move(source, out);
-            const template_path = template(m);
+            const templateResult = template(m);
+            // Normalize back to OS-specific path separators
+            const template_path = path.normalize(templateResult);
             if (file !== template_path) {
               fs.moveSync(file, template_path);
               addToIndex(modelIndex, template_path);
