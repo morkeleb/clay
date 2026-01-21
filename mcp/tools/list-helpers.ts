@@ -193,11 +193,11 @@ export async function listHelpers(
     {
       name: 'eachUniqueJSONPath',
       category: 'iteration',
-      description: 'Iterates over unique values selected by a JSONPath',
+      description: 'Iterates over items selected by JSONPath (unique by last path element, not value). Best used with array selectors like $.types[*] where each item has a unique index.',
       syntax:
-        '{{#eachUniqueJSONPath model "$.types[*].name"}}...{{/eachUniqueJSONPath}}',
+        '{{#eachUniqueJSONPath model "$.types[*]"}}...{{/eachUniqueJSONPath}}',
       example: includeExamples
-        ? '{{#eachUniqueJSONPath model "$.types[*].category"}}{{this}}{{/eachUniqueJSONPath}}'
+        ? '{{#eachUniqueJSONPath model "$.types[*]"}}{{this.name}}: {{this.category}}{{/eachUniqueJSONPath}}'
         : undefined,
     },
     {
@@ -404,6 +404,24 @@ export async function listHelpers(
       syntax: '{{#if (isEmpty value)}}...{{/if}}',
       example: includeExamples
         ? '{{#if (isEmpty items)}}No items{{/if}}'
+        : undefined,
+    },
+    {
+      name: 'isNull',
+      category: 'type-check',
+      description: 'Check if a value is null',
+      syntax: '{{#if (isNull value)}}...{{/if}}',
+      example: includeExamples
+        ? '{{#if (isNull user)}}No user{{/if}}'
+        : undefined,
+    },
+    {
+      name: 'isUndefined',
+      category: 'type-check',
+      description: 'Check if a value is undefined',
+      syntax: '{{#if (isUndefined value)}}...{{/if}}',
+      example: includeExamples
+        ? '{{#if (isUndefined config)}}No config{{/if}}'
         : undefined,
     },
     {

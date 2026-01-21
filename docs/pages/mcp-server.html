@@ -186,9 +186,41 @@
           <strong>AI calls:</strong>
           <code
             >clay_list_helpers({ category: "string", include_examples: true
-            })</code
-          >
+            })</code>
         </p>
+
+        <h3>Get Specific Helper Examples</h3>
+        <p><strong>User:</strong> "How do I use the pluralize helper?"</p>
+        <p>
+          <strong>AI:</strong> The AI calls
+          <code>clay_list_helpers({ include_examples: true })</code> and shows:
+        </p>
+        <pre><code>{{pluralize "category"}} → categories
+{{pluralize "user"}} → users
+{{pluralize "child"}} → children</code></pre>
+
+        <p><strong>Common helper categories available:</strong></p>
+        <ul>
+          <li>
+            <strong>string:</strong> camelCase, pascalCase, kebabCase,
+            snakeCase, upperCase, lowerCase, capitalize, startCase, pluralize,
+            singularize, pad, repeat, replace, truncate, words, split
+          </li>
+          <li><strong>comparison:</strong> eq, ne, lt, gt, lte, gte</li>
+          <li><strong>logic:</strong> if, and, or, switch/case, ifCond</li>
+          <li>
+            <strong>iteration:</strong> each, eachUnique, eachUniqueJSONPath,
+            times, group
+          </li>
+          <li>
+            <strong>type-check:</strong> isArray, isString, isNumber, isBoolean,
+            isEmpty, isNull, isUndefined
+          </li>
+          <li>
+            <strong>utility:</strong> json, markdown, inc, includes, startsWith,
+            endsWith, parseInt
+          </li>
+        </ul>
 
         <h3>Learn About Generators</h3>
         <p><strong>User:</strong> "How do I create a generator?"</p>
@@ -232,6 +264,35 @@ AI: *Calls clay_test_path with your current selector*
 AI: *Calls clay_list_helpers with category: "string"*
     *Shows you the pascalCase helper*
     *Creates example template using {{pascalCase name}}*</code></pre>
+
+        <h3>Advanced Helper Usage</h3>
+        <pre><code>You: "Create a template that generates TypeScript types with proper casing"
+
+AI: *Calls clay_list_helpers to review case conversion helpers*
+    *Suggests using pascalCase for type names*
+    *Suggests using camelCase for property names*
+    
+Template created:
+export type {{pascalCase name}} = {
+  {{#each fields}}
+  {{camelCase name}}: {{type}};
+  {{/each}}
+};</code></pre>
+
+        <h3>Type Checking in Templates</h3>
+        <pre><code>You: "How do I conditionally render based on field types?"
+
+AI: *Calls clay_list_helpers with category: "type-check"*
+    *Shows isArray, isString, isNumber, etc.*
+    
+Template example:
+{{#each fields}}
+  {{#if (isArray type)}}
+    // {{name}} is an array type
+  {{else if (isString type)}}
+    // {{name}} is a string type
+  {{/if}}
+{{/each}}</code></pre>
 
         <h2>Why No Watch Mode?</h2>
         <p>

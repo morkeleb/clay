@@ -66,6 +66,7 @@ class {{pascalCase name}} {
         <h2>String Helpers</h2>
         <p>Clay provides extensive string manipulation helpers:</p>
 
+        <h3>Case Conversion</h3>
         <table>
           <thead>
             <tr>
@@ -76,14 +77,14 @@ class {{pascalCase name}} {
           </thead>
           <tbody>
             <tr>
-              <td><code>pascalCase</code></td>
-              <td><code>{{pascalCase "user name"}}</code></td>
-              <td>UserName</td>
-            </tr>
-            <tr>
               <td><code>camelCase</code></td>
               <td><code>{{camelCase "user name"}}</code></td>
               <td>userName</td>
+            </tr>
+            <tr>
+              <td><code>pascalCase</code></td>
+              <td><code>{{pascalCase "user name"}}</code></td>
+              <td>UserName</td>
             </tr>
             <tr>
               <td><code>kebabCase</code></td>
@@ -106,6 +107,29 @@ class {{pascalCase name}} {
               <td>hello</td>
             </tr>
             <tr>
+              <td><code>capitalize</code></td>
+              <td><code>{{capitalize "hello world"}}</code></td>
+              <td>Hello world</td>
+            </tr>
+            <tr>
+              <td><code>startCase</code></td>
+              <td><code>{{startCase "hello_world"}}</code></td>
+              <td>Hello World</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Pluralization</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Helper</th>
+              <th>Example</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
               <td><code>pluralize</code></td>
               <td><code>{{pluralize "category"}}</code></td>
               <td>categories</td>
@@ -114,6 +138,93 @@ class {{pascalCase name}} {
               <td><code>singularize</code></td>
               <td><code>{{singularize "users"}}</code></td>
               <td>user</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>String Utilities</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Helper</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>pad</code></td>
+              <td>Pads string to length with spaces</td>
+              <td><code>{{pad "abc" 5}}</code> → " abc "</td>
+            </tr>
+            <tr>
+              <td><code>repeat</code></td>
+              <td>Repeats string N times</td>
+              <td><code>{{repeat "*" 3}}</code> → ***</td>
+            </tr>
+            <tr>
+              <td><code>replace</code></td>
+              <td>Replaces part of string</td>
+              <td><code>{{replace "hi" "i" "o"}}</code> → ho</td>
+            </tr>
+            <tr>
+              <td><code>truncate</code></td>
+              <td>Truncates string to length</td>
+              <td><code>{{truncate "hello world" 8}}</code> → hello...</td>
+            </tr>
+            <tr>
+              <td><code>words</code></td>
+              <td>Splits string into word array</td>
+              <td><code>{{#each (words "foo bar")}}{{this}}{{/each}}</code></td>
+            </tr>
+            <tr>
+              <td><code>split</code></td>
+              <td>Splits string by delimiter</td>
+              <td><code>{{#each (split "a,b,c" ",")}}{{this}}{{/each}}</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Comparison Helpers</h2>
+        <p>Compare values in conditional expressions:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Helper</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>eq</code></td>
+              <td>Equals (===)</td>
+              <td><code>{{#if (eq status "active")}}Active{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>ne</code></td>
+              <td>Not equals (!==)</td>
+              <td><code>{{#if (ne count 0)}}Has items{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>lt</code></td>
+              <td>Less than (&lt;)</td>
+              <td><code>{{#if (lt age 18)}}Minor{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>gt</code></td>
+              <td>Greater than (&gt;)</td>
+              <td><code>{{#if (gt score 100)}}High{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>lte</code></td>
+              <td>Less than or equal (&lt;=)</td>
+              <td><code>{{#if (lte count 10)}}Small{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>gte</code></td>
+              <td>Greater than or equal (&gt;=)</td>
+              <td><code>{{#if (gte age 18)}}Adult{{/if}}</code></td>
             </tr>
           </tbody>
         </table>
@@ -132,7 +243,24 @@ class {{pascalCase name}} {
 {{else}}
   Minor
 {{/ifCond}}</code></pre>
+        <p>The <code>ifCond</code> helper supports these operators:</p>
+        <ul>
+          <li><code>==</code>, <code>===</code> - Equality</li>
+          <li><code>!=</code>, <code>!==</code> - Inequality</li>
+          <li><code>&lt;</code>, <code>&lt;=</code> - Less than (or equal)</li>
+          <li><code>&gt;</code>, <code>&gt;=</code> - Greater than (or equal)</li>
+          <li><code>&&</code> - Logical AND</li>
+          <li><code>||</code> - Logical OR</li>
+        </ul>
 
+        <h3>Logical Operators</h3>
+        <pre><code>{{#if (and isActive isPremium)}}
+  Premium Active User
+{{/if}}
+
+{{#if (or isAdmin isModerator)}}
+  Staff Member
+{{/if}}</code></pre>
         <h3>Switch/Case</h3>
         <pre><code>{{#switch type}}
   {{#case 'admin'}}
@@ -146,12 +274,21 @@ class {{pascalCase name}} {
   {{/default}}
 {{/switch}}</code></pre>
 
-        <h3>Comparison Helpers</h3>
-        <pre><code>{{#if (eq status 'active')}}Active{{/if}}
-{{#if (ne count 0)}}Has items{{/if}}
-{{#if (gt age 18)}}Adult{{/if}}
-{{#if (and isActive isPremium)}}Premium Active User{{/if}}
-{{#if (or isAdmin isModerator)}}Staff{{/if}}</code></pre>
+        <p>You can match multiple values in a single case:</p>
+        <pre><code>{{#switch role}}
+  {{#case 'admin' 'moderator'}}
+    Staff Member
+  {{/case}}
+  {{#case 'user'}}
+    Regular User
+  {{/case}}
+{{/switch}}</code></pre>
+
+        <h3>Property Checking</h3>
+        <p>Use <code>propertyExists</code> to check if a property exists in any object:</p>
+        <pre><code>{{#if (propertyExists items "email")}}
+  &lt;th&gt;Email&lt;/th&gt;
+{{/if}}</code></pre>
 
         <h2>Iteration Helpers</h2>
 
@@ -161,11 +298,31 @@ class {{pascalCase name}} {
 {{/each}}</code></pre>
 
         <h3>Each with Unique Values</h3>
-        <pre><code>{{#eachUnique items 'category'}}
+        <p>Iterate over unique values or unique values by property:</p>
+        <pre><code>{{!-- Unique values --}}
+{{#eachUnique tags}}
+  &lt;span&gt;{{this}}&lt;/span&gt;
+{{/eachUnique}}
+
+{{!-- Unique by property --}}
+{{#eachUnique items 'category'}}
   Category: {{this.category}}
 {{/eachUnique}}</code></pre>
 
+        <h3>Each Unique JSONPath</h3>
+        <p>Iterate over items selected by JSONPath (uniqueness determined by path, not value):</p>
+        <pre><code>{{!-- Select array items (each has unique index in path) --}}
+{{#eachUniqueJSONPath clay_model '$.types[*]'}}
+  &lt;h2&gt;{{this.name}} - {{this.category}}&lt;/h2&gt;
+{{/eachUniqueJSONPath}}</code></pre>
+
+        <h3>Times (Repeat N times)</h3>
+        <pre><code>{{#times 3}}
+  Step {{inc @index}}
+{{/times}}</code></pre>
+
         <h3>Group By</h3>
+        <p>Group items by a property:</p>
         <pre><code>{{#group posts by='category'}}
   &lt;h2&gt;{{value}}&lt;/h2&gt;
   {{#each items}}
@@ -173,24 +330,92 @@ class {{pascalCase name}} {
   {{/each}}
 {{/group}}</code></pre>
 
-        <h3>Times (Repeat N times)</h3>
-        <pre><code>{{#times 3}}
-  Index: {{@index}}
-{{/times}}</code></pre>
+        <h2>Type Check Helpers</h2>
+        <p>Check the type of values in your templates:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Helper</th>
+              <th>Description</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>isArray</code></td>
+              <td>Check if value is an array</td>
+              <td><code>{{#if (isArray items)}}Is array{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isString</code></td>
+              <td>Check if value is a string</td>
+              <td><code>{{#if (isString name)}}Is string{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isNumber</code></td>
+              <td>Check if value is a number</td>
+              <td><code>{{#if (isNumber count)}}Is number{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isBoolean</code></td>
+              <td>Check if value is a boolean</td>
+              <td><code>{{#if (isBoolean active)}}Is bool{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isEmpty</code></td>
+              <td>Check if value is empty</td>
+              <td><code>{{#if (isEmpty list)}}No items{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isNull</code></td>
+              <td>Check if value is null</td>
+              <td><code>{{#if (isNull value)}}Is null{{/if}}</code></td>
+            </tr>
+            <tr>
+              <td><code>isUndefined</code></td>
+              <td>Check if value is undefined</td>
+              <td><code>{{#if (isUndefined opt)}}Not set{{/if}}</code></td>
+            </tr>
+          </tbody>
+        </table>
 
         <h2>Utility Helpers</h2>
 
         <h3>JSON Output</h3>
+        <p>Pretty-print objects as JSON:</p>
         <pre><code>&lt;pre&gt;{{{json this}}}&lt;/pre&gt;</code></pre>
 
         <h3>Markdown Rendering</h3>
+        <p>Convert markdown to HTML:</p>
         <pre><code>{{{markdown description}}}</code></pre>
 
-        <h3>Increment</h3>
-        <pre><code>Step {{inc @index}}</code></pre>
+        <h3>Number Operations</h3>
+        <pre><code>{{!-- Increment (useful for 1-based indexes) --}}
+Step {{inc @index}}
 
-        <h3>Split String</h3>
-        <pre><code>{{splitAndUseWord 'foo-bar-baz' '-' 1}}  &lt;!-- Output: bar --&gt;</code></pre>
+{{!-- Parse string to integer --}}
+{{parseInt "42"}}</code></pre>
+
+        <h3>String Checks</h3>
+        <pre><code>{{!-- Check if string contains value --}}
+{{#if (includes email "@")}}Valid email format{{/if}}
+
+{{!-- Check if string starts with value --}}
+{{#if (startsWith filename "test_")}}Is test file{{/if}}
+
+{{!-- Check if string ends with value --}}
+{{#if (endsWith filename ".js")}}Is JS file{{/if}}</code></pre>
+
+        <h3>Split and Extract</h3>
+        <p>Split strings by delimiter and extract parts:</p>
+        <pre><code>{{!-- Using split helper --}}
+{{#each (split "foo,bar,baz" ",")}}
+  - {{this}}
+{{/each}}
+
+{{!-- Using splitAndUseWord to get specific part --}}
+{{splitAndUseWord "user-profile-page" "-" 1}}
+{{!-- Output: profile --}}</code></pre>
 
         <h2>Partials</h2>
         <p>
