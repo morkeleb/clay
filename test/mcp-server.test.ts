@@ -200,5 +200,63 @@ describe('MCP Server', function () {
         serverProcess?.stdin?.write(JSON.stringify(listToolsRequest) + '\n');
       }, 1000);
     });
+
+    it('should list 2 Clay prompts', (done) => {
+      serverProcess = spawn('node', [mcpBin], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let promptsReceived = false;
+      const listPromptsRequest = {
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'prompts/list',
+        params: {},
+      };
+
+      const timeoutId = setTimeout(() => {
+        if (!promptsReceived) {
+          done(new Error('Server did not respond to prompts/list'));
+        }
+      }, 5000);
+
+      serverProcess.stdout?.on('data', (data: Buffer) => {
+        const lines = data
+          .toString()
+          .split('\n')
+          .filter((l) => l.trim());
+        for (const line of lines) {
+          try {
+            const response = JSON.parse(line);
+            if (
+              response.id === 3 &&
+              response.result &&
+              response.result.prompts
+            ) {
+              promptsReceived = true;
+              clearTimeout(timeoutId);
+
+              const prompts = response.result.prompts;
+              expect(prompts).to.be.an('array');
+              expect(prompts.length).to.equal(2);
+
+              const promptNames = prompts.map((p: { name: string }) => p.name);
+              expect(promptNames).to.include('clay-getting-started');
+              expect(promptNames).to.include('clay-workflow');
+
+              done();
+              return;
+            }
+          } catch {
+            // Not JSON or not complete yet
+          }
+        }
+      });
+
+      // Send prompts/list request after a delay
+      setTimeout(() => {
+        serverProcess?.stdin?.write(JSON.stringify(listPromptsRequest) + '\n');
+      }, 1000);
+    });
   });
 });

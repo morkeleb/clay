@@ -8,6 +8,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 // Import tools
@@ -38,11 +40,13 @@ class ClayMCPServer {
       {
         capabilities: {
           tools: {},
+          prompts: {},
         },
       }
     );
 
     this.setupToolHandlers();
+    this.setupPromptHandlers();
     this.setupErrorHandling();
   }
 
@@ -304,6 +308,636 @@ class ClayMCPServer {
             },
           ],
         };
+      }
+    });
+  }
+
+  /**
+   * Setup prompt request handlers
+   */
+  private setupPromptHandlers(): void {
+    // List available prompts
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+      prompts: [
+        {
+          name: 'clay-getting-started',
+          description:
+            'Learn how to set up a Clay architecture and use the basic tools (clean and generate)',
+          arguments: [],
+        },
+        {
+          name: 'clay-workflow',
+          description:
+            'Understand the typical Clay workflow from creating models to generating code',
+          arguments: [],
+        },
+      ],
+    }));
+
+    // Handle prompt requests
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name } = request.params;
+
+      switch (name) {
+        case 'clay-getting-started':
+          return {
+            messages: [
+              {
+                role: 'user',
+                content: {
+                  type: 'text',
+                  text: `# Clay Architecture and Basic Tools
+
+## Overview
+Clay is a code generator that transforms JSON models into code using Handlebars templates. The architecture follows a simple pattern:
+
+**Model → Generator → Generated Code**
+
+## Project Structure
+
+A typical Clay project has this structure:
+
+\`\`\`
+project/
+├── .clay                  # Tracks all models and generated files
+├── models/                # Your JSON data models
+│   └── api.model.json
+├── generators/            # Template-based generators
+│   └── typescript-api/
+│       ├── generator.json # Generator configuration
+│       └── templates/     # Handlebars templates
+│           └── controller.hbs
+└── output/                # Generated code (git-ignored)
+    └── controllers/
+        └── UserController.ts
+\`\`\`
+
+## Core Concepts
+
+### 1. Models (JSON files)
+Models contain your data structure in JSON format:
+
+\`\`\`json
+{
+  "model": {
+    "name": "UserAPI",
+    "entities": [
+      {
+        "name": "User",
+        "fields": [
+          { "name": "id", "type": "number" },
+          { "name": "email", "type": "string" }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
+
+### 2. Generators (Configuration + Templates)
+Generators define how to transform models into code:
+
+**generator.json:**
+\`\`\`json
+{
+  "name": "typescript-api",
+  "description": "Generate TypeScript API code",
+  "steps": [
+    {
+      "type": "each",
+      "jsonPath": "$.model.entities[*]",
+      "command": {
+        "template": "controller.hbs",
+        "output": "{{pascalCase name}}Controller.ts"
+      }
+    }
+  ]
+}
+\`\`\`
+
+**templates/controller.hbs:**
+\`\`\`typescript
+export class {{pascalCase name}}Controller {
+  {{#each fields}}
+  private {{camelCase name}}: {{type}};
+  {{/each}}
+}
+\`\`\`
+
+### 3. The .clay File
+The \`.clay\` file tracks your project:
+- All model paths and their associated generators
+- All generated files for cleanup
+- Generated automatically, committed to git
+
+## Basic Tools
+
+### clay_init - Initialize a Project
+**Purpose:** Create a new Clay project or generator
+
+\`\`\`typescript
+// Initialize a Clay project (creates .clay file)
+clay_init({ type: 'project' })
+
+// Create a new generator structure
+clay_init({ 
+  type: 'generator',
+  name: 'my-generator' 
+})
+\`\`\`
+
+### clay_generate - Generate Code
+**Purpose:** Transform models into code using generators
+
+\`\`\`typescript
+// Regenerate ALL models tracked in .clay (recommended)
+clay_generate({})
+
+// Generate from a specific model
+clay_generate({
+  model_path: 'models/api.model.json',
+  output_path: 'output/api'
+})
+\`\`\`
+
+**Key Points:**
+- Parameterless \`clay_generate({})\` regenerates everything
+- Updates .clay file to track generated files
+- Idempotent - safe to run multiple times
+- Generated files should be git-ignored
+
+### clay_clean - Remove Generated Files
+**Purpose:** Clean up all files tracked in .clay
+
+\`\`\`typescript
+// Clean ALL generated files
+clay_clean({})
+
+// Clean files from a specific model
+clay_clean({
+  model_path: 'models/api.model.json',
+  output_path: 'output/api'
+})
+\`\`\`
+
+**Key Points:**
+- Only removes files tracked in .clay
+- Safe - won't delete untracked files
+- Run before major refactoring
+- Useful when changing generator structure
+
+## Typical Workflow
+
+### 1. Initial Setup
+\`\`\`typescript
+// Step 1: Initialize project
+clay_init({ type: 'project' })
+
+// Step 2: Create a generator
+clay_init({ 
+  type: 'generator',
+  name: 'typescript-api' 
+})
+\`\`\`
+
+### 2. Create Your First Model
+Create \`models/users.model.json\`:
+\`\`\`json
+{
+  "model": {
+    "name": "Users",
+    "entities": [
+      { "name": "User", "type": "entity" },
+      { "name": "Admin", "type": "entity" }
+    ]
+  },
+  "generator": "typescript-api",
+  "outputPath": "output/users"
+}
+\`\`\`
+
+### 3. Configure Generator
+Edit \`generators/typescript-api/generator.json\` and create templates in \`templates/\`
+
+### 4. Generate Code
+\`\`\`typescript
+// Generate from your model
+clay_generate({
+  model_path: 'models/users.model.json',
+  output_path: 'output/users'
+})
+\`\`\`
+
+This creates files and updates .clay to track them.
+
+### 5. Make Changes and Regenerate
+Edit your model or templates, then:
+\`\`\`typescript
+// Regenerate everything
+clay_generate({})
+\`\`\`
+
+### 6. Clean Up When Needed
+\`\`\`typescript
+// Remove all generated files
+clay_clean({})
+\`\`\`
+
+## Best Practices
+
+1. **Always use .clay tracking:**
+   - Run \`clay_generate\` with model and output paths first time
+   - Use parameterless \`clay_generate({})\` for subsequent runs
+
+2. **Git ignore generated files:**
+   \`\`\`gitignore
+   output/
+   generated/
+   \`\`\`
+   But commit \`.clay\` to track what gets generated
+
+3. **Use clay_clean before major changes:**
+   - Changing generator structure
+   - Renaming models
+   - Refactoring output paths
+
+4. **Keep models simple:**
+   - Pure data structures
+   - Use mixins for transformations (see clay_explain_concepts)
+
+5. **Leverage available tools:**
+   - \`clay_test_path\` - Test JSONPath expressions
+   - \`clay_get_model_structure\` - Inspect model data
+   - \`clay_list_helpers\` - See available template helpers
+   - \`clay_explain_concepts\` - Get detailed documentation
+
+## Common Patterns
+
+### Pattern 1: Multiple Files per Entity
+\`\`\`json
+{
+  "steps": [
+    {
+      "type": "each",
+      "jsonPath": "$.model.entities[*]",
+      "command": [
+        { "template": "entity.hbs", "output": "{{name}}.ts" },
+        { "template": "test.hbs", "output": "{{name}}.test.ts" }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+### Pattern 2: Single File for All Data
+\`\`\`json
+{
+  "steps": [
+    {
+      "type": "command",
+      "command": {
+        "template": "index.hbs",
+        "output": "index.ts"
+      }
+    }
+  ]
+}
+\`\`\`
+
+### Pattern 3: Copy Static Files
+\`\`\`json
+{
+  "steps": [
+    {
+      "type": "copy",
+      "copy": "assets/logo.png",
+      "output": "logo.png"
+    }
+  ]
+}
+\`\`\`
+
+## Next Steps
+
+Once comfortable with basics, explore:
+- **Context Variables:** \`clay_key\`, \`clay_parent\`, \`clay_index\` (use \`clay_explain_concepts\`)
+- **JSONPath Selectors:** Complex data queries (use \`clay_test_path\` to experiment)
+- **Mixins:** Transform models before generation
+- **Handlebars Helpers:** 47+ helpers for string manipulation, logic, etc.
+
+Use \`clay_explain_concepts({ topic: 'all' })\` for comprehensive documentation!`,
+                },
+              },
+            ],
+          };
+
+        case 'clay-workflow':
+          return {
+            messages: [
+              {
+                role: 'user',
+                content: {
+                  type: 'text',
+                  text: `# Clay Workflow Guide
+
+This guide walks through a complete workflow from start to finish.
+
+## The Development Cycle
+
+### Phase 1: Project Setup
+
+1. **Initialize Clay project:**
+   \`\`\`typescript
+   clay_init({ type: 'project' })
+   \`\`\`
+   Creates \`.clay\` file in current directory.
+
+2. **Create directory structure:**
+   \`\`\`
+   mkdir -p models generators output
+   \`\`\`
+
+3. **Set up .gitignore:**
+   \`\`\`gitignore
+   output/
+   generated/
+   \`\`\`
+
+### Phase 2: Generator Creation
+
+1. **Initialize generator:**
+   \`\`\`typescript
+   clay_init({ 
+     type: 'generator',
+     name: 'api-generator' 
+   })
+   \`\`\`
+   Creates \`generators/api-generator/\` structure.
+
+2. **Configure generator.json:**
+   \`\`\`json
+   {
+     "name": "api-generator",
+     "description": "Generate API code",
+     "steps": [
+       {
+         "type": "each",
+         "jsonPath": "$.model.endpoints[*]",
+         "command": {
+           "template": "endpoint.hbs",
+           "output": "{{pascalCase name}}.ts"
+         }
+       }
+     ]
+   }
+   \`\`\`
+
+3. **Create templates:**
+   Create \`generators/api-generator/templates/endpoint.hbs\`
+   
+   Use \`clay_list_helpers()\` to discover available helpers.
+
+### Phase 3: Model Creation
+
+1. **Create your data model:**
+   \`\`\`json
+   {
+     "model": {
+       "name": "UserAPI",
+       "endpoints": [
+         { "name": "getUser", "method": "GET" },
+         { "name": "createUser", "method": "POST" }
+       ]
+     },
+     "generator": "api-generator",
+     "outputPath": "output/api"
+   }
+   \`\`\`
+
+2. **Validate model structure:**
+   \`\`\`typescript
+   clay_get_model_structure({
+     model_path: 'models/api.model.json'
+   })
+   \`\`\`
+
+3. **Test JSONPath expressions:**
+   \`\`\`typescript
+   clay_test_path({
+     model_path: 'models/api.model.json',
+     json_path: '$.model.endpoints[*].name'
+   })
+   // Returns: ["getUser", "createUser"]
+   \`\`\`
+
+### Phase 4: First Generation
+
+1. **Generate code:**
+   \`\`\`typescript
+   clay_generate({
+     model_path: 'models/api.model.json',
+     output_path: 'output/api'
+   })
+   \`\`\`
+
+2. **Review output:**
+   Check \`output/api/\` for generated files.
+
+3. **Verify .clay tracking:**
+   The \`.clay\` file now tracks your model and generated files.
+
+### Phase 5: Iteration
+
+1. **Modify your model** (add fields, change data):
+   Edit \`models/api.model.json\`
+
+2. **Update templates** (improve formatting, add logic):
+   Edit \`generators/api-generator/templates/\`
+
+3. **Regenerate everything:**
+   \`\`\`typescript
+   clay_generate({})
+   \`\`\`
+   This regenerates ALL models tracked in .clay.
+
+4. **Review changes:**
+   Generated files are updated automatically.
+
+### Phase 6: Clean Up
+
+When you need to remove generated files:
+
+1. **Clean everything:**
+   \`\`\`typescript
+   clay_clean({})
+   \`\`\`
+
+2. **Or clean specific model:**
+   \`\`\`typescript
+   clay_clean({
+     model_path: 'models/api.model.json',
+     output_path: 'output/api'
+   })
+   \`\`\`
+
+## Real-World Example
+
+Let's build a TypeScript DTO generator:
+
+### 1. Setup
+\`\`\`typescript
+clay_init({ type: 'project' })
+clay_init({ type: 'generator', name: 'typescript-dto' })
+\`\`\`
+
+### 2. Configure Generator
+\`generators/typescript-dto/generator.json\`:
+\`\`\`json
+{
+  "name": "typescript-dto",
+  "steps": [
+    {
+      "type": "each",
+      "jsonPath": "$.model.entities[*]",
+      "command": {
+        "template": "dto.hbs",
+        "output": "{{pascalCase name}}DTO.ts"
+      }
+    },
+    {
+      "type": "command",
+      "command": {
+        "template": "index.hbs",
+        "output": "index.ts"
+      }
+    }
+  ]
+}
+\`\`\`
+
+### 3. Create Templates
+\`generators/typescript-dto/templates/dto.hbs\`:
+\`\`\`typescript
+export interface {{pascalCase name}}DTO {
+  {{#each fields}}
+  {{camelCase name}}: {{type}};
+  {{/each}}
+}
+\`\`\`
+
+\`generators/typescript-dto/templates/index.hbs\`:
+\`\`\`typescript
+{{#each model.entities}}
+export * from './{{pascalCase name}}DTO';
+{{/each}}
+\`\`\`
+
+### 4. Create Model
+\`models/user.model.json\`:
+\`\`\`json
+{
+  "model": {
+    "entities": [
+      {
+        "name": "User",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "email", "type": "string" },
+          { "name": "created_at", "type": "Date" }
+        ]
+      },
+      {
+        "name": "Post",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "title", "type": "string" },
+          { "name": "author_id", "type": "string" }
+        ]
+      }
+    ]
+  },
+  "generator": "typescript-dto",
+  "outputPath": "output/dtos"
+}
+\`\`\`
+
+### 5. Generate
+\`\`\`typescript
+clay_generate({
+  model_path: 'models/user.model.json',
+  output_path: 'output/dtos'
+})
+\`\`\`
+
+**Result:**
+- \`output/dtos/UserDTO.ts\`
+- \`output/dtos/PostDTO.ts\`
+- \`output/dtos/index.ts\`
+
+### 6. Add More Entities
+Edit \`models/user.model.json\`, add \`Comment\` entity.
+
+\`\`\`typescript
+clay_generate({})  // Regenerates everything
+\`\`\`
+
+**Result:**
+- All previous files updated
+- New \`CommentDTO.ts\` created
+- \`index.ts\` updated with new export
+
+## Tips for Productive Workflow
+
+1. **Use parameterless generate:** After initial setup, always use \`clay_generate({})\`
+
+2. **Test as you build:** Use \`clay_test_path\` to verify JSONPath expressions
+
+3. **Discover helpers:** Use \`clay_list_helpers\` when writing templates
+
+4. **Inspect models:** Use \`clay_get_model_structure\` to understand data
+
+5. **Learn incrementally:** Use \`clay_explain_concepts\` for specific topics
+
+6. **Clean before restructuring:** Run \`clay_clean({})\` before major changes
+
+## Common Scenarios
+
+### Scenario: Adding a New Model
+1. Create model JSON file
+2. \`clay_generate({ model_path: '...', output_path: '...' })\`
+3. From now on: \`clay_generate({})\` regenerates all
+
+### Scenario: Changing Generator Templates
+1. Edit template files
+2. \`clay_generate({})\` to regenerate all models
+
+### Scenario: Renaming Output Directory
+1. \`clay_clean({})\` to remove old files
+2. Update model's \`outputPath\`
+3. \`clay_generate({ model_path: '...', output_path: '...' })\`
+
+### Scenario: Starting Over
+1. \`clay_clean({})\` to remove all generated files
+2. Delete \`.clay\` file
+3. \`clay_init({ type: 'project' })\`
+4. Regenerate: \`clay_generate({ model_path: '...', output_path: '...' })\` for each model
+
+## Advanced Topics
+
+For more advanced usage, explore:
+- **Context variables** (\`clay_key\`, \`clay_parent\`, etc.)
+- **Mixins** for model transformations
+- **Partials** for template reuse
+- **Conditional generation** with helpers
+
+Use \`clay_explain_concepts({ topic: 'all' })\` for complete documentation.`,
+                },
+              },
+            ],
+          };
+
+        default:
+          throw new Error(`Unknown prompt: ${name}`);
       }
     });
   }

@@ -8,7 +8,7 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 
 ## Features
 
-### 7 Core Tools
+### 8 Core Tools
 
 - **`clay_generate`** - Generate code from models (supports parameterless all-model regeneration)
 - **`clay_clean`** - Clean up generated files tracked in .clay
@@ -17,6 +17,12 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 - **`clay_list_generators`** - List all generators in project
 - **`clay_get_model_structure`** - Inspect model structure and metadata
 - **`clay_list_helpers`** - List all available Handlebars helpers with syntax and examples
+- **`clay_explain_concepts`** - Get comprehensive documentation on Clay concepts
+
+### 2 Built-in Prompts
+
+- **`clay-getting-started`** - Complete guide to Clay architecture, project structure, and using basic tools (clean, generate)
+- **`clay-workflow`** - Step-by-step workflow from project setup to code generation with real examples
 
 ### Key Benefits
 
@@ -24,7 +30,8 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 ✅ **Working directory context** - Automatically uses project's .clay file  
 ✅ **Input validation** - Prevents invalid parameters before execution  
 ✅ **Structured responses** - Consistent JSON output for all operations  
-✅ **Error handling** - Clear, actionable error messages
+✅ **Error handling** - Clear, actionable error messages  
+✅ **Built-in prompts** - AI can learn Clay architecture and best practices instantly
 
 ## Prerequisites
 
@@ -118,7 +125,77 @@ If Clay is in a different location, use an absolute path.
 
 The Clay tools will be available in Cline within your workspace.
 
+## Using Prompts
+
+The Clay MCP server includes built-in prompts that teach AI assistants about Clay architecture and workflows. These are especially useful when you're starting a new project or onboarding someone (or an AI!) to Clay.
+
+### Available Prompts
+
+#### `clay-getting-started`
+
+**Purpose:** Complete introduction to Clay architecture and basic tools
+
+**What it covers:**
+- Project structure and file organization
+- Core concepts (models, generators, templates, .clay file)
+- How to use `clay_init`, `clay_generate`, and `clay_clean`
+- Best practices and common patterns
+- Real examples with code snippets
+
+**When to use:**
+- Starting a new Clay project
+- Teaching AI about your Clay setup
+- Quick reference for architecture decisions
+
+**How to use (in Claude Desktop):**
+Simply reference the prompt in your conversation:
+> "Use the clay-getting-started prompt to help me set up a new project"
+
+Or Claude will automatically discover it when you ask about Clay basics.
+
+#### `clay-workflow`
+
+**Purpose:** Step-by-step guide through a complete Clay workflow
+
+**What it covers:**
+- Complete development cycle from init to generation
+- Creating generators and configuring them
+- Building models and testing them
+- Iterating on templates
+- Real-world example: Building a TypeScript DTO generator
+- Common scenarios and how to handle them
+
+**When to use:**
+- Learning the Clay development process
+- Understanding how pieces fit together
+- Following a practical example from start to finish
+
+**How to use (in Claude Desktop):**
+> "Show me the clay-workflow to understand how to build a generator"
+
+### How Prompts Work
+
+Prompts are pre-written, comprehensive guides that the AI can access instantly. They provide:
+
+✅ **Consistent knowledge** - Same information every time  
+✅ **Comprehensive coverage** - No important details missed  
+✅ **Structured learning** - Organized in logical progression  
+✅ **Code examples** - Real, working examples  
+✅ **Best practices** - Built-in guidance
+
+When you mention Clay concepts or ask for help, Claude can pull in these prompts to give you accurate, detailed guidance based on your specific needs.
+
 ## Usage Examples
+
+### Example 0: Learn Clay Basics
+
+**You say to Claude:**
+
+> "I want to learn how Clay works and set up my first project"
+
+**Claude responds:**
+
+Claude will automatically use the `clay-getting-started` prompt to provide comprehensive guidance on Clay architecture, explain the project structure, and walk you through using the basic tools.
 
 ### Example 1: Regenerate All Models
 
