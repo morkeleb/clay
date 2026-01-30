@@ -6,3 +6,4 @@ tmp/
 .clay
 dist/
 mcp/dist/
+.DS_Store
