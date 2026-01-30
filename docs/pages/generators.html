@@ -196,47 +196,80 @@
           <li>Keep templates focused on single responsibilities</li>
         </ul>
 
-        <h2>Using Published Generators</h2>
-        <p>Install generators globally:</p>
-        <pre><code>npm install -g clay-model-documentation</code></pre>
+        <h2>Getting Generators</h2>
+        <p>
+          Clay uses a <strong>local-first approach</strong>. All generators are
+          stored in your project's <code>clay/generators/</code> directory.
+        </p>
 
-        <p>Reference in your model:</p>
+        <h3>Create a New Generator</h3>
+        <p>Start from scratch with a template:</p>
+        <pre><code>clay init generator my-api-generator</code></pre>
+
+        <h3>Copy from a Local Path</h3>
+        <p>
+          Copy a generator from another location on your machine:
+        </p>
+        <pre><code>clay generator add /path/to/my-generator
+clay generator add ../other-project/generators/my-generator</code></pre>
+
+        <h3>Clone from the Registry</h3>
+        <p>
+          Browse available generators and clone them to your project:
+        </p>
+        <pre><code>clay generator list-available
+clay generator add clay-model-documentation</code></pre>
+
+        <h3>Clone from GitHub</h3>
+        <p>
+          Clone any generator repository. It will be copied to your local
+          <code>clay/generators/</code> directory:
+        </p>
+        <pre><code>clay generator add https://github.com/user/my-generator</code></pre>
+
+        <h3>Reference in Your Model</h3>
+        <p>
+          Generators are referenced by their path to the generator.json file:
+        </p>
         <pre><code>{
   "name": "my-app",
-  "generators": ["clay-model-documentation"],
+  "generators": [
+    "generators/my-api-generator/generator.json",
+    "generators/forms/generator.json"
+  ],
   "model": {...}
 }</code></pre>
 
         <div class="note">
-          <strong>💡 Pro Tip:</strong> Start with a simple generator that
-          creates one file type, then expand it step by step. Use
+          <strong>💡 Pro Tip:</strong> After adding a generator, customize it
+          for your project! The generator files are in
+          <code>clay/generators/</code> and are part of your codebase. Use
           <code>clay watch</code> to see changes immediately!
         </div>
 
-        <h2>Publishing Generators</h2>
-        <p>Package your generator as an npm module:</p>
-        <pre><code>{
-  "name": "clay-generator-myapi",
-  "version": "1.0.0",
-  "main": "generator.json",
-  "files": [
-    "generator.json",
-    "templates/",
-    "partials/"
-  ]
-}</code></pre>
-
-        <p>Publish to npm:</p>
-        <pre><code>npm publish</code></pre>
-      </div>
-
-      <div class="doc-nav">
-        <a href="models.html" class="doc-nav-item">
-          <div class="nav-label">← Previous</div>
-          <div class="nav-title">Models</div>
-        </a>
-        <a href="templates.html" class="doc-nav-item">
-          <div class="nav-label">Next →</div>
+        <h2>Sharing Generators</h2>
+        <p>
+          Since generators are stored locally in your project, sharing them is
+          easy:
+        </p>
+        <ul>
+          <li>
+            <strong>Commit to version control</strong> - Your
+            <code>clay/generators/</code> directory is part of your project
+          </li>
+          <li>
+            <strong>Copy between projects</strong> - Simply copy the generator
+            directory
+          </li>
+          <li>
+            <strong>Share via GitHub</strong> - Create a repo with your
+            generator and others can clone it
+          </li>
+          <li>
+            <strong>Add to the registry</strong> - Submit a PR to add your
+            generator to the discovery registry
+          </li>
+        </ul>
           <div class="nav-title">Templates</div>
         </a>
       </div>

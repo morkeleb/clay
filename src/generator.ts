@@ -271,7 +271,6 @@ async function generate_file(
   // First pass: generate all files that need updates (without formatting)
   const filesToFormat: Array<{
     filename: string;
-    relFilename: string;
     content: string;
     md5: string;
   }> = [];
@@ -280,8 +279,8 @@ async function generate_file(
     model_partial.map(async (m) => {
       // Get filename from template and normalize to OS-specific path separators
       const templateResult = file_name_template(m);
-      const filename = path.normalize(templateResult);
-      const relFilename = path.relative(process.cwd(), filename);
+      // Ensure we always work with absolute paths for consistent checksum lookups
+      const filename = path.resolve(templateResult);
       if (step.touch && (await fs.pathExists(filename))) {
         ui.info('skipping touch file:', filename);
         return;
@@ -289,11 +288,25 @@ async function generate_file(
       try {
         const preFormattedOutput = template(m);
         const md5 = getMd5ForContent(preFormattedOutput);
+        const storedChecksum = modelIndex.getFileCheckSum(filename);
+        
+        // Debug output when verbose mode is enabled
+        if (process.env.VERBOSE) {
+          const relPath = path.relative(process.cwd(), filename);
+          const normalizedPath = relPath.split(path.sep).join('/');
+          ui.info(`Checking ${filename}`);
+          ui.info(`  Relative path: ${relPath}`);
+          ui.info(`  Normalized path: ${normalizedPath}`);
+          ui.info(`  Stored checksum: ${storedChecksum}`);
+          ui.info(`  Current checksum: ${md5}`);
+          ui.info(`  Changed: ${storedChecksum !== md5}`);
+        }
+        
         // Only process files that have changed
-        if (modelIndex.getFileCheckSum(relFilename) !== md5) {
+        // Pass full filename - getFileCheckSum will compute relative path internally
+        if (storedChecksum !== md5) {
           filesToFormat.push({
             filename,
-            relFilename,
             content: preFormattedOutput,
             md5,
           });
@@ -310,13 +323,17 @@ async function generate_file(
     })
   );
 
+  if (process.env.VERBOSE) {
+    ui.info(`Found ${filesToFormat.length} file(s) that need to be regenerated`);
+  }
+
   // Second pass: format and write files in parallel batches
   // This allows formatters to potentially batch operations if they support it
   const BATCH_SIZE = 10; // Process 10 files at a time to avoid overwhelming the formatter
   for (let i = 0; i < filesToFormat.length; i += BATCH_SIZE) {
     const batch = filesToFormat.slice(i, i + BATCH_SIZE);
     await Promise.all(
-      batch.map(async ({ filename, relFilename, content, md5 }) => {
+      batch.map(async ({ filename, content, md5 }) => {
         try {
           const formattedContent = await applyFormatters(
             generator,
@@ -326,7 +343,8 @@ async function generate_file(
           );
           write(filename, formattedContent);
           if (!step.touch) {
-            modelIndex.setFileCheckSum(relFilename, md5);
+            // Pass full filename - setFileCheckSum will compute relative path internally
+            modelIndex.setFileCheckSum(filename, md5);
           }
         } catch (e) {
           ui.critical('Failed to format/write file:', filename, e);

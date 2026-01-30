@@ -1,5 +1,16 @@
 /**
  * Generator manager module for installing and managing clay generators
+ * 
+ * All generators are stored and used locally from the clay/generators/ directory.
+ * This module supports:
+ * - Creating new generators: clay init generator <name>
+ * - Cloning generators from GitHub repositories to local storage
+ * - Looking up generator repositories from the registry for discovery
+ * - Managing generators in models
+ * 
+ * The registry helps users discover useful generators they can clone.
+ * After cloning, all generators are local and can be customized per-project.
+ * 
  * Note: Uses `any` types for:
  * - HTTP response data parsing (JSON from GitHub)
  * - Dynamic package.json and registry file structures
@@ -174,6 +185,7 @@ export async function findGeneratorInRegistry(
 
 /**
  * List available generators from the registry
+ * Shows generators that can be cloned to your local clay/generators/ directory
  */
 export async function listAvailableGenerators(): Promise<void> {
   const registry = await loadGeneratorRegistry();
@@ -184,7 +196,7 @@ export async function listAvailableGenerators(): Promise<void> {
     return;
   }
 
-  ui.info('Available generators from registry:');
+  ui.info('Available generators (will be copied to clay/generators/):');
   generators.forEach(([key, gen]) => {
     ui.log(`  ${key} - ${gen.name}`);
     ui.log(`    ${gen.description}`);
@@ -301,7 +313,10 @@ export function generatorExistsLocally(generatorRef: string): boolean {
 
 /**
  * Download and install a generator from a GitHub repository
- * @param repoUrl - GitHub repository URL or known generator name
+ * This clones the repository and copies it to clay/generators/<name>
+ * After installation, the generator is used locally.
+ * 
+ * @param repoUrl - GitHub repository URL
  * @param generatorName - Local name for the generator
  */
 async function downloadGenerator(
@@ -342,7 +357,14 @@ async function downloadGenerator(
 
 /**
  * Add a generator to a model
- * @param generatorRef - Generator reference (GitHub URL, local path, or known name)
+ * 
+ * Generators are always used locally from clay/generators/. This function:
+ * 1. For GitHub URLs: Clones the repo to clay/generators/<name>
+ * 2. For local paths: Uses the existing local generator
+ * 3. For registry names: Looks up the repo in the registry and clones it
+ * 4. For non-existent names: Suggests creating with 'clay init generator'
+ * 
+ * @param generatorRef - Generator reference (GitHub URL, local path, or registry name)
  * @param clayFile - The loaded clay file
  */
 export async function addGenerator(
@@ -351,7 +373,6 @@ export async function addGenerator(
 ): Promise<void> {
   // Determine generator name from reference
   let generatorName: string;
-  let generatorPath = generatorRef;
   let isGitRepo = false;
   let isLocalPath = false;
 
@@ -378,10 +399,8 @@ export async function addGenerator(
     // Looks like a path
     isLocalPath = true;
     generatorName = path.basename(generatorRef);
-    generatorPath = generatorRef;
   } else {
     generatorName = generatorRef;
-    generatorPath = generatorRef;
 
     // Check if this is a known generator in the registry
     const registryEntry = await findGeneratorInRegistry(generatorName);
@@ -391,7 +410,7 @@ export async function addGenerator(
       );
       isGitRepo = true;
       generatorRef = registryEntry.repository;
-      ui.info(`Using repository: ${registryEntry.repository}`);
+      ui.info(`Cloning to: clay/generators/${generatorName}`);
     }
   }
 
@@ -402,26 +421,76 @@ export async function addGenerator(
       if (!success) {
         return;
       }
-      generatorPath = `clay/generators/${generatorName}`;
-    } else if (!isLocalPath) {
-      // Try to find if it's a known generator or installed globally
+    } else if (isLocalPath) {
+      // Copy generator from local path to clay/generators
+      const targetPath = path.join('clay', 'generators', generatorName);
+      
+      try {
+        // Check if source path exists and has generator.json
+        const sourcePath = path.resolve(generatorRef);
+        const sourceGeneratorJson = path.join(sourcePath, 'generator.json');
+        
+        if (!fs.existsSync(sourceGeneratorJson)) {
+          ui.warn(`No generator.json found at ${sourcePath}`);
+          return;
+        }
+        
+        // Ensure target directory exists
+        fs.ensureDirSync(path.dirname(targetPath));
+        
+        // Copy the generator directory
+        ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
+        fs.copySync(sourcePath, targetPath);
+        
+        ui.info(`Generator "${generatorName}" copied successfully to ${targetPath}`);
+      } catch (error: any) {
+        ui.warn(`Failed to copy generator: ${error.message}`);
+        return;
+      }
+    } else {
+      // Generator not found locally
       ui.warn(
-        `Generator "${generatorName}" not found locally and not in registry.`
+        `Generator "${generatorName}" not found locally.`
       );
-      ui.info('You can:');
-      ui.info('1. Provide a GitHub repository URL');
-      ui.info('2. Install it globally with npm/yarn');
-      ui.info(
-        "3. Use 'clay generator list-available' to see available generators"
-      );
+      ui.info('');
+      ui.info('Options:');
+      ui.info(`1. Create a new generator: clay init generator ${generatorName}`);
+      ui.info('2. Provide a GitHub URL to clone: clay generator add <github-url>');
+      ui.info('3. Browse available generators: clay generator list-available');
+      ui.info('4. Provide a path to an existing generator directory');
+      ui.info('');
       return;
     }
   } else {
-    // Generator exists locally, use the provided reference as the path
+    // Generator exists locally in clay/generators
     if (isLocalPath) {
-      generatorPath = generatorRef;
-    } else {
-      generatorPath = `clay/generators/${generatorName}`;
+      // If it's a local path pointing to an external location, ask if they want to copy it
+      const targetPath = path.join('clay', 'generators', generatorName);
+      const sourcePath = path.resolve(generatorRef);
+      
+      if (fs.existsSync(targetPath)) {
+        const { overwrite } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'overwrite',
+            message: `Generator "${generatorName}" already exists in clay/generators/. Overwrite?`,
+            default: false,
+          },
+        ]);
+        
+        if (overwrite) {
+          ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
+          fs.removeSync(targetPath);
+          fs.copySync(sourcePath, targetPath);
+          ui.info(`Generator "${generatorName}" updated successfully`);
+        }
+      } else {
+        // Target doesn't exist yet, but generatorExistsLocally returned true
+        // This means the source path exists and has generator.json
+        ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
+        fs.copySync(sourcePath, targetPath);
+        ui.info(`Generator "${generatorName}" copied successfully to ${targetPath}`);
+      }
     }
   }
 
@@ -462,11 +531,19 @@ export async function addGenerator(
       modelData.generators = [];
     }
 
+    // Add the generator with the path pattern that matches existing generators
+    // Use "generators/<name>/generator.json" format for consistency
+    const generatorReference = `generators/${generatorName}/generator.json`;
+
     // Check if generator is already in the model
     const alreadyExists = modelData.generators.some(
       (gen: string | { generator: string }) => {
         const existingName = typeof gen === 'string' ? gen : gen.generator;
-        return existingName === generatorName || existingName === generatorPath;
+        // Check if it matches the full reference or contains the generator name
+        return existingName === generatorReference || 
+               existingName.includes(`/${generatorName}/`) ||
+               existingName.endsWith(`/${generatorName}`) ||
+               existingName === generatorName;
       }
     );
 
@@ -477,8 +554,7 @@ export async function addGenerator(
       return;
     }
 
-    // Add the generator using the determined path
-    modelData.generators.push(generatorPath);
+    modelData.generators.push(generatorReference);
 
     // Write back to model file
     fs.writeFileSync(modelPath, JSON.stringify(modelData, null, 2));

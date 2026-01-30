@@ -10,7 +10,6 @@ import path from 'path';
 import fs from 'fs';
 import * as ui from './output';
 import _ from 'lodash';
-import resolveGlobal from 'resolve-global';
 import chokidar from 'chokidar';
 import { createClayFile, load as loadClayFile } from './clay_file';
 import * as generatorManager from './generator-manager';
@@ -64,13 +63,13 @@ function resolve_generator(
   const generator_name = typeof name === 'string' ? name : name.generator || '';
   const output = typeof name === 'object' ? name.output : undefined;
 
+  // Only look for generators in local paths, prioritizing clay/generators directory
   const generator_path = [
-    path.dirname(resolveGlobal.silent(generator_name) || '') +
-      '/generator.json',
     generator_name + '.json',
     path.resolve(generator_name + '.json'),
     path.resolve(path.join(model_path, generator_name + '.json')),
     path.resolve(path.join(model_path, generator_name, 'generator.json')),
+    path.resolve(path.join('clay', 'generators', generator_name, 'generator.json')),
     generator_name,
     path.resolve(generator_name),
     path.resolve(path.join(model_path, generator_name)),

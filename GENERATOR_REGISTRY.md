@@ -1,6 +1,42 @@
 # Generator Registry
 
-Clay includes a built-in registry of known generators that can be easily installed and used in your projects. This registry provides a curated list of generators maintained by the community.
+The Clay generator registry is a **discovery tool** that helps you find useful generators you can clone into your project.
+
+## How It Works
+
+1. **Browse available generators**: `clay generator list-available`
+2. **Clone a generator from the registry**: `clay generator add <generator-name>`
+3. **The generator is copied to**: `clay/generators/<generator-name>`
+4. **Customize it for your project** - it's now part of your codebase
+
+## Local-First Approach
+
+All Clay generators are **local** - stored in your project's `clay/generators/` directory. This provides:
+- ✅ Version control - generators are committed with your code
+- ✅ Customization - modify generators for your specific needs
+- ✅ No global dependencies - everything is self-contained
+- ✅ Team collaboration - everyone has the same generators
+
+## Creating Generators
+
+**Create a new generator from scratch:**
+```bash
+clay init generator my-generator
+```
+
+**Clone an existing generator from the registry:**
+```bash
+clay generator add clay-model-documentation
+```
+
+**Clone from any GitHub repository:**
+```bash
+clay generator add https://github.com/user/my-generator
+```
+
+---
+
+## Registry Information
 
 ## Registry Updates
 
