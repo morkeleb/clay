@@ -82,9 +82,6 @@ export async function cleanTool(args: unknown) {
               success: true,
               message: 'Successfully cleaned generated files',
               models_cleaned: modelsCount,
-              total_files_removed: 0, // Would need to parse output
-              details: [],
-              raw_output: result.output,
             },
             null,
             2

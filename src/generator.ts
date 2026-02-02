@@ -423,10 +423,7 @@ function execute(
       stdio: verbose ? 'inherit' : 'pipe',
     });
   } catch (e: any) {
-    ui.warn('error while executing', commandline);
-    if (e.stdout) {
-      ui.warn(e.stdout.toString());
-    }
+    ui.critical('error while executing', commandline, e.message || e);
   }
 }
 

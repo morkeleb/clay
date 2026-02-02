@@ -86,8 +86,7 @@ export async function generateTool(args: unknown) {
             text: JSON.stringify(
               {
                 success: true,
-                message: 'Successfully generated code for all models',
-                output: result.output,
+                message: 'Successfully generated code',
                 stats: {
                   filesGenerated: stats.filesGenerated,
                   filesCopied: stats.filesCopied,
@@ -158,12 +157,10 @@ export async function generateTool(args: unknown) {
                 total_files_generated: stats.filesGenerated,
                 total_files_copied: stats.filesCopied,
                 total_commands_executed: stats.commandsExecuted,
-                details: clayData.models.map((m) => ({
+                models: clayData.models.map((m) => ({
                   model_path: m.path,
                   output_path: m.output,
-                  // Per-model file counts not available when generating all models together
                 })),
-                raw_output: result.output,
               },
               null,
               2

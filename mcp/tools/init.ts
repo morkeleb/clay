@@ -107,7 +107,6 @@ export async function initTool(args: unknown) {
                   ? ['.clay']
                   : [`clay/generators/${input.name}/generator.json`],
               next_steps: nextSteps,
-              raw_output: result.output,
             },
             null,
             2

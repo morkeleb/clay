@@ -65,5 +65,5 @@ export function critical(...text: any[]): void {
   if (!process.isCLI) return;
   text.unshift(chalk.red('CRITICAL! '));
   console.warn.apply(console, text);
-  process.exit();
+  process.exit(1);
 }
