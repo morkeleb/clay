@@ -312,6 +312,29 @@ export function generatorExistsLocally(generatorRef: string): boolean {
 }
 
 /**
+ * Remove .git directory from a path to prevent git submodule issues
+ * 
+ * @param generatorPath - Path to the generator directory
+ */
+function removeGitDirectory(generatorPath: string): void {
+  const gitPath = path.join(generatorPath, '.git');
+  if (fs.existsSync(gitPath)) {
+    fs.removeSync(gitPath);
+  }
+}
+
+/**
+ * Copy a generator directory and remove .git to prevent submodule issues
+ * 
+ * @param sourcePath - Source path to copy from
+ * @param targetPath - Target path to copy to
+ */
+function copyGeneratorAndCleanGit(sourcePath: string, targetPath: string): void {
+  fs.copySync(sourcePath, targetPath);
+  removeGitDirectory(targetPath);
+}
+
+/**
  * Download and install a generator from a GitHub repository
  * This clones the repository and copies it to clay/generators/<name>
  * After installation, the generator is used locally.
@@ -340,6 +363,9 @@ async function downloadGenerator(
         'Downloaded repository does not contain a generator.json file'
       );
     }
+
+    // Remove .git directory to prevent git from treating it as a submodule
+    removeGitDirectory(generatorPath);
 
     ui.info(
       `Generator "${generatorName}" downloaded successfully to ${generatorPath}`
@@ -440,7 +466,7 @@ export async function addGenerator(
         
         // Copy the generator directory
         ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
-        fs.copySync(sourcePath, targetPath);
+        copyGeneratorAndCleanGit(sourcePath, targetPath);
         
         ui.info(`Generator "${generatorName}" copied successfully to ${targetPath}`);
       } catch (error: any) {
@@ -481,14 +507,16 @@ export async function addGenerator(
         if (overwrite) {
           ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
           fs.removeSync(targetPath);
-          fs.copySync(sourcePath, targetPath);
+          copyGeneratorAndCleanGit(sourcePath, targetPath);
+          
           ui.info(`Generator "${generatorName}" updated successfully`);
         }
       } else {
         // Target doesn't exist yet, but generatorExistsLocally returned true
         // This means the source path exists and has generator.json
         ui.info(`Copying generator from ${sourcePath} to ${targetPath}`);
-        fs.copySync(sourcePath, targetPath);
+        copyGeneratorAndCleanGit(sourcePath, targetPath);
+        
         ui.info(`Generator "${generatorName}" copied successfully to ${targetPath}`);
       }
     }
