@@ -105,6 +105,44 @@ describe('MCP Model CRUD Tools', function () {
     return { success: true, matched: updated };
   }
 
+  function renameInModel(modelPath: string, jsonPath: string, oldName: string, newName: string) {
+    const data = readModelFile(modelPath);
+    const matches = jp.query(data, jsonPath);
+    if (matches.length === 0) return { success: false, message: `No items matched JSONPath: ${jsonPath}` };
+    let renamed = 0;
+    for (const m of matches) {
+      if (typeof m === 'object' && m !== null && !Array.isArray(m) && oldName in m) {
+        m[newName] = m[oldName];
+        delete m[oldName];
+        renamed++;
+      }
+    }
+    writeModelFile(modelPath, data);
+    return { success: true, renamed };
+  }
+
+  function setSchema(modelPath: string, schemaPath: string) {
+    const data = readModelFile(modelPath);
+    const resolvedSchema = path.isAbsolute(schemaPath)
+      ? schemaPath
+      : path.resolve(path.dirname(modelPath), schemaPath);
+    if (!fs.existsSync(resolvedSchema)) return { success: false, message: `Schema file not found: ${resolvedSchema}` };
+
+    // Validate for warnings
+    const schemaContent = JSON.parse(fs.readFileSync(resolvedSchema, 'utf-8'));
+    const ajv = new Ajv({ allErrors: true });
+    const validate = ajv.compile(schemaContent);
+    const valid = validate(data.model);
+    const warnings = valid ? [] : (validate.errors || []).map((e: any) => `${e.instancePath}: ${e.message}`);
+
+    data['$schema'] = schemaPath;
+    fs.writeFileSync(path.resolve(modelPath), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+
+    const result: any = { success: true, message: `Set $schema to ${schemaPath}` };
+    if (warnings.length > 0) { result.validation_warnings = warnings; }
+    return result;
+  }
+
   function deleteFromModel(filePath: string, jsonPath: string) {
     const data = readModelFile(filePath);
     const paths = jp.paths(data, jsonPath);
@@ -278,6 +316,86 @@ describe('MCP Model CRUD Tools', function () {
       const result = deleteFromModel(modelPath, '$.model.entities[?(@.name=="Nonexistent")]');
       expect(result.success).to.be.false;
       expect(result.message).to.include('No items matched');
+    });
+  });
+
+  describe('clay_model_rename', () => {
+    it('should rename property on all matched items', () => {
+      const result = renameInModel(modelPath, '$.model.entities[*]', 'fields', 'columns');
+      expect(result.success).to.be.true;
+      expect(result.renamed).to.equal(2);
+      const data = readModelFile(modelPath);
+      const entities = (data.model as any).entities;
+      for (const entity of entities) {
+        expect(entity).to.have.property('columns');
+        expect(entity).to.not.have.property('fields');
+      }
+    });
+
+    it('should skip items that do not have the old property', () => {
+      // Remove 'fields' from the second entity so only one has it
+      const data = readModelFile(modelPath);
+      delete (data.model as any).entities[1].fields;
+      fs.writeFileSync(modelPath, JSON.stringify(data, null, 2));
+
+      const result = renameInModel(modelPath, '$.model.entities[*]', 'fields', 'columns');
+      expect(result.success).to.be.true;
+      expect(result.renamed).to.equal(1);
+      const updated = readModelFile(modelPath);
+      const entities = (updated.model as any).entities;
+      expect(entities[0]).to.have.property('columns');
+      expect(entities[1]).to.not.have.property('columns');
+    });
+
+    it('should return error if nothing matched', () => {
+      const result = renameInModel(modelPath, '$.model.nonexistent[*]', 'foo', 'bar');
+      expect(result.success).to.be.false;
+      expect(result.message).to.include('No items matched');
+    });
+  });
+
+  describe('clay_model_set_schema', () => {
+    it('should set $schema reference on model', () => {
+      const schemaPath = path.join(testDir, 'model.schema.json');
+      fs.writeFileSync(schemaPath, JSON.stringify({
+        type: 'object',
+        properties: {
+          entities: { type: 'array' },
+        },
+      }));
+
+      const result = setSchema(modelPath, 'model.schema.json');
+      expect(result.success).to.be.true;
+      expect(result.message).to.include('model.schema.json');
+
+      const data = readModelFile(modelPath);
+      expect(data['$schema']).to.equal('model.schema.json');
+    });
+
+    it('should return validation warnings if model does not match schema', () => {
+      const schemaPath = path.join(testDir, 'strict.schema.json');
+      fs.writeFileSync(schemaPath, JSON.stringify({
+        type: 'object',
+        properties: {
+          entities: { type: 'string' },  // entities is actually an array, so this will warn
+        },
+        required: ['entities'],
+      }));
+
+      const result = setSchema(modelPath, 'strict.schema.json');
+      expect(result.success).to.be.true;
+      expect(result.validation_warnings).to.be.an('array');
+      expect(result.validation_warnings.length).to.be.greaterThan(0);
+
+      // $schema should still be set despite warnings
+      const data = readModelFile(modelPath);
+      expect(data['$schema']).to.equal('strict.schema.json');
+    });
+
+    it('should return error if schema file does not exist', () => {
+      const result = setSchema(modelPath, 'nonexistent.schema.json');
+      expect(result.success).to.be.false;
+      expect(result.message).to.include('Schema file not found');
     });
   });
 });
