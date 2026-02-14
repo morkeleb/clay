@@ -7,6 +7,7 @@ import { ModelRenameInputSchema } from '../shared/schemas.js';
 import { readModelFile, writeModelFile } from '../shared/model-file.js';
 import { resolvePath, getWorkspaceContext } from '../shared/workspace-manager.js';
 import jp from 'jsonpath';
+import { checkConventions } from '../shared/conventions.js';
 
 export async function modelRenameTool(args: unknown) {
   const validation = validateInput(ModelRenameInputSchema, args);
@@ -58,12 +59,28 @@ export async function modelRenameTool(args: unknown) {
 
     writeModelFile(fullModelPath, modelData);
 
+    // Check conventions (warnings only — mutation already written)
+    let conventionViolations: Array<{ generator: string; convention: string; errors: string[] }> | undefined;
+    try {
+      const violations = checkConventions(fullModelPath, context.workingDirectory);
+      if (violations.length > 0) {
+        conventionViolations = violations;
+      }
+    } catch {
+      // Convention checking is best-effort — don't fail the mutation
+    }
+
+    const response: Record<string, unknown> = {
+      success: true,
+      message: `Renamed '${input.old_name}' to '${input.new_name}' on ${renamed} item(s) at ${input.json_path}`,
+      renamed,
+    };
+    if (conventionViolations) {
+      response.convention_violations = conventionViolations;
+    }
+
     return {
-      content: [{ type: 'text', text: JSON.stringify({
-        success: true,
-        message: `Renamed '${input.old_name}' to '${input.new_name}' on ${renamed} item(s) at ${input.json_path}`,
-        renamed,
-      }, null, 2) }],
+      content: [{ type: 'text', text: JSON.stringify(response, null, 2) }],
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
