@@ -84,6 +84,29 @@
           }
         ]
       }
+    },
+    "conventions": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Convention identifier" },
+              "description": { "type": "string", "description": "What this convention enforces" },
+              "function": { "type": "string", "description": "JS function string: (model) => string[]" }
+            },
+            "required": ["name", "description", "function"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "include": { "type": "string", "description": "Path to convention JSON file" }
+            },
+            "required": ["include"]
+          }
+        ]
+      }
     }
   },
   "required": ["partials", "formatters", "steps"]

@@ -123,6 +123,17 @@ const GeneratorStepSchema = z.union([
   }),
 ]);
 
+const ConventionSchema = z.union([
+  z.object({
+    name: z.string(),
+    description: z.string(),
+    function: z.string(),
+  }),
+  z.object({
+    include: z.string(),
+  }),
+]);
+
 const GeneratorSchema = z.object({
   steps: z.array(GeneratorStepSchema),
   partials: z.array(z.string()).optional(),
@@ -137,6 +148,7 @@ const GeneratorSchema = z.object({
       ])
     )
     .optional(),
+  conventions: z.array(ConventionSchema).optional(),
 });
 
 function validateGeneratorSchema(generator: any): Generator {
