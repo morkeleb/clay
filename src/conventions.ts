@@ -14,26 +14,28 @@ export interface ConventionViolation {
 }
 
 /**
- * Load conventions from a generator.json file.
+ * Load conventions from a generator.json file path.
  * Conventions can be defined inline or via include references to external JSON files.
  */
-export function loadConventions(generatorPath: string): Convention[] {
-  const generatorFile = path.join(generatorPath, 'generator.json');
-  if (!fs.existsSync(generatorFile)) {
+export function loadConventions(generatorJsonPath: string): Convention[] {
+  const resolved = path.resolve(generatorJsonPath);
+  if (!fs.existsSync(resolved)) {
     return [];
   }
 
-  const content = fs.readFileSync(generatorFile, 'utf-8');
+  const content = fs.readFileSync(resolved, 'utf-8');
   const generator = JSON.parse(content);
 
   if (!generator.conventions || !Array.isArray(generator.conventions)) {
     return [];
   }
 
+  const generatorDir = path.dirname(resolved);
+
   return generator.conventions.map(
     (entry: Convention | { include: string }) => {
       if ('include' in entry && typeof entry.include === 'string') {
-        const includePath = path.resolve(generatorPath, entry.include);
+        const includePath = path.resolve(generatorDir, entry.include);
         const includeContent = fs.readFileSync(includePath, 'utf-8');
         return JSON.parse(includeContent) as Convention;
       }

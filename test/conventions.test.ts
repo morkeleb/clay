@@ -40,7 +40,7 @@ describe('conventions', function () {
         JSON.stringify(generator)
       );
 
-      const conventions = loadConventions(testDir);
+      const conventions = loadConventions(path.join(testDir, 'generator.json'));
       expect(conventions).to.have.length(1);
       expect(conventions[0].name).to.equal('no-empty-entities');
       expect(conventions[0].description).to.equal(
@@ -66,7 +66,7 @@ describe('conventions', function () {
         JSON.stringify(generator)
       );
 
-      const conventions = loadConventions(testDir);
+      const conventions = loadConventions(path.join(testDir, 'generator.json'));
       expect(conventions).to.have.length(1);
       expect(conventions[0].name).to.equal('from-file');
       expect(conventions[0].description).to.equal(
@@ -81,7 +81,7 @@ describe('conventions', function () {
         JSON.stringify(generator)
       );
 
-      const conventions = loadConventions(testDir);
+      const conventions = loadConventions(path.join(testDir, 'generator.json'));
       expect(conventions).to.deep.equal([]);
     });
   });

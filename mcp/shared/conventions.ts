@@ -40,14 +40,17 @@ export function checkConventions(
     const generatorName = typeof g === 'string' ? g : g.generator || '';
     const modelDir = path.dirname(path.resolve(modelPath));
 
-    // Resolve generator directory paths.
-    // loadConventions expects a directory path and internally joins with 'generator.json'.
-    // Same resolution order as command-line.ts but using directory candidates.
+    // Same resolution order as command-line.ts
     const candidatePaths = [
+      generatorName + '.json',
+      path.resolve(generatorName + '.json'),
+      path.resolve(path.join(modelDir, generatorName + '.json')),
+      path.resolve(path.join(modelDir, generatorName, 'generator.json')),
+      path.resolve(path.join(workingDirectory, 'clay', 'generators', generatorName, 'generator.json')),
+      generatorName,
       path.resolve(generatorName),
       path.resolve(path.join(modelDir, generatorName)),
-      path.resolve(path.join(workingDirectory, 'clay', 'generators', generatorName)),
-    ].filter((p) => fs.existsSync(path.join(p, 'generator.json')));
+    ].filter((p) => fs.existsSync(p));
 
     if (candidatePaths.length === 0) continue;
 

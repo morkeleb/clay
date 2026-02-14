@@ -7,8 +7,7 @@ import * as os from 'os';
  * CJS-compatible test for convention checking logic used by MCP tools.
  * Tests the pattern: load model -> find generators -> load conventions -> run.
  *
- * Note: loadConventions expects a directory path and internally joins
- * with 'generator.json'.
+ * Note: loadConventions expects the path to generator.json.
  */
 import { loadConventions, runConventions } from '../src/conventions';
 
@@ -35,7 +34,7 @@ describe('MCP conventions helper', function () {
       ],
     }));
 
-    const conventions = loadConventions(genDir);
+    const conventions = loadConventions(path.join(genDir, 'generator.json'));
     expect(conventions).to.have.lengthOf(1);
     expect(conventions[0].name).to.equal('test-conv');
   });
@@ -56,7 +55,7 @@ describe('MCP conventions helper', function () {
       ],
     }));
 
-    const conventions = loadConventions(genDir);
+    const conventions = loadConventions(path.join(genDir, 'generator.json'));
     const violations = runConventions(conventions, {
       entities: [{ name: 'User', fields: [{ name: 'created_at', type: 'Date' }] }],
     });
@@ -81,7 +80,7 @@ describe('MCP conventions helper', function () {
       ],
     }));
 
-    const conventions = loadConventions(genDir);
+    const conventions = loadConventions(path.join(genDir, 'generator.json'));
     const violations = runConventions(conventions, {
       entities: [{ name: 'User', fields: [{ name: 'email', type: 'string' }] }],
     });
