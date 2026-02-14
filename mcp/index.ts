@@ -21,6 +21,12 @@ import { listGeneratorsTool } from './tools/list-generators.js';
 import { getModelStructureTool } from './tools/get-model-structure.js';
 import { listHelpersTool } from './tools/list-helpers.js';
 import { explainConceptsTool } from './tools/explain-concepts.js';
+import { modelQueryTool } from './tools/model-query.js';
+import { modelAddTool } from './tools/model-add.js';
+import { modelUpdateTool } from './tools/model-update.js';
+import { modelDeleteTool } from './tools/model-delete.js';
+import { modelRenameTool } from './tools/model-rename.js';
+import { modelSetSchemaTool } from './tools/model-set-schema.js';
 
 // Import utilities
 import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
@@ -262,6 +268,159 @@ class ClayMCPServer {
             },
           },
         },
+        {
+          name: 'clay_model_query',
+          description:
+            'Query model data using JSONPath. Returns only matched items, keeping context small. Uses the expanded model (includes resolved, mixins applied). Use this instead of reading the entire model file.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              json_path: {
+                type: 'string',
+                description: 'JSONPath expression (e.g., "$.model.entities[?(@.name==\'User\')]")',
+              },
+            },
+            required: ['model_path', 'json_path'],
+          },
+        },
+        {
+          name: 'clay_model_add',
+          description:
+            'Add an item to an array or property to an object in a model file. Appends to arrays, merges into objects. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              json_path: {
+                type: 'string',
+                description: 'JSONPath to target array or object (e.g., "$.model.entities")',
+              },
+              value: {
+                description: 'Value to add: appended if target is array, merged if target is object',
+              },
+            },
+            required: ['model_path', 'json_path', 'value'],
+          },
+        },
+        {
+          name: 'clay_model_update',
+          description:
+            'Update fields on all items matched by JSONPath. Merges provided fields into each match. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              json_path: {
+                type: 'string',
+                description: 'JSONPath expression matching items to update',
+              },
+              fields: {
+                type: 'object',
+                description: 'Fields to merge into each matched item',
+              },
+            },
+            required: ['model_path', 'json_path', 'fields'],
+          },
+        },
+        {
+          name: 'clay_model_delete',
+          description:
+            'Remove items matched by JSONPath from their parent arrays or objects. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              json_path: {
+                type: 'string',
+                description: 'JSONPath expression matching items to remove',
+              },
+            },
+            required: ['model_path', 'json_path'],
+          },
+        },
+        {
+          name: 'clay_model_rename',
+          description:
+            'Rename a property key across all items matched by JSONPath. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              json_path: {
+                type: 'string',
+                description: 'JSONPath expression matching items whose property to rename',
+              },
+              old_name: {
+                type: 'string',
+                description: 'Current property name to rename',
+              },
+              new_name: {
+                type: 'string',
+                description: 'New property name',
+              },
+            },
+            required: ['model_path', 'json_path', 'old_name', 'new_name'],
+          },
+        },
+        {
+          name: 'clay_model_set_schema',
+          description:
+            'Set or update the $schema reference on a model file. Validates current model against the schema and warns of violations (still writes the reference).',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: {
+                type: 'string',
+                description: 'Directory containing .clay file (defaults to current working directory)',
+              },
+              model_path: {
+                type: 'string',
+                description: 'Path to model.json file',
+              },
+              schema_path: {
+                type: 'string',
+                description: 'Path to JSON Schema file (relative to model file or absolute)',
+              },
+            },
+            required: ['model_path', 'schema_path'],
+          },
+        },
       ],
     }));
 
@@ -287,6 +446,18 @@ class ClayMCPServer {
             return await listHelpersTool(args || {});
           case 'clay_explain_concepts':
             return await explainConceptsTool(args || {});
+          case 'clay_model_query':
+            return await modelQueryTool(args || {});
+          case 'clay_model_add':
+            return await modelAddTool(args || {});
+          case 'clay_model_update':
+            return await modelUpdateTool(args || {});
+          case 'clay_model_delete':
+            return await modelDeleteTool(args || {});
+          case 'clay_model_rename':
+            return await modelRenameTool(args || {});
+          case 'clay_model_set_schema':
+            return await modelSetSchemaTool(args || {});
           default:
             throw new Error(`Unknown tool: ${name}`);
         }

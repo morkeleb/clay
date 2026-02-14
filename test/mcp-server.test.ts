@@ -141,12 +141,13 @@ describe('MCP Server', function () {
       }
     });
 
-    it('should list 8 Clay tools', (done) => {
+    it('should list 14 Clay tools', (done) => {
       serverProcess = spawn('node', [mcpBin], {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 
       let toolsReceived = false;
+      let stdoutBuffer = '';
       const listToolsRequest = {
         jsonrpc: '2.0',
         id: 2,
@@ -161,11 +162,12 @@ describe('MCP Server', function () {
       }, 5000);
 
       serverProcess.stdout?.on('data', (data: Buffer) => {
-        const lines = data
-          .toString()
-          .split('\n')
-          .filter((l) => l.trim());
+        stdoutBuffer += data.toString();
+        const lines = stdoutBuffer.split('\n');
+        // Keep the last (possibly incomplete) line in the buffer
+        stdoutBuffer = lines.pop() || '';
         for (const line of lines) {
+          if (!line.trim()) continue;
           try {
             const response = JSON.parse(line);
             if (response.id === 2 && response.result && response.result.tools) {
@@ -174,7 +176,7 @@ describe('MCP Server', function () {
 
               const tools = response.result.tools;
               expect(tools).to.be.an('array');
-              expect(tools.length).to.equal(8);
+              expect(tools.length).to.equal(14);
 
               const toolNames = tools.map((t: { name: string }) => t.name);
               expect(toolNames).to.include('clay_generate');
@@ -185,6 +187,12 @@ describe('MCP Server', function () {
               expect(toolNames).to.include('clay_get_model_structure');
               expect(toolNames).to.include('clay_list_helpers');
               expect(toolNames).to.include('clay_explain_concepts');
+              expect(toolNames).to.include('clay_model_query');
+              expect(toolNames).to.include('clay_model_add');
+              expect(toolNames).to.include('clay_model_update');
+              expect(toolNames).to.include('clay_model_delete');
+              expect(toolNames).to.include('clay_model_rename');
+              expect(toolNames).to.include('clay_model_set_schema');
 
               done();
               return;
