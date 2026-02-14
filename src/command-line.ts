@@ -15,6 +15,7 @@ import { createClayFile, load as loadClayFile } from './clay_file';
 import * as generatorManager from './generator-manager';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
+import { loadConventions, runConventions } from './conventions';
 
 const commander = new Command();
 
@@ -88,6 +89,44 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
   await Promise.all(
     modelsToExecute.map(async (modelIndex) => {
       const model = modelIndex.load();
+
+      // Check conventions from all generators before generating
+      const allViolations: Array<{ generator: string; convention: string; errors: string[] }> = [];
+      for (const g of model.generators) {
+        const generatorName = typeof g === 'string' ? g : (g as GeneratorReference).generator || '';
+        const generatorPaths = [
+          generatorName + '.json',
+          path.resolve(generatorName + '.json'),
+          path.resolve(path.join(path.dirname(modelIndex.path), generatorName + '.json')),
+          path.resolve(path.join(path.dirname(modelIndex.path), generatorName, 'generator.json')),
+          path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
+          generatorName,
+          path.resolve(generatorName),
+          path.resolve(path.join(path.dirname(modelIndex.path), generatorName)),
+        ].filter(fs.existsSync);
+
+        if (generatorPaths.length > 0) {
+          try {
+            const conventions = loadConventions(generatorPaths[0]);
+            if (conventions.length > 0) {
+              const violations = runConventions(conventions, model.model);
+              for (const v of violations) {
+                allViolations.push({ generator: generatorName, convention: v.convention, errors: v.errors });
+              }
+            }
+          } catch {
+            // If conventions can't be loaded, skip
+          }
+        }
+      }
+
+      if (allViolations.length > 0) {
+        const messages = allViolations.flatMap(v =>
+          v.errors.map(e => `[${v.generator}/${v.convention}] ${e}`)
+        );
+        throw new Error(`Convention violations found:\n${messages.join('\n')}`);
+      }
+
       await Promise.all(
         model.generators.map((g: string | GeneratorReference) =>
           resolve_generator(
