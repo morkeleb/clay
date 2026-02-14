@@ -312,3 +312,91 @@ export const ExplainConceptsOutputSchema = z.object({
 
 export type ExplainConceptsInput = z.infer<typeof ExplainConceptsInputSchema>;
 export type ExplainConceptsOutput = z.infer<typeof ExplainConceptsOutputSchema>;
+
+// ============================================================================
+// clay_model_query schemas
+// ============================================================================
+
+export const ModelQueryInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    json_path: z.string().describe('JSONPath expression to query (e.g., "$.model.entities[?(@.name==\'User\')]")'),
+  })
+  .describe('Query model data using JSONPath. Returns matched items only.');
+
+export type ModelQueryInput = z.infer<typeof ModelQueryInputSchema>;
+
+// ============================================================================
+// clay_model_add schemas
+// ============================================================================
+
+export const ModelAddInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    json_path: z.string().describe('JSONPath to the target array or object'),
+    value: z.any().describe('Value to add: appended if target is array, merged if target is object'),
+  })
+  .describe('Add an item to an array or property to an object at a JSONPath location.');
+
+export type ModelAddInput = z.infer<typeof ModelAddInputSchema>;
+
+// ============================================================================
+// clay_model_update schemas
+// ============================================================================
+
+export const ModelUpdateInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    json_path: z.string().describe('JSONPath expression matching items to update'),
+    fields: z.record(z.any()).describe('Fields to merge into each matched item'),
+  })
+  .describe('Update fields on all items matched by JSONPath.');
+
+export type ModelUpdateInput = z.infer<typeof ModelUpdateInputSchema>;
+
+// ============================================================================
+// clay_model_delete schemas
+// ============================================================================
+
+export const ModelDeleteInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    json_path: z.string().describe('JSONPath expression matching items to remove'),
+  })
+  .describe('Remove items matched by JSONPath from their parent arrays/objects.');
+
+export type ModelDeleteInput = z.infer<typeof ModelDeleteInputSchema>;
+
+// ============================================================================
+// clay_model_rename schemas
+// ============================================================================
+
+export const ModelRenameInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    json_path: z.string().describe('JSONPath expression matching items whose property to rename'),
+    old_name: z.string().describe('Current property name to rename'),
+    new_name: z.string().describe('New property name'),
+  })
+  .describe('Rename a property key across all items matched by JSONPath.');
+
+export type ModelRenameInput = z.infer<typeof ModelRenameInputSchema>;
+
+// ============================================================================
+// clay_model_set_schema schemas
+// ============================================================================
+
+export const ModelSetSchemaInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    model_path: ModelPathSchema,
+    schema_path: z.string().describe('Path to JSON Schema file (relative to model file or absolute)'),
+  })
+  .describe('Set or update the $schema reference on a model file.');
+
+export type ModelSetSchemaInput = z.infer<typeof ModelSetSchemaInputSchema>;
