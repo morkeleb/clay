@@ -13,6 +13,7 @@ const { loadConventions, runConventions } = require('../../dist/src/conventions.
 export interface ConventionViolation {
   generator: string;
   convention: string;
+  description: string;
   errors: string[];
 }
 
@@ -63,6 +64,7 @@ export function checkConventions(
         allViolations.push({
           generator: generatorName,
           convention: v.convention,
+          description: v.description,
           errors: v.errors,
         });
       }

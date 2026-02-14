@@ -91,7 +91,7 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
       const model = modelIndex.load();
 
       // Check conventions from all generators before generating
-      const allViolations: Array<{ generator: string; convention: string; errors: string[] }> = [];
+      const allViolations: Array<{ generator: string; convention: string; description: string; errors: string[] }> = [];
       for (const g of model.generators) {
         const generatorName = typeof g === 'string' ? g : (g as GeneratorReference).generator || '';
         const generatorPaths = [
@@ -111,11 +111,13 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
             if (conventions.length > 0) {
               const violations = runConventions(conventions, model.model);
               for (const v of violations) {
-                allViolations.push({ generator: generatorName, convention: v.convention, errors: v.errors });
+                allViolations.push({ generator: generatorName, convention: v.convention, description: v.description, errors: v.errors });
               }
             }
-          } catch {
-            // If conventions can't be loaded, skip
+          } catch (e) {
+            if (process.env.VERBOSE) {
+              ui.warn(`Could not load conventions for generator '${generatorName}': ${e instanceof Error ? e.message : String(e)}`);
+            }
           }
         }
       }

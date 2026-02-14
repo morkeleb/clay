@@ -59,9 +59,10 @@ export function runConventions(
     try {
       // eslint-disable-next-line no-eval
       const fn = eval(convention.function);
-      const errors: string[] = fn(model);
+      const result = fn(model);
+      const errors: string[] = Array.isArray(result) ? result : [];
 
-      if (errors && errors.length > 0) {
+      if (errors.length > 0) {
         violations.push({
           convention: convention.name,
           description: convention.description,
