@@ -13,6 +13,7 @@ import * as path from 'node:path';
 import Ajv from 'ajv';
 
 const require = createRequire(import.meta.url);
+const ajv = new Ajv({ allErrors: true });
 
 /**
  * Raw JSON.parse of a model file.
@@ -21,7 +22,11 @@ const require = createRequire(import.meta.url);
 export function readModelFile(modelPath: string): Record<string, unknown> {
   const resolved = path.resolve(modelPath);
   const content = fs.readFileSync(resolved, 'utf-8');
-  return JSON.parse(content) as Record<string, unknown>;
+  const parsed = JSON.parse(content);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    throw new Error(`Model file ${modelPath} must contain a JSON object`);
+  }
+  return parsed as Record<string, unknown>;
 }
 
 /**
@@ -54,7 +59,6 @@ export function validateAgainstSchema(
   const schemaContent = fs.readFileSync(resolved, 'utf-8');
   const schema = JSON.parse(schemaContent);
 
-  const ajv = new Ajv({ allErrors: true });
   const validate = ajv.compile(schema);
   const valid = validate(data);
 
