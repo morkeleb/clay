@@ -312,6 +312,102 @@ describe('MCP Model CRUD Tools', function () {
     return result;
   }
 
+  /**
+   * CJS include-aware delete helper.
+   * Loads expanded model with include map, traces targets to source, deletes from the correct file.
+   */
+  function deleteFromModelIncludeAware(
+    filePath: string,
+    jsonPath: string
+  ): { success: boolean; message?: string; removed?: number; source_file?: string } {
+    const { model: expandedModel, includeMap } = clayModel.loadWithIncludeMap(filePath);
+
+    let targetPaths: (string | number)[][];
+    try {
+      targetPaths = jp.paths(expandedModel, jsonPath);
+    } catch (e: unknown) {
+      return { success: false, message: `Invalid JSONPath expression: ${e instanceof Error ? e.message : String(e)}` };
+    }
+
+    if (targetPaths.length === 0) {
+      return { success: false, message: `No items matched JSONPath: ${jsonPath}` };
+    }
+
+    // Categorize each target
+    const includeRootPaths: (string | number)[][] = [];
+    const insideIncludeEdits = new Map<string, (string | number)[][]>();
+    const mainModelPaths: (string | number)[][] = [];
+
+    for (const tp of targetPaths) {
+      // Trace to source
+      let current: unknown = expandedModel;
+      let lastIncludeIdx = -1;
+      let lastIncludeFile: string | null = null;
+
+      for (let i = 1; i < tp.length; i++) {
+        current = (current as Record<string | number, unknown>)[tp[i]];
+        if (current !== null && typeof current === 'object' && includeMap.has(current as object)) {
+          lastIncludeIdx = i;
+          lastIncludeFile = includeMap.get(current as object)!;
+        }
+      }
+
+      if (lastIncludeFile) {
+        const relativePath: (string | number)[] = ['$', ...tp.slice(lastIncludeIdx + 1)];
+        if (relativePath.length === 1 && relativePath[0] === '$') {
+          // Target IS the included object — delete include ref from main model
+          includeRootPaths.push(tp);
+        } else {
+          // Target is inside included object — delete from include file
+          if (!insideIncludeEdits.has(lastIncludeFile)) insideIncludeEdits.set(lastIncludeFile, []);
+          insideIncludeEdits.get(lastIncludeFile)!.push(relativePath);
+        }
+      } else {
+        mainModelPaths.push(tp);
+      }
+    }
+
+    let removed = 0;
+
+    // Handle deletions inside included files
+    for (const [incFile, relativePaths] of insideIncludeEdits) {
+      const includeData = JSON.parse(fs.readFileSync(path.resolve(incFile), 'utf-8'));
+      const sorted = [...relativePaths].reverse();
+      for (const relPath of sorted) {
+        const parentPath = relPath.slice(0, -1);
+        const key = relPath[relPath.length - 1];
+        const parent = jp.query(includeData, jp.stringify(parentPath))[0];
+        if (Array.isArray(parent) && typeof key === 'number') { parent.splice(key, 1); removed++; }
+        else if (typeof parent === 'object' && parent !== null) { delete parent[key as string]; removed++; }
+      }
+      fs.writeFileSync(path.resolve(incFile), JSON.stringify(includeData, null, 2) + '\n', 'utf-8');
+    }
+
+    // Handle deletions from main model (both includeRoot and mainModel paths)
+    const allMainPaths = [...includeRootPaths, ...mainModelPaths];
+    if (allMainPaths.length > 0) {
+      const data = readModelFile(filePath);
+      const sorted = [...allMainPaths].reverse();
+      for (const pathComponents of sorted) {
+        const parentPath = pathComponents.slice(0, -1);
+        const key = pathComponents[pathComponents.length - 1];
+        const parent = jp.query(data, jp.stringify(parentPath))[0];
+        if (Array.isArray(parent) && typeof key === 'number') { parent.splice(key, 1); removed++; }
+        else if (typeof parent === 'object' && parent !== null) { delete parent[key as string]; removed++; }
+      }
+      writeModelFile(filePath, data);
+    }
+
+    const result: { success: boolean; removed: number; source_file?: string } = {
+      success: true,
+      removed,
+    };
+    if (insideIncludeEdits.size === 1 && allMainPaths.length === 0) {
+      result.source_file = [...insideIncludeEdits.keys()][0];
+    }
+    return result;
+  }
+
   function deleteFromModel(filePath: string, jsonPath: string) {
     const data = readModelFile(filePath);
     const paths = jp.paths(data, jsonPath);
@@ -601,6 +697,100 @@ describe('MCP Model CRUD Tools', function () {
       const result = deleteFromModel(modelPath, '$.model.entities[?(@.name=="Nonexistent")]');
       expect(result.success).to.be.false;
       expect(result.message).to.include('No items matched');
+    });
+
+    it('should delete a field from an entity in an included file', () => {
+      // Create included file with entity data (2 fields)
+      const includePath = path.join(testDir, 'user-entity.json');
+      fs.writeFileSync(includePath, JSON.stringify({
+        fields: [{ name: 'id', type: 'string' }, { name: 'email', type: 'string' }],
+      }, null, 2));
+
+      // Create model with include reference
+      const modelWithInclude = {
+        name: 'IncludeDeleteTest',
+        generators: ['gen'],
+        model: {
+          entities: [
+            { name: 'User', include: 'user-entity.json' },
+          ],
+        },
+      };
+      const includeModelPath = path.join(testDir, 'include-delete.model.json');
+      fs.writeFileSync(includeModelPath, JSON.stringify(modelWithInclude, null, 2));
+
+      // Delete the 'email' field via JSONPath on the expanded model
+      const result = deleteFromModelIncludeAware(
+        includeModelPath,
+        '$.model.entities[?(@.name=="User")].fields[?(@.name=="email")]'
+      );
+
+      expect(result.success).to.be.true;
+      expect(result.removed).to.equal(1);
+      expect(result.source_file).to.equal(path.resolve(includePath));
+
+      // Verify the included file now has only 1 field
+      const updatedInclude = JSON.parse(fs.readFileSync(includePath, 'utf-8'));
+      expect(updatedInclude.fields).to.have.length(1);
+      expect(updatedInclude.fields[0].name).to.equal('id');
+
+      // Verify main model still has include reference (unchanged)
+      const mainModel = JSON.parse(fs.readFileSync(includeModelPath, 'utf-8'));
+      expect(mainModel.model.entities[0].include).to.equal('user-entity.json');
+    });
+
+    it('should remove include reference from main model when deleting an included entity', () => {
+      // Create included file
+      const includePath = path.join(testDir, 'user-entity.json');
+      fs.writeFileSync(includePath, JSON.stringify({
+        fields: [{ name: 'id', type: 'string' }],
+      }, null, 2));
+
+      // Create model with 1 included entity + 1 inline entity
+      const modelWithInclude = {
+        name: 'IncludeDeleteRootTest',
+        generators: ['gen'],
+        model: {
+          entities: [
+            { name: 'User', include: 'user-entity.json' },
+            { name: 'Post', fields: [{ name: 'id', type: 'string' }] },
+          ],
+        },
+      };
+      const includeModelPath = path.join(testDir, 'include-delete-root.model.json');
+      fs.writeFileSync(includeModelPath, JSON.stringify(modelWithInclude, null, 2));
+
+      // Delete the included entity by name
+      const result = deleteFromModelIncludeAware(
+        includeModelPath,
+        '$.model.entities[?(@.name=="User")]'
+      );
+
+      expect(result.success).to.be.true;
+      expect(result.removed).to.equal(1);
+
+      // Verify: main model array shrunk (include ref removed), inline entity still there
+      const mainModel = JSON.parse(fs.readFileSync(includeModelPath, 'utf-8'));
+      expect(mainModel.model.entities).to.have.length(1);
+      expect(mainModel.model.entities[0].name).to.equal('Post');
+
+      // Verify: included file still exists on disk
+      expect(fs.existsSync(includePath)).to.be.true;
+    });
+
+    it('should still delete from main model when no includes (include-aware)', () => {
+      const result = deleteFromModelIncludeAware(
+        modelPath,
+        '$.model.entities[?(@.name=="Post")]'
+      );
+      expect(result.success).to.be.true;
+      expect(result.removed).to.equal(1);
+      expect(result.source_file).to.be.undefined;
+
+      const data = readModelFile(modelPath);
+      const entities = (data.model as any).entities;
+      expect(entities).to.have.length(1);
+      expect(entities[0].name).to.equal('User');
     });
   });
 
