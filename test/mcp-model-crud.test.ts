@@ -408,6 +408,106 @@ describe('MCP Model CRUD Tools', function () {
     return result;
   }
 
+  /**
+   * CJS include-aware rename helper.
+   * Loads expanded model with include map, traces targets to source, renames property in correct file.
+   */
+  function renameInModelIncludeAware(
+    filePath: string,
+    jsonPath: string,
+    oldName: string,
+    newName: string
+  ): { success: boolean; message?: string; renamed?: number; source_file?: string; files_modified?: string[] } {
+    const { model: expandedModel, includeMap } = clayModel.loadWithIncludeMap(filePath);
+
+    let matches: unknown[];
+    let matchPaths: (string | number)[][];
+    try {
+      matches = jp.query(expandedModel, jsonPath);
+      matchPaths = jp.paths(expandedModel, jsonPath);
+    } catch (e: unknown) {
+      return { success: false, message: `Invalid JSONPath expression: ${e instanceof Error ? e.message : String(e)}` };
+    }
+
+    if (matches.length === 0) {
+      return { success: false, message: `No items matched JSONPath: ${jsonPath}` };
+    }
+
+    // Group by source file
+    const includeFileEdits = new Map<string, (string | number)[][]>();
+    const mainFileMatchIndices: number[] = [];
+    let renamed = 0;
+
+    for (let i = 0; i < matches.length; i++) {
+      if (typeof matches[i] !== 'object' || matches[i] === null || Array.isArray(matches[i])) continue;
+
+      let current: unknown = expandedModel;
+      let lastIncludeIdx = -1;
+      let lastIncludeFile: string | null = null;
+
+      for (let j = 1; j < matchPaths[i].length; j++) {
+        current = (current as Record<string | number, unknown>)[matchPaths[i][j]];
+        if (current !== null && typeof current === 'object' && includeMap.has(current as object)) {
+          lastIncludeIdx = j;
+          lastIncludeFile = includeMap.get(current as object)!;
+        }
+      }
+
+      if (lastIncludeFile) {
+        if (!includeFileEdits.has(lastIncludeFile)) includeFileEdits.set(lastIncludeFile, []);
+        const relativePath: (string | number)[] = ['$', ...matchPaths[i].slice(lastIncludeIdx + 1)];
+        includeFileEdits.get(lastIncludeFile)!.push(relativePath);
+      } else {
+        mainFileMatchIndices.push(i);
+      }
+    }
+
+    const filesModified = new Set<string>();
+
+    // Apply to included files
+    for (const [incFile, relativePaths] of includeFileEdits) {
+      const includeData = JSON.parse(fs.readFileSync(path.resolve(incFile), 'utf-8'));
+      for (const relPath of relativePaths) {
+        const relTargets = jp.query(includeData, jp.stringify(relPath));
+        for (const t of relTargets) {
+          if (typeof t === 'object' && t !== null && !Array.isArray(t) && oldName in t) {
+            t[newName] = t[oldName];
+            delete t[oldName];
+            renamed++;
+          }
+        }
+      }
+      fs.writeFileSync(path.resolve(incFile), JSON.stringify(includeData, null, 2) + '\n', 'utf-8');
+      filesModified.add(incFile);
+    }
+
+    // Apply to main file
+    if (mainFileMatchIndices.length > 0) {
+      const data = readModelFile(filePath);
+      const rawMatches = jp.query(data, jsonPath);
+      for (const m of rawMatches) {
+        if (typeof m === 'object' && m !== null && !Array.isArray(m) && oldName in m) {
+          m[newName] = m[oldName];
+          delete m[oldName];
+          renamed++;
+        }
+      }
+      writeModelFile(filePath, data);
+      filesModified.add(path.resolve(filePath));
+    }
+
+    const result: { success: boolean; renamed: number; source_file?: string; files_modified?: string[] } = {
+      success: true,
+      renamed,
+    };
+    if (filesModified.size > 1) {
+      result.files_modified = [...filesModified];
+    } else if (includeFileEdits.size === 1) {
+      result.source_file = [...includeFileEdits.keys()][0];
+    }
+    return result;
+  }
+
   function deleteFromModel(filePath: string, jsonPath: string) {
     const data = readModelFile(filePath);
     const paths = jp.paths(data, jsonPath);
@@ -826,6 +926,66 @@ describe('MCP Model CRUD Tools', function () {
       const result = renameInModel(modelPath, '$.model.nonexistent[*]', 'foo', 'bar');
       expect(result.success).to.be.false;
       expect(result.message).to.include('No items matched');
+    });
+
+    it('should rename property on an entity in an included file', () => {
+      // Create included file with entity data
+      const includePath = path.join(testDir, 'user-entity.json');
+      fs.writeFileSync(includePath, JSON.stringify({
+        fields: [{ name: 'id', type: 'string' }],
+      }, null, 2));
+
+      // Create model with include reference
+      const modelWithInclude = {
+        name: 'IncludeRenameTest',
+        generators: ['gen'],
+        model: {
+          entities: [
+            { name: 'User', include: 'user-entity.json' },
+          ],
+        },
+      };
+      const includeModelPath = path.join(testDir, 'include-rename.model.json');
+      fs.writeFileSync(includeModelPath, JSON.stringify(modelWithInclude, null, 2));
+
+      const result = renameInModelIncludeAware(
+        includeModelPath,
+        '$.model.entities[?(@.name=="User")]',
+        'fields',
+        'columns'
+      );
+
+      expect(result.success).to.be.true;
+      expect(result.renamed).to.equal(1);
+      expect(result.source_file).to.equal(path.resolve(includePath));
+
+      // Verify the included file was updated
+      const updatedInclude = JSON.parse(fs.readFileSync(includePath, 'utf-8'));
+      expect(updatedInclude).to.have.property('columns');
+      expect(updatedInclude).to.not.have.property('fields');
+
+      // Verify main model still has include reference
+      const mainModel = JSON.parse(fs.readFileSync(includeModelPath, 'utf-8'));
+      expect(mainModel.model.entities[0].include).to.equal('user-entity.json');
+    });
+
+    it('should still rename in main model when no includes (include-aware)', () => {
+      const result = renameInModelIncludeAware(
+        modelPath,
+        '$.model.entities[*]',
+        'fields',
+        'columns'
+      );
+      expect(result.success).to.be.true;
+      expect(result.renamed).to.equal(2);
+      expect(result.source_file).to.be.undefined;
+
+      const data = readModelFile(modelPath);
+      const entities = (data.model as any).entities;
+      for (const entity of entities) {
+        expect(entity).to.have.property('columns');
+        expect(entity).to.not.have.property('fields');
+      }
     });
   });
 
