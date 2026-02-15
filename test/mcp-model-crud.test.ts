@@ -60,6 +60,77 @@ describe('MCP Model CRUD Tools', function () {
 
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const Ajv = require('ajv').default || require('ajv');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const clayModel = require('../dist/src/model.js');
+
+  /**
+   * CJS include-aware add helper.
+   * Loads expanded model with include map, queries it, traces to source, mutates the correct file.
+   */
+  function addToModelIncludeAware(
+    filePath: string,
+    jsonPath: string,
+    value: unknown
+  ): { success: boolean; message?: string; path?: string; source_file?: string } {
+    const { model: expandedModel, includeMap } = clayModel.loadWithIncludeMap(filePath);
+
+    let targets: unknown[];
+    let targetPaths: (string | number)[][];
+    try {
+      targets = jp.query(expandedModel, jsonPath);
+      targetPaths = jp.paths(expandedModel, jsonPath);
+    } catch (e: unknown) {
+      return { success: false, message: `Invalid JSONPath expression: ${e instanceof Error ? e.message : String(e)}` };
+    }
+
+    if (targets.length === 0) {
+      return { success: false, message: `No items matched JSONPath: ${jsonPath}` };
+    }
+
+    const targetPath = targetPaths[0];
+
+    // Trace to source: walk the path and find the deepest included object
+    let current: unknown = expandedModel;
+    let lastIncludeIdx = -1;
+    let lastIncludeFile: string | null = null;
+
+    for (let i = 1; i < targetPath.length; i++) {
+      current = (current as Record<string | number, unknown>)[targetPath[i]];
+      if (current !== null && typeof current === 'object' && includeMap.has(current as object)) {
+        lastIncludeIdx = i;
+        lastIncludeFile = includeMap.get(current as object)!;
+      }
+    }
+
+    if (lastIncludeFile) {
+      // Edit included file
+      const includeData = JSON.parse(fs.readFileSync(path.resolve(lastIncludeFile), 'utf-8'));
+      const relativePath: (string | number)[] = ['$', ...targetPath.slice(lastIncludeIdx + 1)];
+      const relTargets = jp.query(includeData, jp.stringify(relativePath));
+      if (relTargets.length === 0) {
+        return { success: false, message: 'Target not found in included file' };
+      }
+      const relTarget = relTargets[0];
+      if (Array.isArray(relTarget)) { relTarget.push(value); }
+      else if (typeof relTarget === 'object' && relTarget !== null) { Object.assign(relTarget, value); }
+      else { return { success: false, message: 'Target is not array or object' }; }
+      fs.writeFileSync(path.resolve(lastIncludeFile), JSON.stringify(includeData, null, 2) + '\n', 'utf-8');
+      return { success: true, message: `Added value at ${jsonPath}`, path: jsonPath, source_file: lastIncludeFile };
+    } else {
+      // Edit main model file (raw)
+      const data = readModelFile(filePath);
+      const rawTargets = jp.query(data, jsonPath);
+      if (rawTargets.length === 0) {
+        return { success: false, message: `No items matched in raw model: ${jsonPath}` };
+      }
+      const rawTarget = rawTargets[0];
+      if (Array.isArray(rawTarget)) { rawTarget.push(value); }
+      else if (typeof rawTarget === 'object' && rawTarget !== null) { Object.assign(rawTarget, value); }
+      else { return { success: false, message: 'Target is not array or object' }; }
+      writeModelFile(filePath, data);
+      return { success: true, message: `Added value at ${jsonPath}`, path: jsonPath };
+    }
+  }
 
   function readModelFile(filePath: string): Record<string, unknown> {
     const content = fs.readFileSync(path.resolve(filePath), 'utf-8');
@@ -246,6 +317,62 @@ describe('MCP Model CRUD Tools', function () {
       const result = addToModel(modelPath, '$.model.nonexistent', { foo: 'bar' });
       expect(result.success).to.be.false;
       expect(result.message).to.include('No items matched');
+    });
+
+    it('should add a field to an entity in an included file', () => {
+      // Create included file with entity data
+      const includePath = path.join(testDir, 'user-entity.json');
+      fs.writeFileSync(includePath, JSON.stringify({
+        fields: [{ name: 'id', type: 'string' }, { name: 'email', type: 'string' }],
+      }, null, 2));
+
+      // Create model with include reference
+      const modelWithInclude = {
+        name: 'IncludeAddTest',
+        generators: ['gen'],
+        model: {
+          entities: [
+            { name: 'User', include: 'user-entity.json' },
+          ],
+        },
+      };
+      const includeModelPath = path.join(testDir, 'include-add.model.json');
+      fs.writeFileSync(includeModelPath, JSON.stringify(modelWithInclude, null, 2));
+
+      // Add a field via the expanded entity's fields array
+      const result = addToModelIncludeAware(
+        includeModelPath,
+        '$.model.entities[?(@.name=="User")].fields',
+        { name: 'age', type: 'number' }
+      );
+
+      expect(result.success).to.be.true;
+      expect(result.source_file).to.equal(path.resolve(includePath));
+
+      // Verify the included file was updated
+      const updatedInclude = JSON.parse(fs.readFileSync(includePath, 'utf-8'));
+      expect(updatedInclude.fields).to.have.length(3);
+      expect(updatedInclude.fields[2].name).to.equal('age');
+
+      // Verify main model still has include reference (not expanded)
+      const mainModel = JSON.parse(fs.readFileSync(includeModelPath, 'utf-8'));
+      expect(mainModel.model.entities[0].include).to.equal('user-entity.json');
+      expect(mainModel.model.entities[0].fields).to.be.undefined;
+    });
+
+    it('should still add to main model when no includes involved', () => {
+      const result = addToModelIncludeAware(
+        modelPath,
+        '$.model.entities',
+        { name: 'Comment', fields: [{ name: 'id', type: 'string' }] }
+      );
+      expect(result.success).to.be.true;
+      expect(result.source_file).to.be.undefined;
+
+      const data = readModelFile(modelPath);
+      const entities = (data.model as any).entities;
+      expect(entities).to.have.length(3);
+      expect(entities[2].name).to.equal('Comment');
     });
 
     it('should reject if $schema validation fails', () => {

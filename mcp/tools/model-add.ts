@@ -1,10 +1,11 @@
 /**
- * clay_model_add tool - Add items to arrays or properties to objects at a JSONPath location
- * Uses the raw model file (preserves include/mixin references)
+ * clay_model_add tool - Add items to arrays or properties to objects at a JSONPath location.
+ * Include-aware: queries the expanded model, traces targets back to source files.
  */
 import { validateInput } from '../shared/validation.js';
 import { ModelAddInputSchema } from '../shared/schemas.js';
-import { readModelFile, writeModelFile } from '../shared/model-file.js';
+import { readModelFile, writeModelFile, readExpandedModelWithIncludeMap } from '../shared/model-file.js';
+import { traceToSource, readIncludeFile, writeIncludeFile, resolveInInclude } from '../shared/include-writer.js';
 import { resolvePath, getWorkspaceContext } from '../shared/workspace-manager.js';
 import jp from 'jsonpath';
 import { checkConventions } from '../shared/conventions.js';
@@ -22,11 +23,15 @@ export async function modelAddTool(args: unknown) {
   try {
     const context = getWorkspaceContext(input.working_directory);
     const fullModelPath = resolvePath(context.workingDirectory, input.model_path);
-    const modelData = readModelFile(fullModelPath);
+
+    // Load expanded model with include tracking
+    const { model: expandedModel, includeMap } = readExpandedModelWithIncludeMap(fullModelPath);
 
     let targets: unknown[];
+    let targetPaths: (string | number)[][];
     try {
-      targets = jp.query(modelData, input.json_path);
+      targets = jp.query(expandedModel, input.json_path);
+      targetPaths = jp.paths(expandedModel, input.json_path);
     } catch (e) {
       return {
         content: [{ type: 'text', text: JSON.stringify({
@@ -46,22 +51,83 @@ export async function modelAddTool(args: unknown) {
     }
 
     const target = targets[0];
-    if (Array.isArray(target)) {
-      target.push(input.value);
-    } else if (typeof target === 'object' && target !== null) {
-      Object.assign(target, input.value);
+    const targetPath = targetPaths[0];
+
+    // Trace target to source file
+    const { filePath: includeFile, relativePath } = traceToSource(
+      expandedModel as unknown as Record<string, unknown>,
+      includeMap,
+      targetPath
+    );
+
+    let sourceFile: string | undefined;
+
+    if (includeFile) {
+      // Edit the included file
+      const includeData = readIncludeFile(includeFile);
+      const relTargets = resolveInInclude(includeData, relativePath);
+      if (relTargets.length === 0) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: false,
+            message: 'Target not found in included file',
+          }, null, 2) }],
+        };
+      }
+      const relTarget = relTargets[0];
+      if (Array.isArray(relTarget)) {
+        relTarget.push(input.value);
+      } else if (typeof relTarget === 'object' && relTarget !== null) {
+        Object.assign(relTarget, input.value);
+      } else {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: false,
+            message: 'Target is not an array or object',
+          }, null, 2) }],
+        };
+      }
+      writeIncludeFile(includeFile, includeData);
+      sourceFile = includeFile;
     } else {
-      return {
-        content: [{ type: 'text', text: JSON.stringify({
-          success: false,
-          message: 'Target is not an array or object',
-        }, null, 2) }],
-      };
+      // Edit the main model file (raw, preserving includes)
+      const modelData = readModelFile(fullModelPath);
+      let rawTargets: unknown[];
+      try {
+        rawTargets = jp.query(modelData, input.json_path);
+      } catch {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: false,
+            message: 'Target not found in raw model file',
+          }, null, 2) }],
+        };
+      }
+      if (rawTargets.length === 0) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: false,
+            message: `No items matched in raw model: ${input.json_path}`,
+          }, null, 2) }],
+        };
+      }
+      const rawTarget = rawTargets[0];
+      if (Array.isArray(rawTarget)) {
+        rawTarget.push(input.value);
+      } else if (typeof rawTarget === 'object' && rawTarget !== null) {
+        Object.assign(rawTarget, input.value);
+      } else {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: false,
+            message: 'Target is not an array or object',
+          }, null, 2) }],
+        };
+      }
+      writeModelFile(fullModelPath, modelData);
     }
 
-    writeModelFile(fullModelPath, modelData);
-
-    // Check conventions (warnings only — mutation already written)
+    // Check conventions (warnings only)
     let conventionViolations: Array<{ generator: string; convention: string; errors: string[] }> | undefined;
     try {
       const violations = checkConventions(fullModelPath, context.workingDirectory);
@@ -69,7 +135,7 @@ export async function modelAddTool(args: unknown) {
         conventionViolations = violations;
       }
     } catch {
-      // Convention checking is best-effort — don't fail the mutation
+      // Convention checking is best-effort
     }
 
     const response: Record<string, unknown> = {
@@ -77,6 +143,9 @@ export async function modelAddTool(args: unknown) {
       message: `Added value at ${input.json_path}`,
       path: input.json_path,
     };
+    if (sourceFile) {
+      response.source_file = sourceFile;
+    }
     if (conventionViolations) {
       response.convention_violations = conventionViolations;
     }
