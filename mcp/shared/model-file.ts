@@ -44,6 +44,18 @@ export function readExpandedModel(modelPath: string): {
 }
 
 /**
+ * Uses Clay's model.loadWithIncludeMap() to resolve includes (with tracking) and apply mixins.
+ * Returns the expanded model plus a map of object references to their source file paths.
+ */
+export function readExpandedModelWithIncludeMap(modelPath: string): {
+  model: { name: string; generators: string[]; mixins?: unknown[]; model: Record<string, unknown> };
+  includeMap: Map<object, string>;
+} {
+  const clayModel = require('../../dist/src/model.js');
+  return clayModel.loadWithIncludeMap(modelPath);
+}
+
+/**
  * Validate data against a JSON Schema file using Ajv.
  * @returns Array of error strings (empty if valid).
  */
