@@ -123,6 +123,65 @@ function executeIncludes(model: any, modelPath: string): void {
 }
 
 /**
+ * Execute includes in the model and build a map of included objects to their source files
+ * Each included object is mapped to the file path it was loaded from
+ */
+function executeIncludesWithMap(
+  model: any,
+  modelPath: string
+): Map<object, string> {
+  const includeMap = new Map<object, string>();
+
+  const check = (m: any): void => {
+    if (m === null || m === undefined) return;
+
+    if (Object.prototype.hasOwnProperty.call(m, 'include')) {
+      const includePath = path.resolve(
+        path.join(path.dirname(modelPath), m.include)
+      );
+      const includeData = require(includePath);
+
+      for (const key in includeData) {
+        if (Object.prototype.hasOwnProperty.call(includeData, key)) {
+          m[key] = includeData[key];
+        }
+      }
+      delete m.include;
+
+      // Record this object as coming from the included file
+      includeMap.set(m, includePath);
+    }
+
+    if (Array.isArray(m)) {
+      for (let index = 0; index < m.length; index++) {
+        const element = m[index];
+        if (typeof element === 'object' && element !== null) {
+          check(element);
+        }
+      }
+    }
+
+    for (const property in m) {
+      if (Object.prototype.hasOwnProperty.call(m, property)) {
+        const e = m[property];
+        if (typeof e === 'object' && e !== null) {
+          check(e);
+        }
+      }
+    }
+  };
+
+  for (const modelproperty in model) {
+    if (Object.prototype.hasOwnProperty.call(model, modelproperty)) {
+      const element = model[modelproperty];
+      check(element);
+    }
+  }
+
+  return includeMap;
+}
+
+/**
  * Load a Clay model from a file path
  * Processes includes and mixins
  *
@@ -137,4 +196,25 @@ export function load(modelPath: string): ClayModel {
   executeMixins(model);
 
   return model;
+}
+
+/**
+ * Load a Clay model and build an include map
+ * The include map tracks which objects came from which included files,
+ * enabling mutation tools to trace JSONPath targets back to source files.
+ *
+ * @param modelPath - Path to the model JSON file
+ * @returns The loaded model and a map of included objects to their source file paths
+ */
+export function loadWithIncludeMap(modelPath: string): {
+  model: ClayModel;
+  includeMap: Map<object, string>;
+} {
+  const resolvedPath = path.resolve(modelPath);
+  const model = requireNew(resolvedPath) as ClayModel;
+
+  const includeMap = executeIncludesWithMap(model, modelPath);
+  executeMixins(model);
+
+  return { model, includeMap };
 }
