@@ -47,7 +47,9 @@
         </ul>
 
         <h2>Available Tools</h2>
-        <p>The MCP server provides 8 tools:</p>
+        <p>The MCP server provides 14 tools:</p>
+
+        <h3>Project &amp; Generation</h3>
         <ul>
           <li><code>clay_generate</code> - Generate code from models</li>
           <li><code>clay_clean</code> - Clean up generated files</li>
@@ -63,6 +65,41 @@
           </li>
           <li>
             <code>clay_explain_concepts</code> - Get comprehensive documentation
+          </li>
+        </ul>
+
+        <h3>Model CRUD (include-aware)</h3>
+        <p>
+          These tools let the AI query and modify your model data directly.
+          They are <strong>include-aware</strong>: they query the expanded model
+          (with includes resolved) to find targets, then trace back to the
+          correct source file to apply the edit. If data lives in an included
+          file, the mutation is written there &mdash; the main model's
+          <code>include</code> reference is preserved.
+        </p>
+        <ul>
+          <li>
+            <code>clay_model_query</code> - Query model data with JSONPath
+            (searches the expanded model)
+          </li>
+          <li>
+            <code>clay_model_add</code> - Add items to arrays or properties to
+            objects
+          </li>
+          <li>
+            <code>clay_model_update</code> - Update fields on matched items
+          </li>
+          <li>
+            <code>clay_model_delete</code> - Remove matched items (deleting an
+            included entity removes the include reference from the main model)
+          </li>
+          <li>
+            <code>clay_model_rename</code> - Rename a property key on matched
+            items
+          </li>
+          <li>
+            <code>clay_model_set_schema</code> - Set or update
+            <code>$schema</code> reference on a model
           </li>
         </ul>
 
@@ -247,6 +284,66 @@
           </li>
         </ul>
 
+        <h3>Query Model Data</h3>
+        <p><strong>User:</strong> "Show me the User entity"</p>
+        <p>
+          <strong>AI calls:</strong>
+          <code
+            >clay_model_query({ model_path: "./clay/model.json", json_path:
+            "$.model.entities[?(@.name=='User')]" })</code
+          >
+        </p>
+
+        <h3>Add a Field to an Entity</h3>
+        <p><strong>User:</strong> "Add an email field to the User entity"</p>
+        <p>
+          <strong>AI calls:</strong>
+          <code
+            >clay_model_add({ model_path: "./clay/model.json", json_path:
+            "$.model.entities[?(@.name=='User')].fields", value: { name:
+            "email", type: "string" } })</code
+          >
+        </p>
+        <p>
+          If User lives in an included file (e.g.
+          <code>entities/user.json</code>), the field is added there
+          automatically. The response includes
+          <code>source_file</code> showing which file was modified.
+        </p>
+
+        <h3>Update an Entity</h3>
+        <p><strong>User:</strong> "Add a description to the User entity"</p>
+        <p>
+          <strong>AI calls:</strong>
+          <code
+            >clay_model_update({ model_path: "./clay/model.json", json_path:
+            "$.model.entities[?(@.name=='User')]", fields: { description: "A
+            registered user" } })</code
+          >
+        </p>
+
+        <h3>Delete a Field</h3>
+        <p><strong>User:</strong> "Remove the legacy_id field from User"</p>
+        <p>
+          <strong>AI calls:</strong>
+          <code
+            >clay_model_delete({ model_path: "./clay/model.json", json_path:
+            "$.model.entities[?(@.name=='User')].fields[?(@.name=='legacy_id')]"
+            })</code
+          >
+        </p>
+
+        <h3>Rename a Property</h3>
+        <p><strong>User:</strong> "Rename 'fields' to 'columns' on all entities"</p>
+        <p>
+          <strong>AI calls:</strong>
+          <code
+            >clay_model_rename({ model_path: "./clay/model.json", json_path:
+            "$.model.entities[*]", old_name: "fields", new_name: "columns"
+            })</code
+          >
+        </p>
+
         <h3>Learn About Generators</h3>
         <p><strong>User:</strong> "How do I create a generator?"</p>
         <p>
@@ -274,6 +371,14 @@ AI: *Calls clay_get_model_structure to inspect your model*
     *Creates generator.json with appropriate steps*
     *Creates templates using discovered helpers*
     *Calls clay_generate to test the generator*</code></pre>
+
+        <h3>Editing Models with Includes</h3>
+        <pre><code>You: "Add a 'role' field to the User entity"
+
+AI: *Calls clay_model_query to find the User entity*
+    *Calls clay_model_add to add the field*
+    *Response shows source_file: "entities/user.json"*
+    *The included file was edited, main model unchanged*</code></pre>
 
         <h3>Debugging JSONPath</h3>
         <pre><code>You: "Why isn't my generator selecting the right fields?"

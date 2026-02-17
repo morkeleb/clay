@@ -8,16 +8,25 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 
 ## Features
 
-### 8 Core Tools
+### 14 Core Tools
 
+**Project & Generation:**
 - **`clay_generate`** - Generate code from models (supports parameterless all-model regeneration)
 - **`clay_clean`** - Clean up generated files tracked in .clay
-- **`clay_test_path`** - Test JSONPath expressions against models
 - **`clay_init`** - Initialize Clay projects or generators
 - **`clay_list_generators`** - List all generators in project
 - **`clay_get_model_structure`** - Inspect model structure and metadata
 - **`clay_list_helpers`** - List all available Handlebars helpers with syntax and examples
 - **`clay_explain_concepts`** - Get comprehensive documentation on Clay concepts
+
+**Model CRUD (include-aware):**
+- **`clay_model_query`** - Query model data with JSONPath (queries expanded model with includes resolved)
+- **`clay_model_add`** - Add items to arrays or properties to objects
+- **`clay_model_update`** - Update fields on matched items
+- **`clay_model_delete`** - Remove matched items from arrays or objects
+- **`clay_model_rename`** - Rename a property key on matched items
+- **`clay_model_set_schema`** - Set or update $schema reference on a model
+- **`clay_test_path`** - Test JSONPath expressions against models
 
 ### 2 Built-in Prompts
 
@@ -94,7 +103,7 @@ Add the Clay MCP server:
 
 ### Step 3: Restart Claude Desktop
 
-The MCP server will now be available. Claude can see and call all 7 Clay tools.
+The MCP server will now be available. Claude can see and call all 14 Clay tools.
 
 ## Setup with Cline (VS Code Extension)
 
@@ -352,6 +361,82 @@ List all available Handlebars helpers for templates. Essential for LLMs when cre
 - "Show me all comparison helpers with examples"
 - "List all available helpers in the logic category"
 
+### `clay_model_query`
+
+Query model data using JSONPath expressions. Queries the **expanded** model (includes resolved, mixins applied).
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `json_path` (required): JSONPath expression (e.g., `$.model.entities[?(@.name=='User')]`)
+
+### `clay_model_add`
+
+Add an item to an array or property to an object. **Include-aware:** queries the expanded model to find targets, then writes to the correct source file.
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `json_path` (required): JSONPath to target array or object
+- `value` (required): Value to add (appended to arrays, merged into objects)
+
+**Include behavior:** If the target is inside an included file, the mutation is written to that file. The response includes `source_file` indicating which file was modified. The main model's `include` reference is preserved.
+
+### `clay_model_update`
+
+Update fields on all items matched by JSONPath. **Include-aware:** traces each match to its source file and applies updates there.
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `json_path` (required): JSONPath expression matching items to update
+- `fields` (required): Fields to merge into each matched item
+
+**Include behavior:** When matches span multiple files, each file is updated independently. The response includes `source_file` (single included file) or `files_modified` (multiple files).
+
+### `clay_model_delete`
+
+Remove items matched by JSONPath. **Include-aware** with special handling for included entities.
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `json_path` (required): JSONPath expression matching items to remove
+
+**Include behavior:**
+
+- **Deleting inside an included entity** (e.g., a field): edits the included file
+- **Deleting an included entity itself**: removes the `{ "include": "..." }` reference from the main model file (does not delete the included file from disk)
+- **Deleting from the main model**: edits the main model file directly
+
+### `clay_model_rename`
+
+Rename a property key across all items matched by JSONPath. **Include-aware:** traces each match to its source file and renames there.
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `json_path` (required): JSONPath expression matching items whose property to rename
+- `old_name` (required): Current property name
+- `new_name` (required): New property name
+
+**Include behavior:** Same as `clay_model_update` — renames are applied to the correct source file(s).
+
+### `clay_model_set_schema`
+
+Set or update the `$schema` reference on a model file. Validates the current model against the schema and warns of violations (still writes the reference).
+
+**Parameters:**
+
+- `working_directory` (optional): Directory containing .clay file
+- `model_path` (required): Path to model.json file
+- `schema_path` (required): Relative path to JSON Schema file
+
 ## Development
 
 ### Build
@@ -378,7 +463,7 @@ The MCP server is tested as part of Clay's test suite. Tests verify:
 
 - ✅ Server starts without errors
 - ✅ Responds to initialization requests
-- ✅ Lists all 7 tools correctly
+- ✅ Lists all 14 tools correctly
 - ✅ Handles JSON-RPC protocol correctly
 
 Run tests from the main Clay directory:
@@ -445,7 +530,10 @@ mcp/
 │   ├── schemas.ts          # Zod validation schemas
 │   ├── workspace-manager.ts # Working directory context
 │   ├── clay-wrapper.ts     # Clay CLI execution
-│   └── validation.ts       # Input validation
+│   ├── validation.ts       # Input validation
+│   ├── model-file.ts       # Model file read/write helpers
+│   ├── include-writer.ts   # Include-aware mutation helpers (traceToSource, etc.)
+│   └── conventions.ts      # Convention checking for mutations
 └── tools/                  # Tool implementations
     ├── generate.ts
     ├── clean.ts
@@ -453,7 +541,13 @@ mcp/
     ├── init.ts
     ├── list-generators.ts
     ├── get-model-structure.ts
-    └── list-helpers.ts
+    ├── list-helpers.ts
+    ├── model-query.ts      # Query model with JSONPath
+    ├── model-add.ts        # Add items (include-aware)
+    ├── model-update.ts     # Update items (include-aware)
+    ├── model-delete.ts     # Delete items (include-aware)
+    ├── model-rename.ts     # Rename properties (include-aware)
+    └── model-set-schema.ts # Set $schema reference
 ```
 
 ## License

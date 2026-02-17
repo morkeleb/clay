@@ -294,7 +294,7 @@ class ClayMCPServer {
         {
           name: 'clay_model_add',
           description:
-            'Add an item to an array or property to an object in a model file. Appends to arrays, merges into objects. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+            'Add an item to an array or property to an object in a model file. Appends to arrays, merges into objects. Include-aware: queries the expanded model (includes resolved) to find targets, then writes to the correct source file (main model or included file). Returns source_file when mutation goes to an included file. Validates against $schema if present.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -320,7 +320,7 @@ class ClayMCPServer {
         {
           name: 'clay_model_update',
           description:
-            'Update fields on all items matched by JSONPath. Merges provided fields into each match. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+            'Update fields on all items matched by JSONPath. Merges provided fields into each match. Include-aware: queries the expanded model (includes resolved) to find targets, then writes to the correct source file(s). Returns source_file or files_modified when mutations span included files. Validates against $schema if present.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -347,7 +347,7 @@ class ClayMCPServer {
         {
           name: 'clay_model_delete',
           description:
-            'Remove items matched by JSONPath from their parent arrays or objects. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+            'Remove items matched by JSONPath from their parent arrays or objects. Include-aware: queries the expanded model (includes resolved) to find targets. Deleting inside an included entity edits the included file. Deleting an included entity itself removes the include reference from the main model. Validates against $schema if present.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -370,7 +370,7 @@ class ClayMCPServer {
         {
           name: 'clay_model_rename',
           description:
-            'Rename a property key across all items matched by JSONPath. Operates on raw file (preserves includes/mixins). Validates against $schema if present.',
+            'Rename a property key across all items matched by JSONPath. Include-aware: queries the expanded model (includes resolved) to find targets, then renames in the correct source file(s). Returns source_file or files_modified when mutations span included files. Validates against $schema if present.',
           inputSchema: {
             type: 'object',
             properties: {
