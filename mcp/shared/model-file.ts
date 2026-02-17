@@ -97,7 +97,7 @@ export function writeModelFile(
       path.dirname(modelPath),
       schemaRelative
     );
-    const errors = validateAgainstSchema(data.model, resolvedSchema);
+    const errors = validateAgainstSchema(data, resolvedSchema);
     if (errors.length > 0) {
       throw new Error(
         'Schema validation failed:\n' + errors.join('\n')

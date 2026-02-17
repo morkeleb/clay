@@ -41,6 +41,34 @@ export async function modelAddTool(args: unknown) {
       };
     }
 
+    // If the path doesn't match, try resolving as parent + leaf property.
+    // e.g. $.model.types.cronJobRun → parent $.model.types, leaf "cronJobRun"
+    let leafProperty: string | undefined;
+    let parentPath: string | undefined;
+    if (targets.length === 0) {
+      const pathParts = input.json_path.replace(/\]$/, '').split(/\.|\[['"]?|['"]?\]/);
+      const lastPart = pathParts.filter(Boolean).pop();
+      if (lastPart) {
+        // Rebuild parent path by removing the last segment
+        const lastDot = input.json_path.lastIndexOf('.' + lastPart);
+        const lastBracket = input.json_path.lastIndexOf("['" + lastPart);
+        const splitPos = Math.max(lastDot, lastBracket);
+        if (splitPos > 0) {
+          const candidateParent = input.json_path.substring(0, splitPos);
+          try {
+            targets = jp.query(expandedModel, candidateParent);
+            targetPaths = jp.paths(expandedModel, candidateParent);
+            if (targets.length > 0) {
+              leafProperty = lastPart;
+              parentPath = candidateParent;
+            }
+          } catch {
+            // Parent path also invalid, fall through to error
+          }
+        }
+      }
+    }
+
     if (targets.length === 0) {
       return {
         content: [{ type: 'text', text: JSON.stringify({
@@ -75,7 +103,18 @@ export async function modelAddTool(args: unknown) {
         };
       }
       const relTarget = relTargets[0];
-      if (Array.isArray(relTarget)) {
+      if (leafProperty) {
+        if (typeof relTarget === 'object' && relTarget !== null && !Array.isArray(relTarget)) {
+          (relTarget as Record<string, unknown>)[leafProperty] = input.value;
+        } else {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({
+              success: false,
+              message: 'Parent target is not an object; cannot set property',
+            }, null, 2) }],
+          };
+        }
+      } else if (Array.isArray(relTarget)) {
         relTarget.push(input.value);
       } else if (typeof relTarget === 'object' && relTarget !== null) {
         Object.assign(relTarget, input.value);
@@ -92,9 +131,11 @@ export async function modelAddTool(args: unknown) {
     } else {
       // Edit the main model file (raw, preserving includes)
       const modelData = readModelFile(fullModelPath);
+      // When leafProperty is set, use the stored parent path for querying the raw model.
+      const rawQueryPath = leafProperty && parentPath ? parentPath : input.json_path;
       let rawTargets: unknown[];
       try {
-        rawTargets = jp.query(modelData, input.json_path);
+        rawTargets = jp.query(modelData, rawQueryPath);
       } catch {
         return {
           content: [{ type: 'text', text: JSON.stringify({
@@ -107,12 +148,23 @@ export async function modelAddTool(args: unknown) {
         return {
           content: [{ type: 'text', text: JSON.stringify({
             success: false,
-            message: `No items matched in raw model: ${input.json_path}`,
+            message: `No items matched in raw model: ${rawQueryPath}`,
           }, null, 2) }],
         };
       }
       const rawTarget = rawTargets[0];
-      if (Array.isArray(rawTarget)) {
+      if (leafProperty) {
+        if (typeof rawTarget === 'object' && rawTarget !== null && !Array.isArray(rawTarget)) {
+          (rawTarget as Record<string, unknown>)[leafProperty] = input.value;
+        } else {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({
+              success: false,
+              message: 'Parent target is not an object; cannot set property',
+            }, null, 2) }],
+          };
+        }
+      } else if (Array.isArray(rawTarget)) {
         rawTarget.push(input.value);
       } else if (typeof rawTarget === 'object' && rawTarget !== null) {
         Object.assign(rawTarget, input.value);
