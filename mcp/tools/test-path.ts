@@ -1,5 +1,7 @@
 /**
  * clay_test_path tool - Test JSONPath expressions
+ * Uses the expanded model (includes resolved, mixins applied) for consistency
+ * with clay_model_query and clay_model_update.
  */
 import { validateInput, validateJSONPath } from '../shared/validation.js';
 import { TestPathInputSchema } from '../shared/schemas.js';
@@ -7,7 +9,8 @@ import {
   getWorkspaceContext,
   resolvePath,
 } from '../shared/workspace-manager.js';
-import { executeClayCommand } from '../shared/clay-wrapper.js';
+import { readExpandedModel } from '../shared/model-file.js';
+import jp from 'jsonpath';
 
 export async function testPathTool(args: unknown) {
   const validation = validateInput(TestPathInputSchema, args);
@@ -55,14 +58,12 @@ export async function testPathTool(args: unknown) {
     const context = getWorkspaceContext(input.working_directory);
     const workingDir = context.workingDirectory;
     const modelPath = resolvePath(workingDir, input.model_path);
+    const modelData = readExpandedModel(modelPath);
 
-    const result = executeClayCommand(
-      'test-path',
-      [modelPath, input.json_path],
-      workingDir
-    );
-
-    if (!result.success) {
+    let results: unknown[];
+    try {
+      results = jp.query(modelData, input.json_path);
+    } catch (e) {
       return {
         content: [
           {
@@ -70,8 +71,7 @@ export async function testPathTool(args: unknown) {
             text: JSON.stringify(
               {
                 success: false,
-                message: `Failed to test path: ${result.error}`,
-                output: result.output,
+                message: `Invalid JSONPath expression: ${e instanceof Error ? e.message : String(e)}`,
               },
               null,
               2
@@ -88,9 +88,8 @@ export async function testPathTool(args: unknown) {
           text: JSON.stringify(
             {
               success: true,
-              results: [], // Would need to parse output
-              count: 0,
-              formatted_output: result.output,
+              count: results.length,
+              results,
             },
             null,
             2
