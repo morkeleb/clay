@@ -272,6 +272,59 @@ commander
   .description('initializes the folder with an empty .clay file or a generator')
   .action(init);
 
+commander
+  .command('init-claude')
+  .description(
+    'sets up Claude Code hooks to prevent editing Clay-generated files'
+  )
+  .action(() => {
+    const { initClaude } = require('./init-claude');
+    initClaude(process.cwd());
+    ui.log('Claude Code hooks initialized in .claude/');
+  });
+
+commander
+  .command('init-mcp')
+  .description(
+    'adds the Clay MCP server to an MCP config file for your AI platform'
+  )
+  .action(async () => {
+    const inquirer = require('inquirer');
+    const {
+      detectPlatforms,
+      initMcpForPlatform,
+      PLATFORMS,
+    } = require('./init-mcp');
+    const projectDir = process.cwd();
+
+    const detected = detectPlatforms(projectDir);
+    const choices = PLATFORMS.map(
+      (p: { id: string; name: string }) => ({
+        name: p.name,
+        value: p.id,
+        checked: detected.includes(p.id),
+      })
+    );
+
+    const { platforms } = await inquirer.prompt([
+      {
+        type: 'checkbox',
+        name: 'platforms',
+        message: 'Which AI platforms are you using?',
+        choices,
+        validate: (answer: string[]) =>
+          answer.length > 0
+            ? true
+            : 'Select at least one platform.',
+      },
+    ]);
+
+    for (const platform of platforms) {
+      const configPath = initMcpForPlatform(platform, projectDir);
+      ui.log(`Clay MCP server added to ${configPath}`);
+    }
+  });
+
 function watch(model_path?: string, output_path?: string): void {
   const indexFile = loadClayFile('.');
   let modelsToExecute: ModelIndex[];

@@ -121,6 +121,8 @@ clay clean [model] [output]     # Remove generated files
 clay watch [model] [output]     # Watch and regenerate
 clay test-path <model> <path>   # Test JSONPath expressions
 clay init [type] [name]         # Initialize project or generator
+clay init-claude                # Set up Claude Code hooks for generated file protection
+clay init-mcp                   # Add Clay MCP server (interactive platform selection)
 ```
 
 ## AI Integration (MCP Server)

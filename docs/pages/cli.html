@@ -46,6 +46,46 @@ Options:
           Creates a new generator in <code>clay/generators/my-generator/</code>
         </p>
 
+        <h3>init-claude</h3>
+        <p>Set up Claude Code hooks to prevent editing Clay-generated files</p>
+        <pre><code>clay init-claude</code></pre>
+        <p>Creates:</p>
+        <ul>
+          <li>
+            <code>.claude/settings.json</code> &mdash; PreToolUse hook that
+            intercepts Edit/Write operations
+          </li>
+          <li>
+            <code>.claude/hooks/check-generated-file.sh</code> &mdash; script
+            that checks the <code>.clay</code> manifest and blocks edits to
+            generated files
+          </li>
+        </ul>
+        <p>
+          Safe to run multiple times &mdash; merges into existing settings
+          without overwriting.
+        </p>
+
+        <h3>init-mcp</h3>
+        <p>Add the Clay MCP server to your AI platform's MCP configuration</p>
+        <pre><code>clay init-mcp</code></pre>
+        <p>
+          Interactively asks which AI platforms you use, with auto-detection
+          of platforms already present in your project (e.g. <code>.vscode/</code>,
+          <code>.claude/</code>, <code>.cursor/</code>).
+        </p>
+        <p><strong>Supported platforms:</strong></p>
+        <ul>
+          <li><strong>VS Code / GitHub Copilot</strong> &rarr; <code>.vscode/mcp.json</code></li>
+          <li><strong>Claude Code</strong> &rarr; <code>.mcp.json</code></li>
+          <li><strong>Claude Desktop</strong> &rarr; system config file</li>
+          <li><strong>Cursor</strong> &rarr; <code>.cursor/mcp.json</code></li>
+        </ul>
+        <p>
+          Merges into existing config files without overwriting other servers.
+          Safe to run multiple times.
+        </p>
+
         <h3>generate</h3>
         <p>Generate code from your model</p>
         <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
