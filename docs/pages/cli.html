@@ -49,21 +49,25 @@ Options:
         <h3>init-claude</h3>
         <p>Set up Claude Code hooks to prevent editing Clay-generated files</p>
         <pre><code>clay init-claude</code></pre>
-        <p>Creates:</p>
-        <ul>
-          <li>
-            <code>.claude/settings.json</code> &mdash; PreToolUse hook that
-            intercepts Edit/Write operations
-          </li>
-          <li>
-            <code>.claude/hooks/check-generated-file.sh</code> &mdash; script
-            that checks the <code>.clay</code> manifest and blocks edits to
-            generated files
-          </li>
-        </ul>
+        <p>
+          Creates <code>.claude/settings.json</code> with a PreToolUse hook
+          that calls <code>clay check-generated</code> before any Edit/Write
+          operation. No scripts are generated &mdash; Clay handles the check
+          entirely.
+        </p>
         <p>
           Safe to run multiple times &mdash; merges into existing settings
           without overwriting.
+        </p>
+
+        <h3>check-generated</h3>
+        <p>Check if a file is Clay-generated (used internally by hooks)</p>
+        <pre><code>echo '{"file_path": "/path/to/file.ts"}' | clay check-generated</code></pre>
+        <p>
+          Reads JSON from stdin, checks the <code>.clay</code> manifest, and
+          exits with code 2 if the file is generated (blocking the edit).
+          Exits 0 otherwise. This command is called automatically by the Claude
+          Code hook &mdash; you don't need to run it manually.
         </p>
 
         <h3>init-mcp</h3>

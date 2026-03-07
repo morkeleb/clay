@@ -284,6 +284,26 @@ commander
   });
 
 commander
+  .command('check-generated')
+  .description(
+    'check if a file is Clay-generated (used by Claude Code hooks, reads JSON from stdin)'
+  )
+  .action(async () => {
+    const { checkGenerated, parseHookInput } = require('./check-generated');
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) {
+      chunks.push(chunk);
+    }
+    const input = Buffer.concat(chunks).toString('utf8');
+    const filePath = parseHookInput(input);
+    const result = checkGenerated(filePath);
+    if (result.blocked) {
+      process.stderr.write(result.message + '\n');
+      process.exit(2);
+    }
+  });
+
+commander
   .command('init-mcp')
   .description(
     'adds the Clay MCP server to an MCP config file for your AI platform'
