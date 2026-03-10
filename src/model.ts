@@ -84,14 +84,18 @@ function executeIncludes(model: any, modelPath: string): void {
       const includePath = path.resolve(
         path.join(path.dirname(modelPath), m.include)
       );
-      const includeData = require(includePath);
+      try {
+        const includeData = require(includePath);
 
-      for (const key in includeData) {
-        if (Object.prototype.hasOwnProperty.call(includeData, key)) {
-          m[key] = includeData[key];
+        for (const key in includeData) {
+          if (Object.prototype.hasOwnProperty.call(includeData, key)) {
+            m[key] = includeData[key];
+          }
         }
+        delete m.include;
+      } catch {
+        // Include file not found - leave include reference intact
       }
-      delete m.include;
     }
 
     if (Array.isArray(m)) {
@@ -139,17 +143,21 @@ function executeIncludesWithMap(
       const includePath = path.resolve(
         path.join(path.dirname(modelPath), m.include)
       );
-      const includeData = require(includePath);
+      try {
+        const includeData = require(includePath);
 
-      for (const key in includeData) {
-        if (Object.prototype.hasOwnProperty.call(includeData, key)) {
-          m[key] = includeData[key];
+        for (const key in includeData) {
+          if (Object.prototype.hasOwnProperty.call(includeData, key)) {
+            m[key] = includeData[key];
+          }
         }
-      }
-      delete m.include;
+        delete m.include;
 
-      // Record this object as coming from the included file
-      includeMap.set(m, includePath);
+        // Record this object as coming from the included file
+        includeMap.set(m, includePath);
+      } catch {
+        // Include file not found - leave include reference intact
+      }
     }
 
     if (Array.isArray(m)) {

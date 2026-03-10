@@ -101,4 +101,39 @@ describe('the model module', () => {
       expect(result.model.types[0].include).to.equal(undefined);
     });
   });
+
+  describe('include with missing file', () => {
+    let result: any;
+
+    beforeEach(() => {
+      result = model.load('./test/samples/include-missing.json');
+    });
+
+    it('will resolve valid includes and skip missing ones', () => {
+      // First type has a valid include that resolves
+      expect(result.model.types[0].events).to.deep.equal([
+        { name: 'ordercreated' },
+      ]);
+      // Second type has a missing include - should keep the include reference
+      expect(result.model.types[1].include).to.equal('entities/nonexistent.json');
+      expect(result.model.types[1].name).to.equal('placeholder');
+    });
+  });
+
+  describe('loadWithIncludeMap with missing file', () => {
+    let result: any;
+
+    beforeEach(() => {
+      result = model.loadWithIncludeMap('./test/samples/include-missing.json');
+    });
+
+    it('will not throw on missing includes', () => {
+      expect(result.model).to.not.equal(undefined);
+      expect(result.includeMap).to.be.an.instanceOf(Map);
+    });
+
+    it('will resolve valid includes into the map', () => {
+      expect(result.includeMap.size).to.equal(1);
+    });
+  });
 });

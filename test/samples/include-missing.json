@@ -1,0 +1,12 @@
+{
+  "name": "mymodel",
+  "generators": [
+    "documentation"
+  ],
+  "model": {
+    "types": [
+      {"include": "entities/order.json"},
+      {"include": "entities/nonexistent.json", "name": "placeholder"}
+    ]
+  }
+}
