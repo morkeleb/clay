@@ -52,7 +52,10 @@ export async function listGeneratorsTool(args: unknown) {
               success: true,
               generators: [],
               message: `Found ${clayData.models.length} models in project`,
-              raw_data: clayData,
+              models: clayData.models.map((m) => ({
+                path: m.path,
+                output: m.output,
+              })),
             },
             null,
             2
