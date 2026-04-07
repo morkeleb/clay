@@ -298,8 +298,11 @@ commander
     const filePath = parseHookInput(input);
     const result = checkGenerated(filePath);
     if (result.blocked) {
-      process.stderr.write(result.message + '\n');
-      process.exit(2);
+      const hookResponse = JSON.stringify({
+        decision: 'block',
+        reason: result.message,
+      });
+      process.stdout.write(hookResponse + '\n');
     }
   });
 
