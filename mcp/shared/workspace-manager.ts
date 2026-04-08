@@ -28,14 +28,50 @@ export function getWorkspaceContext(workingDir?: string): WorkspaceContext {
 }
 
 /**
- * Validate that a .clay file exists in the working directory
+ * Search up the directory tree for a .clay file starting from the given directory.
+ * Returns the directory containing the .clay file, or null if not found.
+ */
+export function findClayFileUp(startDir: string): string | null {
+  let current = path.resolve(startDir);
+  const root = path.parse(current).root;
+
+  while (true) {
+    if (fs.existsSync(path.join(current, '.clay'))) {
+      return current;
+    }
+    const parent = path.dirname(current);
+    if (parent === current || parent === root) {
+      // Check root as well
+      if (fs.existsSync(path.join(root, '.clay'))) {
+        return root;
+      }
+      return null;
+    }
+    current = parent;
+  }
+}
+
+/**
+ * Validate that a .clay file exists in the working directory.
+ * If not found, searches up the directory tree and suggests where it was found.
  */
 export function requireClayFile(workingDir?: string): WorkspaceContext {
   const context = getWorkspaceContext(workingDir);
 
   if (!context.hasClayFile) {
+    const foundDir = findClayFileUp(context.workingDirectory);
+
+    if (foundDir) {
+      const relPath = path.relative(context.workingDirectory, foundDir) || '.';
+      throw new Error(
+        `.clay file not found in ${context.workingDirectory}, ` +
+          `but found one in ${foundDir}. ` +
+          `Either set working_directory to "${relPath}" or run the command from the project root.`
+      );
+    }
+
     throw new Error(
-      `.clay file not found in ${context.workingDirectory}. ` +
+      `.clay file not found in ${context.workingDirectory} or any parent directory. ` +
         'Run clay_init to create one.'
     );
   }
