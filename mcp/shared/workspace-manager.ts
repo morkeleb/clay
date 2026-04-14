@@ -18,7 +18,8 @@ export function getWorkspaceContext(workingDir?: string): WorkspaceContext {
     ? path.resolve(workingDir)
     : process.cwd();
   const clayFilePath = path.join(workingDirectory, '.clay');
-  const hasClayFile = fs.existsSync(clayFilePath);
+  const hasClayFile =
+    fs.existsSync(clayFilePath) && fs.statSync(clayFilePath).isFile();
 
   return {
     workingDirectory,
@@ -36,13 +37,17 @@ export function findClayFileUp(startDir: string): string | null {
   const root = path.parse(current).root;
 
   while (true) {
-    if (fs.existsSync(path.join(current, '.clay'))) {
+    const candidate = path.join(current, '.clay');
+    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
       return current;
     }
     const parent = path.dirname(current);
     if (parent === current || parent === root) {
-      // Check root as well
-      if (fs.existsSync(path.join(root, '.clay'))) {
+      const rootCandidate = path.join(root, '.clay');
+      if (
+        fs.existsSync(rootCandidate) &&
+        fs.statSync(rootCandidate).isFile()
+      ) {
         return root;
       }
       return null;
