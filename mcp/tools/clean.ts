@@ -3,8 +3,8 @@
  */
 import { validateInput } from '../shared/validation.js';
 import { CleanInputSchema } from '../shared/schemas.js';
+import path from 'path';
 import {
-  getWorkspaceContext,
   requireClayFile,
   resolvePath,
 } from '../shared/workspace-manager.js';
@@ -33,21 +33,23 @@ export async function cleanTool(args: unknown) {
   const input = validation.data;
 
   try {
-    const context = input.model_path
-      ? getWorkspaceContext(input.working_directory)
-      : requireClayFile(input.working_directory);
+    const context = requireClayFile(input.working_directory);
+    const clayRoot = context.workingDirectory;
 
-    const workingDir = context.workingDirectory;
+    let commandArgs: string[] = [];
+    if (input.model_path && input.output_path) {
+      const userDir = input.working_directory
+        ? path.resolve(input.working_directory)
+        : process.cwd();
+      const absoluteModelPath = resolvePath(userDir, input.model_path);
+      const absoluteOutputPath = resolvePath(userDir, input.output_path);
+      commandArgs = [
+        path.relative(clayRoot, absoluteModelPath),
+        path.relative(clayRoot, absoluteOutputPath),
+      ];
+    }
 
-    const commandArgs =
-      input.model_path && input.output_path
-        ? [
-            resolvePath(workingDir, input.model_path),
-            resolvePath(workingDir, input.output_path),
-          ]
-        : [];
-
-    const result = executeClayCommand('clean', commandArgs, workingDir);
+    const result = executeClayCommand('clean', commandArgs, clayRoot);
 
     if (!result.success) {
       return {

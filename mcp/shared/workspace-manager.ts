@@ -57,31 +57,27 @@ export function findClayFileUp(startDir: string): string | null {
 }
 
 /**
- * Validate that a .clay file exists in the working directory.
- * If not found, searches up the directory tree and suggests where it was found.
+ * Find the nearest directory containing a .clay file, starting from the given
+ * directory and walking up the tree (like git does with .git).
+ * Throws if no .clay file is found anywhere.
  */
 export function requireClayFile(workingDir?: string): WorkspaceContext {
   const context = getWorkspaceContext(workingDir);
 
-  if (!context.hasClayFile) {
-    const foundDir = findClayFileUp(context.workingDirectory);
-
-    if (foundDir) {
-      const relPath = path.relative(context.workingDirectory, foundDir) || '.';
-      throw new Error(
-        `.clay file not found in ${context.workingDirectory}, ` +
-          `but found one in ${foundDir}. ` +
-          `Either set working_directory to "${relPath}" or run the command from the project root.`
-      );
-    }
-
-    throw new Error(
-      `.clay file not found in ${context.workingDirectory} or any parent directory. ` +
-        'Run clay_init to create one.'
-    );
+  if (context.hasClayFile) {
+    return context;
   }
 
-  return context;
+  const foundDir = findClayFileUp(context.workingDirectory);
+
+  if (foundDir) {
+    return getWorkspaceContext(foundDir);
+  }
+
+  throw new Error(
+    `.clay file not found in ${context.workingDirectory} or any parent directory. ` +
+      'Run clay_init to create one.'
+  );
 }
 
 /**

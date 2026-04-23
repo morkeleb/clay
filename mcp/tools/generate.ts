@@ -4,8 +4,8 @@
 import type { GenerateInput } from '../shared/schemas.js';
 import { validateInput } from '../shared/validation.js';
 import { GenerateInputSchema } from '../shared/schemas.js';
+import path from 'path';
 import {
-  getWorkspaceContext,
   requireClayFile,
   resolvePath,
 } from '../shared/workspace-manager.js';
@@ -39,23 +39,26 @@ export async function generateTool(args: unknown) {
   const input = validation.data;
 
   try {
-    // Get workspace context
-    const context = input.model_path
-      ? getWorkspaceContext(input.working_directory)
-      : requireClayFile(input.working_directory);
-
-    const workingDir = context.workingDirectory;
+    // Resolve to the nearest directory containing .clay (walks up the tree)
+    const context = requireClayFile(input.working_directory);
+    const clayRoot = context.workingDirectory;
 
     // Determine what to generate
     if (input.model_path && input.output_path) {
-      // Generate specific model
-      const modelPath = resolvePath(workingDir, input.model_path);
-      const outputPath = resolvePath(workingDir, input.output_path);
+      // Generate specific model — resolve from user's working directory,
+      // then make relative to the .clay root so the CLI stores clean paths
+      const userDir = input.working_directory
+        ? path.resolve(input.working_directory)
+        : process.cwd();
+      const absoluteModelPath = resolvePath(userDir, input.model_path);
+      const absoluteOutputPath = resolvePath(userDir, input.output_path);
+      const modelPath = path.relative(clayRoot, absoluteModelPath);
+      const outputPath = path.relative(clayRoot, absoluteOutputPath);
 
       const result = executeClayCommand(
         'generate',
         [modelPath, outputPath],
-        workingDir
+        clayRoot
       );
 
       if (!result.success) {
@@ -101,26 +104,7 @@ export async function generateTool(args: unknown) {
       };
     } else {
       // Generate all models from .clay file
-      if (!context.hasClayFile) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  success: false,
-                  message:
-                    'No .clay file found and no model_path provided. Run clay_init first to create a .clay file.',
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-
-      const result = executeClayCommand('generate', [], workingDir);
+      const result = executeClayCommand('generate', [], clayRoot);
 
       if (!result.success) {
         return {
