@@ -146,6 +146,31 @@ describe('gitattributes', () => {
     expect(content).to.not.include('old.ts');
   });
 
+  it('quotes paths containing spaces', () => {
+    fs.writeJsonSync(path.join(testDir, '.clay'), {
+      gitattributes: true,
+      models: [
+        {
+          path: 'model.json',
+          output: '',
+          generated_files: {
+            'src/my file.ts': { md5: 'x', date: '2025-01-01' },
+            'normal.ts': { md5: 'y', date: '2025-01-01' },
+          },
+        },
+      ],
+    });
+    updateGitattributes(testDir);
+
+    const content = fs.readFileSync(
+      path.join(testDir, '.gitattributes'),
+      'utf8'
+    );
+    expect(content).to.include('"src/my file.ts" linguist-generated=true');
+    expect(content).to.include('normal.ts linguist-generated=true');
+    expect(content).to.not.include('"normal.ts"');
+  });
+
   it('is idempotent', () => {
     fs.writeJsonSync(path.join(testDir, '.clay'), {
       gitattributes: true,

@@ -11,7 +11,8 @@ import fs from 'fs';
 import * as ui from './output';
 import _ from 'lodash';
 import chokidar from 'chokidar';
-import { createClayFile, updateClayConfig, load as loadClayFile } from './clay_file';
+import { createClayFile, updateClayConfig, VALID_CONFIG_KEYS, load as loadClayFile } from './clay_file';
+import type { ClayConfigKey } from './clay_file';
 import * as generatorManager from './generator-manager';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
@@ -261,7 +262,7 @@ async function init(
       );
       ui.log(`Generator initialized at ${generatorFilePath}`);
     } else if (options?.yes) {
-      createClayFile('.');
+      createClayFile('.', { gitattributes: true });
     } else {
       const inquirer = require('inquirer');
       const { gitattributes } = await inquirer.prompt([
@@ -292,14 +293,13 @@ commander
   .action(init);
 
 function config(key?: string, value?: string): void {
-  const validKeys = ['gitattributes'];
   if (!key || !value) {
     console.error('Usage: clay config <key> <true|false>');
-    console.error('Available keys:', validKeys.join(', '));
+    console.error('Available keys:', VALID_CONFIG_KEYS.join(', '));
     process.exit(1);
   }
-  if (!validKeys.includes(key)) {
-    console.error(`Unknown config key: ${key}. Available keys: ${validKeys.join(', ')}`);
+  if (!(VALID_CONFIG_KEYS as readonly string[]).includes(key)) {
+    console.error(`Unknown config key: ${key}. Available keys: ${VALID_CONFIG_KEYS.join(', ')}`);
     process.exit(1);
   }
   if (value !== 'true' && value !== 'false') {
@@ -307,7 +307,7 @@ function config(key?: string, value?: string): void {
     process.exit(1);
   }
   try {
-    updateClayConfig('.', key, value === 'true');
+    updateClayConfig('.', key as ClayConfigKey, value === 'true');
     ui.log(`Set ${key} = ${value}`);
   } catch (error) {
     if (error instanceof Error) {

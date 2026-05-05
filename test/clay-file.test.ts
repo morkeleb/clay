@@ -36,8 +36,11 @@ describe('clay_file', () => {
 
     it('should include gitattributes flag when option is set', () => {
       clay_file.createClayFile('.', { gitattributes: true });
-      const fileContent = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      const raw = fs.readFileSync(clayFilePath, 'utf8');
+      const fileContent = JSON.parse(raw);
       expect(fileContent).to.deep.equal({ gitattributes: true, models: [] });
+      // Config flags should appear before models in serialized output
+      expect(raw.indexOf('gitattributes')).to.be.lessThan(raw.indexOf('models'));
     });
 
     it('should throw an error if a .clay file already exists', () => {
@@ -86,6 +89,44 @@ describe('clay_file', () => {
         .getFileCheckSum('order.txt');
 
       expect(resultMd5).to.equal(fileMd5);
+    });
+  });
+
+  describe('updateClayConfig', () => {
+    it('should set a config value to true', () => {
+      fs.writeFileSync(clayFilePath, JSON.stringify({ models: [] }), 'utf8');
+      clay_file.updateClayConfig('.', 'gitattributes', true);
+      const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(data.gitattributes).to.equal(true);
+    });
+
+    it('should remove key when set to false', () => {
+      fs.writeFileSync(
+        clayFilePath,
+        JSON.stringify({ gitattributes: true, models: [] }),
+        'utf8'
+      );
+      clay_file.updateClayConfig('.', 'gitattributes', false);
+      const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(data).to.not.have.property('gitattributes');
+    });
+
+    it('should throw when .clay does not exist', () => {
+      expect(() => clay_file.updateClayConfig('.', 'gitattributes', true)).to.throw(
+        'No .clay file found'
+      );
+    });
+
+    it('should preserve existing models data', () => {
+      const existing = {
+        models: [{ path: 'model.json', output: '', generated_files: {} }],
+      };
+      fs.writeFileSync(clayFilePath, JSON.stringify(existing), 'utf8');
+      clay_file.updateClayConfig('.', 'gitattributes', true);
+      const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(data.models).to.have.lengthOf(1);
+      expect(data.models[0].path).to.equal('model.json');
+      expect(data.gitattributes).to.equal(true);
     });
   });
 

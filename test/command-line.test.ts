@@ -183,4 +183,47 @@ describe('the command line interface', () => {
       expect(generatorContent).to.have.property('steps').that.is.an('array');
     });
   });
+
+  describe('the config command', () => {
+    it('should set gitattributes to true', () => {
+      execSync('node dist/index.js config gitattributes true', {
+        stdio: 'pipe',
+      });
+      const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(data.gitattributes).to.equal(true);
+    });
+
+    it('should set gitattributes to false', () => {
+      // First enable it
+      execSync('node dist/index.js config gitattributes true', {
+        stdio: 'pipe',
+      });
+      // Then disable
+      execSync('node dist/index.js config gitattributes false', {
+        stdio: 'pipe',
+      });
+      const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(data).to.not.have.property('gitattributes');
+    });
+
+    it('should fail for unknown config key', () => {
+      try {
+        execSync('node dist/index.js config badkey true', { stdio: 'pipe' });
+        expect.fail('should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.match(/Unknown config key/);
+      }
+    });
+
+    it('should fail for invalid value', () => {
+      try {
+        execSync('node dist/index.js config gitattributes maybe', {
+          stdio: 'pipe',
+        });
+        expect.fail('should have thrown');
+      } catch (error: any) {
+        expect(error.message).to.match(/Value must be "true" or "false"/);
+      }
+    });
+  });
 });

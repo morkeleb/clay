@@ -30,7 +30,10 @@ export function updateGitattributes(directory: string): void {
   // Build the managed block
   const lines: string[] = [MARKER_START];
   for (const file of sorted) {
-    lines.push(`${file} linguist-generated=true`);
+    // Quote paths containing spaces, #, or ! per gitattributes format
+    const escaped =
+      /[\s#!]/.test(file) ? `"${file.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : file;
+    lines.push(`${escaped} linguist-generated=true`);
   }
   lines.push(MARKER_END);
 
@@ -43,7 +46,7 @@ export function updateGitattributes(directory: string): void {
     const startIdx = existing.indexOf(MARKER_START);
     const endIdx = existing.indexOf(MARKER_END);
 
-    if (startIdx !== -1 && endIdx !== -1) {
+    if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
       // Replace existing managed block
       const before = existing.slice(0, startIdx);
       const after = existing.slice(endIdx + MARKER_END.length);

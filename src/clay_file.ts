@@ -109,22 +109,29 @@ export function createClayFile(
   if (fs.existsSync(clayFilePath)) {
     throw new Error('A .clay file already exists in this folder.');
   }
-  const data: { gitattributes?: boolean; models: never[] } = { models: [] };
-  if (options.gitattributes) {
-    data.gitattributes = true;
-  }
+  const data: { gitattributes?: boolean; models: never[] } = options.gitattributes
+    ? { gitattributes: true, models: [] }
+    : { models: [] };
   fs.writeFileSync(clayFilePath, JSON.stringify(data, null, 2), 'utf8');
   output.write('.clay file has been created successfully.');
 }
 
+export const VALID_CONFIG_KEYS = ['gitattributes'] as const;
+export type ClayConfigKey = (typeof VALID_CONFIG_KEYS)[number];
+
 export function updateClayConfig(
   directory: string,
-  key: string,
+  key: ClayConfigKey,
   value: boolean
 ): void {
   const clayFilePath = path.join(directory, '.clay');
   if (!fs.existsSync(clayFilePath)) {
     throw new Error('No .clay file found. Run clay init first.');
+  }
+  if (!VALID_CONFIG_KEYS.includes(key)) {
+    throw new Error(
+      `Unknown config key: ${key}. Valid keys: ${VALID_CONFIG_KEYS.join(', ')}`
+    );
   }
   const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
   if (value) {
