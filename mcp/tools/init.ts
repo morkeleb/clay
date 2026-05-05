@@ -54,7 +54,7 @@ export async function initTool(args: unknown) {
     const commandArgs =
       input.type === 'generator' && input.name
         ? ['init', 'generator', input.name]
-        : ['init'];
+        : ['init', '-y'];
 
     const result = executeClayCommand(
       commandArgs[0],

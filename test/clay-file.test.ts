@@ -34,6 +34,12 @@ describe('clay_file', () => {
       ).to.be.true;
     });
 
+    it('should include gitattributes flag when option is set', () => {
+      clay_file.createClayFile('.', { gitattributes: true });
+      const fileContent = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+      expect(fileContent).to.deep.equal({ gitattributes: true, models: [] });
+    });
+
     it('should throw an error if a .clay file already exists', () => {
       fs.writeFileSync(clayFilePath, '', 'utf8');
 

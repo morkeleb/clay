@@ -11,11 +11,12 @@ import fs from 'fs';
 import * as ui from './output';
 import _ from 'lodash';
 import chokidar from 'chokidar';
-import { createClayFile, load as loadClayFile } from './clay_file';
+import { createClayFile, updateClayConfig, load as loadClayFile } from './clay_file';
 import * as generatorManager from './generator-manager';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 import { loadConventions, runConventions } from './conventions';
+import { updateGitattributes } from './gitattributes';
 
 const commander = new Command();
 
@@ -167,6 +168,7 @@ async function generate(
 
   await generateModels(modelsToExecute);
   indexFile.save();
+  updateGitattributes('.');
 }
 
 const cleanModels = (modelsToExecute: ModelIndex[]): void => {
@@ -232,7 +234,11 @@ commander
   .description('runs the generators')
   .action(generate);
 
-function init(type?: string, name?: string): void {
+async function init(
+  type?: string,
+  name?: string,
+  options?: { yes?: boolean }
+): Promise<void> {
   try {
     if (type === 'generator' && name) {
       const generatorPath = path.join('clay', 'generators', name);
@@ -254,8 +260,20 @@ function init(type?: string, name?: string): void {
         JSON.stringify(generatorTemplate, null, 2)
       );
       ui.log(`Generator initialized at ${generatorFilePath}`);
-    } else {
+    } else if (options?.yes) {
       createClayFile('.');
+    } else {
+      const inquirer = require('inquirer');
+      const { gitattributes } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'gitattributes',
+          message:
+            'Mark generated files in .gitattributes? (collapses diffs in GitHub PRs)',
+          default: true,
+        },
+      ]);
+      createClayFile('.', { gitattributes });
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -269,8 +287,42 @@ function init(type?: string, name?: string): void {
 
 commander
   .command('init [type] [name]')
+  .option('-y, --yes', 'skip prompts and use defaults')
   .description('initializes the folder with an empty .clay file or a generator')
   .action(init);
+
+function config(key?: string, value?: string): void {
+  const validKeys = ['gitattributes'];
+  if (!key || !value) {
+    console.error('Usage: clay config <key> <true|false>');
+    console.error('Available keys:', validKeys.join(', '));
+    process.exit(1);
+  }
+  if (!validKeys.includes(key)) {
+    console.error(`Unknown config key: ${key}. Available keys: ${validKeys.join(', ')}`);
+    process.exit(1);
+  }
+  if (value !== 'true' && value !== 'false') {
+    console.error(`Value must be "true" or "false", got: ${value}`);
+    process.exit(1);
+  }
+  try {
+    updateClayConfig('.', key, value === 'true');
+    ui.log(`Set ${key} = ${value}`);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(String(error));
+    }
+    process.exit(1);
+  }
+}
+
+commander
+  .command('config <key> <value>')
+  .description('set a configuration option (e.g. clay config gitattributes true)')
+  .action(config);
 
 commander
   .command('init-claude')

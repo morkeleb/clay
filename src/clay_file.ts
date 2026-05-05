@@ -97,11 +97,40 @@ export function load(directory: string): ClayFileManager {
   };
 }
 
-export function createClayFile(directory: string): void {
+export interface CreateClayFileOptions {
+  gitattributes?: boolean;
+}
+
+export function createClayFile(
+  directory: string,
+  options: CreateClayFileOptions = {}
+): void {
   const clayFilePath = path.join(directory, '.clay');
   if (fs.existsSync(clayFilePath)) {
     throw new Error('A .clay file already exists in this folder.');
   }
-  fs.writeFileSync(clayFilePath, JSON.stringify({ models: [] }), 'utf8');
+  const data: { gitattributes?: boolean; models: never[] } = { models: [] };
+  if (options.gitattributes) {
+    data.gitattributes = true;
+  }
+  fs.writeFileSync(clayFilePath, JSON.stringify(data, null, 2), 'utf8');
   output.write('.clay file has been created successfully.');
+}
+
+export function updateClayConfig(
+  directory: string,
+  key: string,
+  value: boolean
+): void {
+  const clayFilePath = path.join(directory, '.clay');
+  if (!fs.existsSync(clayFilePath)) {
+    throw new Error('No .clay file found. Run clay init first.');
+  }
+  const data = JSON.parse(fs.readFileSync(clayFilePath, 'utf8'));
+  if (value) {
+    data[key] = value;
+  } else {
+    delete data[key];
+  }
+  fs.writeFileSync(clayFilePath, JSON.stringify(data, null, 2), 'utf8');
 }

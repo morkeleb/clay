@@ -148,14 +148,14 @@ describe('the command line interface', () => {
       if (fs.existsSync(clayFilePath)) {
         fs.unlinkSync(clayFilePath);
       }
-      execSync('node dist/index.js init', { stdio: 'pipe' });
+      execSync('node dist/index.js init -y', { stdio: 'pipe' });
       expect(fs.existsSync(clayFilePath)).to.equal(true);
     });
 
     it('should fail if .clay file already exists', () => {
       fs.writeFileSync(clayFilePath, '', 'utf8');
       try {
-        execSync('node dist/index.js init', { stdio: 'pipe' });
+        execSync('node dist/index.js init -y', { stdio: 'pipe' });
       } catch (error: any) {
         expect(error.message).to.match(
           /A .clay file already exists in this folder/

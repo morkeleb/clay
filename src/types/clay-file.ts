@@ -33,6 +33,7 @@ export interface ClayModelEntry {
  * Root .clay file structure
  */
 export interface ClayFile {
+  gitattributes?: boolean;
   models: ClayModelEntry[];
 }
 
