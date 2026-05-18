@@ -14,6 +14,7 @@ import Ajv from 'ajv';
 
 const require = createRequire(import.meta.url);
 const ajv = new Ajv({ allErrors: true });
+const compiledValidators = new Map<string, ReturnType<typeof ajv.compile>>();
 
 /**
  * Raw JSON.parse of a model file.
@@ -68,10 +69,13 @@ export function validateAgainstSchema(
     throw new Error(`Schema file not found: ${resolved}`);
   }
 
-  const schemaContent = fs.readFileSync(resolved, 'utf-8');
-  const schema = JSON.parse(schemaContent);
-
-  const validate = ajv.compile(schema);
+  let validate = compiledValidators.get(resolved);
+  if (!validate) {
+    const schemaContent = fs.readFileSync(resolved, 'utf-8');
+    const schema = JSON.parse(schemaContent);
+    validate = ajv.compile(schema);
+    compiledValidators.set(resolved, validate);
+  }
   const valid = validate(data);
 
   if (valid) {
