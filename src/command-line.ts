@@ -325,6 +325,7 @@ function config(key?: string, value?: string): void {
     if (key === 'automerge') {
       configureGitMergeDriver('.', value === 'true');
     }
+    updateGitattributes('.');
     ui.log(`Set ${key} = ${value}`);
   } catch (error) {
     if (error instanceof Error) {
