@@ -99,6 +99,7 @@ export function load(directory: string): ClayFileManager {
 
 export interface CreateClayFileOptions {
   gitattributes?: boolean;
+  automerge?: boolean;
 }
 
 export function createClayFile(
@@ -109,14 +110,15 @@ export function createClayFile(
   if (fs.existsSync(clayFilePath)) {
     throw new Error('A .clay file already exists in this folder.');
   }
-  const data: { gitattributes?: boolean; models: never[] } = options.gitattributes
-    ? { gitattributes: true, models: [] }
-    : { models: [] };
+  const config: Record<string, boolean> = {};
+  if (options.gitattributes) config.gitattributes = true;
+  if (options.automerge) config.automerge = true;
+  const data = { ...config, models: [] as never[] };
   fs.writeFileSync(clayFilePath, JSON.stringify(data, null, 2), 'utf8');
   output.write('.clay file has been created successfully.');
 }
 
-export const VALID_CONFIG_KEYS = ['gitattributes'] as const;
+export const VALID_CONFIG_KEYS = ['gitattributes', 'automerge'] as const;
 export type ClayConfigKey = (typeof VALID_CONFIG_KEYS)[number];
 
 export function updateClayConfig(

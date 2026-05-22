@@ -2,7 +2,11 @@ import path from 'path';
 import os from 'os';
 import { expect } from 'chai';
 import fs from 'fs-extra';
-import { updateGitattributes } from '../src/gitattributes';
+import { execSync } from 'child_process';
+import {
+  updateGitattributes,
+  configureGitMergeDriver,
+} from '../src/gitattributes';
 
 describe('gitattributes', () => {
   let testDir: string;
@@ -171,6 +175,42 @@ describe('gitattributes', () => {
     expect(content).to.not.include('"normal.ts"');
   });
 
+  it('adds .clay merge attribute when automerge is enabled', () => {
+    fs.writeJsonSync(path.join(testDir, '.clay'), {
+      automerge: true,
+      models: [],
+    });
+    updateGitattributes(testDir);
+
+    const content = fs.readFileSync(
+      path.join(testDir, '.gitattributes'),
+      'utf8'
+    );
+    expect(content).to.include('.clay merge=clay-generator');
+  });
+
+  it('includes both merge attribute and generated files when both enabled', () => {
+    fs.writeJsonSync(path.join(testDir, '.clay'), {
+      gitattributes: true,
+      automerge: true,
+      models: [
+        {
+          path: 'model.json',
+          output: '',
+          generated_files: { 'out.ts': { md5: 'x', date: '2025-01-01' } },
+        },
+      ],
+    });
+    updateGitattributes(testDir);
+
+    const content = fs.readFileSync(
+      path.join(testDir, '.gitattributes'),
+      'utf8'
+    );
+    expect(content).to.include('.clay merge=clay-generator');
+    expect(content).to.include('out.ts linguist-generated=true');
+  });
+
   it('is idempotent', () => {
     fs.writeJsonSync(path.join(testDir, '.clay'), {
       gitattributes: true,
@@ -191,5 +231,49 @@ describe('gitattributes', () => {
     );
     const matches = content.match(/# clay:generated:start/g);
     expect(matches).to.have.lengthOf(1);
+  });
+});
+
+describe('configureGitMergeDriver', () => {
+  let gitDir: string;
+
+  beforeEach(() => {
+    gitDir = fs.mkdtempSync(path.join(os.tmpdir(), 'clay-git-'));
+    execSync('git init', { cwd: gitDir, stdio: 'pipe' });
+  });
+
+  afterEach(() => {
+    fs.removeSync(gitDir);
+  });
+
+  it('sets merge driver in git config', () => {
+    configureGitMergeDriver(gitDir, true);
+
+    const driver = execSync('git config merge.clay-generator.driver', {
+      cwd: gitDir,
+      encoding: 'utf8',
+    }).trim();
+    expect(driver).to.equal('clay merge-driver %O %A %B');
+  });
+
+  it('removes merge driver from git config when disabled', () => {
+    configureGitMergeDriver(gitDir, true);
+    configureGitMergeDriver(gitDir, false);
+
+    try {
+      execSync('git config merge.clay-generator.driver', {
+        cwd: gitDir,
+        stdio: 'pipe',
+      });
+      expect.fail('should have thrown — section should be removed');
+    } catch {
+      // Expected: git config exits non-zero when key doesn't exist
+    }
+  });
+
+  it('does not throw in a non-git directory', () => {
+    const nonGit = fs.mkdtempSync(path.join(os.tmpdir(), 'clay-nogit-'));
+    expect(() => configureGitMergeDriver(nonGit, true)).to.not.throw();
+    fs.removeSync(nonGit);
   });
 });

@@ -34,6 +34,7 @@ export interface ClayModelEntry {
  */
 export interface ClayFile {
   gitattributes?: boolean;
+  automerge?: boolean;
   models: ClayModelEntry[];
 }
 

@@ -17,7 +17,8 @@ import * as generatorManager from './generator-manager';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 import { loadConventions, runConventions } from './conventions';
-import { updateGitattributes } from './gitattributes';
+import { updateGitattributes, configureGitMergeDriver } from './gitattributes';
+import { runMergeDriver } from './merge-driver';
 
 const commander = new Command();
 
@@ -262,10 +263,12 @@ async function init(
       );
       ui.log(`Generator initialized at ${generatorFilePath}`);
     } else if (options?.yes) {
-      createClayFile('.', { gitattributes: true });
+      createClayFile('.', { gitattributes: true, automerge: true });
+      updateGitattributes('.');
+      configureGitMergeDriver('.');
     } else {
       const inquirer = require('inquirer');
-      const { gitattributes } = await inquirer.prompt([
+      const answers = await inquirer.prompt([
         {
           type: 'confirm',
           name: 'gitattributes',
@@ -273,8 +276,19 @@ async function init(
             'Mark generated files in .gitattributes? (collapses diffs in GitHub PRs)',
           default: true,
         },
+        {
+          type: 'confirm',
+          name: 'automerge',
+          message:
+            'Auto-merge .clay file conflicts with git? (avoids manual conflict resolution)',
+          default: true,
+        },
       ]);
-      createClayFile('.', { gitattributes });
+      createClayFile('.', answers);
+      updateGitattributes('.');
+      if (answers.automerge) {
+        configureGitMergeDriver('.');
+      }
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -308,6 +322,9 @@ function config(key?: string, value?: string): void {
   }
   try {
     updateClayConfig('.', key as ClayConfigKey, value === 'true');
+    if (key === 'automerge') {
+      configureGitMergeDriver('.', value === 'true');
+    }
     ui.log(`Set ${key} = ${value}`);
   } catch (error) {
     if (error instanceof Error) {
@@ -323,6 +340,14 @@ commander
   .command('config <key> <value>')
   .description('set a configuration option (e.g. clay config gitattributes true)')
   .action(config);
+
+commander
+  .command('merge-driver <ancestor> <ours> <theirs>')
+  .description('git merge driver for .clay files (used automatically by git)')
+  .action((ancestor: string, ours: string, theirs: string) => {
+    const success = runMergeDriver(ancestor, ours, theirs);
+    process.exit(success ? 0 : 1);
+  });
 
 commander
   .command('init-claude')

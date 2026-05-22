@@ -4,10 +4,12 @@ import type { ClayFile } from './types/clay-file';
 
 const MARKER_START = '# clay:generated:start';
 const MARKER_END = '# clay:generated:end';
+const AUTOMERGE_LINE = '.clay merge=clay-generator';
 
 /**
  * Update .gitattributes with linguist-generated markers for all
- * non-touch generated files tracked in the .clay manifest.
+ * non-touch generated files tracked in the .clay manifest,
+ * and the automerge driver attribute for .clay files.
  */
 export function updateGitattributes(directory: string): void {
   const clayPath = path.join(directory, '.clay');
@@ -15,13 +17,15 @@ export function updateGitattributes(directory: string): void {
 
   const data: ClayFile = JSON.parse(fs.readFileSync(clayPath, 'utf8'));
 
-  if (!data.gitattributes) return;
+  if (!data.gitattributes && !data.automerge) return;
 
   // Collect all generated file paths across models
   const generatedFiles = new Set<string>();
-  for (const model of data.models) {
-    for (const filePath of Object.keys(model.generated_files || {})) {
-      generatedFiles.add(filePath);
+  if (data.gitattributes) {
+    for (const model of data.models) {
+      for (const filePath of Object.keys(model.generated_files || {})) {
+        generatedFiles.add(filePath);
+      }
     }
   }
 
@@ -29,6 +33,9 @@ export function updateGitattributes(directory: string): void {
 
   // Build the managed block
   const lines: string[] = [MARKER_START];
+  if (data.automerge) {
+    lines.push(AUTOMERGE_LINE);
+  }
   for (const file of sorted) {
     // Quote paths containing spaces, #, or ! per gitattributes format
     const escaped =
@@ -59,5 +66,34 @@ export function updateGitattributes(directory: string): void {
     }
   } else {
     fs.writeFileSync(attrPath, managedBlock + '\n', 'utf8');
+  }
+}
+
+/**
+ * Configure the git merge driver for .clay files in the local repo.
+ */
+export function configureGitMergeDriver(
+  directory: string,
+  enable: boolean = true
+): void {
+  const { execSync } = require('child_process');
+  try {
+    if (enable) {
+      execSync(
+        'git config merge.clay-generator.name "Clay auto-merge driver"',
+        { cwd: directory, stdio: 'pipe' }
+      );
+      execSync(
+        'git config merge.clay-generator.driver "clay merge-driver %O %A %B"',
+        { cwd: directory, stdio: 'pipe' }
+      );
+    } else {
+      execSync('git config --remove-section merge.clay-generator', {
+        cwd: directory,
+        stdio: 'pipe',
+      });
+    }
+  } catch {
+    // Not a git repo, git not available, or section doesn't exist — silently skip
   }
 }
