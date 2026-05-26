@@ -59,9 +59,12 @@ export function buildGeneratePipeline(
   // Wire up the pipeline: render → hash → format → write
   // Select is a source, not a transform, so it's called separately
   const processingPipeline = pipeline(
-    createRenderStage(
-      progress ? (f) => progress.onRender(f) : undefined,
-      progress ? (f) => progress.onSkip(f) : undefined
+    concurrent(
+      createRenderStage(
+        progress ? (f) => progress.onRender(f) : undefined,
+        progress ? (f) => progress.onSkip(f) : undefined
+      ),
+      { concurrency: 20 }
     )
   )
     .pipe(createHashStage(progress ? (f) => progress.onSkip(f) : undefined))
