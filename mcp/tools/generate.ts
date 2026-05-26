@@ -73,8 +73,7 @@ export async function generateTool(args: unknown) {
                 message: 'Successfully generated code',
                 stats: {
                   modelsProcessed: result.modelsProcessed,
-                  filesWritten: result.filesWritten,
-                  filesUnchanged: result.filesUnchanged,
+                  modelsSkipped: result.modelsSkipped,
                 },
               },
               null,
@@ -99,8 +98,7 @@ export async function generateTool(args: unknown) {
                 success: true,
                 message: `Successfully regenerated all models`,
                 models_processed: result.modelsProcessed,
-                files_written: result.filesWritten,
-                files_unchanged: result.filesUnchanged,
+                models_skipped: result.modelsSkipped,
                 models: clayData.models.map((m) => ({
                   model_path: m.path,
                   output_path: m.output,

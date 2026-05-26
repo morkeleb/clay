@@ -10,10 +10,13 @@ import crypto from 'crypto';
 
 /**
  * Recursively collect all include file paths from a model JSON file.
- * Does NOT load or execute the model — just scans for $include references.
+ * Does NOT load or execute the model — just scans for "include" references.
  */
 export function collectModelDependencies(modelPath: string): string[] {
   const resolved = path.resolve(modelPath);
+  // All includes resolve relative to the root model's directory,
+  // matching the runtime behavior in model.ts executeIncludes()
+  const modelDir = path.dirname(resolved);
   const deps: string[] = [resolved];
   const visited = new Set<string>([resolved]);
 
@@ -44,7 +47,8 @@ export function collectModelDependencies(modelPath: string): string[] {
       const record = obj as Record<string, unknown>;
 
       if (typeof record.include === 'string') {
-        const includePath = path.resolve(path.dirname(filePath), record.include);
+        // Resolve relative to root model dir (matches runtime behavior)
+        const includePath = path.resolve(modelDir, record.include);
         if (!visited.has(includePath)) {
           visited.add(includePath);
           deps.push(includePath);
@@ -68,7 +72,7 @@ export function collectModelDependencies(modelPath: string): string[] {
 
 /**
  * Collect all file paths that a generator depends on:
- * the generator JSON, template files/dirs, and partial files.
+ * the generator JSON, template files/dirs, partial files, and convention includes.
  */
 export function collectGeneratorDependencies(
   generatorPath: string,
@@ -76,7 +80,7 @@ export function collectGeneratorDependencies(
 ): string[] {
   const deps: string[] = [path.resolve(generatorPath)];
 
-  let generatorData: { steps?: unknown[]; partials?: string[] };
+  let generatorData: { steps?: unknown[]; partials?: string[]; conventions?: unknown[] };
   try {
     generatorData = JSON.parse(fs.readFileSync(generatorPath, 'utf8'));
   } catch {
@@ -101,6 +105,17 @@ export function collectGeneratorDependencies(
     const partialPath = path.resolve(path.join(generatorDir, partial));
     if (fs.existsSync(partialPath)) {
       deps.push(partialPath);
+    }
+  }
+
+  // Collect convention include files
+  for (const conv of generatorData.conventions || []) {
+    const c = conv as Record<string, unknown>;
+    if (typeof c.include === 'string') {
+      const convPath = path.resolve(path.join(generatorDir, c.include));
+      if (fs.existsSync(convPath)) {
+        deps.push(convPath);
+      }
     }
   }
 

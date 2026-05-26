@@ -159,23 +159,20 @@ export async function generate(
         }
 
         // Check input hash — skip if nothing changed
-        if (!force) {
-          const { changed, hash } = checkInputHash(
-            modelIndex.input_hash,
-            deps,
-            clayVersion
-          );
+        const { changed, hash } = checkInputHash(
+          modelIndex.input_hash,
+          deps,
+          clayVersion
+        );
+        // Always store the hash (even with --force) so the next run can skip
+        modelIndex.input_hash = hash;
 
-          if (!changed) {
-            modelsSkipped++;
-            if (verbose) {
-              ui.info(`skipping ${modelIndex.path} (unchanged)`);
-            }
-            return;
+        if (!force && !changed) {
+          modelsSkipped++;
+          if (verbose) {
+            ui.info(`skipping ${modelIndex.path} (unchanged)`);
           }
-
-          // Store the new hash (will be saved with indexFile.save())
-          modelIndex.input_hash = hash;
+          return;
         }
 
         // Check conventions
