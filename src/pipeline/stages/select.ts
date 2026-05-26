@@ -15,12 +15,14 @@ export function createSelectStage(
   fileNamePattern: string,
   outputDir: string,
   step: GeneratorStepGenerate,
-  modelIndex: ClayModelEntry
+  modelIndex: ClayModelEntry,
+  onSelect?: (templatePath: string) => void
 ): AsyncGenerator<SelectItem> {
   const matches = jph.select(model, jsonPath);
 
   async function* generate(): AsyncGenerator<SelectItem> {
     for (const modelData of matches) {
+      onSelect?.(templatePath);
       yield {
         modelData,
         templatePath,

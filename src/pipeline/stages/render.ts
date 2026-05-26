@@ -23,7 +23,9 @@ function getTemplate(filePath: string): HandlebarsTemplateDelegate {
  * Input: SelectItem (model data + template path)
  * Output: RenderedItem (filename + rendered content)
  */
-export function createRenderStage(): Stage<SelectItem, RenderedItem> {
+export function createRenderStage(
+  onRender?: (filename: string) => void
+): Stage<SelectItem, RenderedItem> {
   return async function* (input) {
     for await (const item of input) {
       const template = getTemplate(item.templatePath);
@@ -31,6 +33,7 @@ export function createRenderStage(): Stage<SelectItem, RenderedItem> {
       const filename = path.resolve(fileNameTemplate(item.modelData));
       const content = template(item.modelData);
 
+      onRender?.(filename);
       yield {
         filename,
         content,

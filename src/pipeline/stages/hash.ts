@@ -7,7 +7,9 @@ import type { Stage, RenderedItem, ChangedItem } from '../types';
  * Input: RenderedItem
  * Output: ChangedItem (only items that differ from stored checksum)
  */
-export function createHashStage(): Stage<RenderedItem, ChangedItem> {
+export function createHashStage(
+  onSkip?: (filename: string) => void
+): Stage<RenderedItem, ChangedItem> {
   return async function* (input) {
     for await (const item of input) {
       const md5 = crypto.createHash('md5').update(item.content).digest('hex');
@@ -21,6 +23,8 @@ export function createHashStage(): Stage<RenderedItem, ChangedItem> {
           step: item.step,
           modelIndex: item.modelIndex,
         };
+      } else {
+        onSkip?.(item.filename);
       }
     }
   };

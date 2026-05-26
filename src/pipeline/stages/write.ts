@@ -10,7 +10,9 @@ import type { Stage, FormattedItem, WrittenItem } from '../types';
  * Input: FormattedItem
  * Output: WrittenItem
  */
-export function createWriteStage(): Stage<FormattedItem, WrittenItem> {
+export function createWriteStage(
+  onWrite?: (filename: string) => void
+): Stage<FormattedItem, WrittenItem> {
   return async function* (input) {
     for await (const item of input) {
       const dir = path.dirname(item.filename);
@@ -20,6 +22,7 @@ export function createWriteStage(): Stage<FormattedItem, WrittenItem> {
 
       ui.write(item.filename);
       await fs.writeFile(item.filename, item.content, 'utf8');
+      onWrite?.(item.filename);
 
       if (!item.step.touch) {
         item.modelIndex.setFileCheckSum(item.filename, item.md5);

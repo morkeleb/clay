@@ -16,7 +16,11 @@ import { requireNew } from './require-helper';
 import { z } from 'zod';
 import jp from 'jsonpath';
 import * as output from './output';
-import { buildGeneratePipeline, createFormatterCache } from './pipeline/index';
+import {
+  buildGeneratePipeline,
+  createFormatterCache,
+  createProgress,
+} from './pipeline/index';
 import { clearRenderCache } from './pipeline/stages/render';
 import { executeCommand } from './pipeline/stages/command';
 import type {
@@ -288,7 +292,10 @@ function decorate_generator(
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials || [], dirname);
 
-    const pipelineRunner = buildGeneratePipeline(g, formatterCache);
+    const generatorName = path.basename(p, '.json');
+    const verbose = !!process.env.VERBOSE;
+    const progress = createProgress(generatorName, verbose);
+    const pipelineRunner = buildGeneratePipeline(g, formatterCache, progress);
 
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
@@ -336,6 +343,8 @@ function decorate_generator(
         copy(step, model, output, dirname, modelIndex);
       }
     }
+
+    progress.done();
   };
 
   decorated.clean = (_model: any, _outputDir: string): void => {

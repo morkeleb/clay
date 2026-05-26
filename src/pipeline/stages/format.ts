@@ -11,7 +11,8 @@ import type { FormatterCache } from '../formatter-cache';
  */
 export function createFormatStage(
   generator: Generator,
-  cache: FormatterCache
+  cache: FormatterCache,
+  onFormat?: (filename: string) => void
 ): Stage<ChangedItem, FormattedItem> {
   const formatters = generator.formatters || [];
 
@@ -40,6 +41,7 @@ export function createFormatStage(
         }
       }
 
+      onFormat?.(item.filename);
       yield {
         filename: item.filename,
         content,
