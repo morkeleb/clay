@@ -17,6 +17,8 @@ export function createSelectStage(
   step: GeneratorStepGenerate,
   modelIndex: ClayModelEntry,
   formatters: readonly FormatterSpec[],
+  partials: readonly string[],
+  partialsDir: string,
   onSelect?: (templatePath: string) => void
 ): AsyncGenerator<SelectItem> {
   const matches = jph.select(model, jsonPath);
@@ -32,6 +34,8 @@ export function createSelectStage(
         step,
         modelIndex,
         formatters,
+        partials,
+        partialsDir,
       };
     }
   }

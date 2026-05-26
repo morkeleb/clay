@@ -22,6 +22,8 @@ export interface SelectItem {
   readonly step: GeneratorStepGenerate;
   readonly modelIndex: ClayModelEntry;
   readonly formatters: readonly FormatterSpec[];
+  readonly partials: readonly string[];
+  readonly partialsDir: string;
 }
 
 /** After rendering: has content but not yet hashed */
