@@ -44,14 +44,15 @@ function createVerboseProgress(): PipelineProgress {
   };
 }
 
+const SPINNER = ['\u280B', '\u2819', '\u2839', '\u2838', '\u283C', '\u2834', '\u2826', '\u2827', '\u2807', '\u280F'];
+
 /**
- * Compact progress: one in-place line with a staged progress bar.
+ * Compact progress: one in-place line with a spinner and live counters.
  *
- * The bar represents total pipeline completion:
- * each item goes through select → render → (skip | format → write)
- * so total work = items * 4 stages (select, render, hash-result, write/skip)
+ * A streaming pipeline has no known total upfront, so a progress bar would
+ * be misleading. Instead we show activity via a spinner and stage counters:
  *
- * Display: ████████░░░░░░░ 1200/1746  render 1180  skip 1170  write 10
+ *   generate ⠋ select 1746  render 1180  skip 1170  write 10
  */
 function createCompactProgress(generatorName: string): PipelineProgress {
   let selected = 0;
@@ -60,22 +61,20 @@ function createCompactProgress(generatorName: string): PipelineProgress {
   let formatted = 0;
   let written = 0;
   let lastLineLength = 0;
+  let tick = 0;
 
   function render() {
-    const finished = skipped + written;
-    const total = selected;
-
-    // Progress bar based on final outcomes (skip + write) vs total selected
-    const bar = total > 0 ? progressBar(finished, total, 20) : '';
-    const ratio = total > 0 ? `${finished}/${total}` : '';
+    tick++;
+    const spinner = SPINNER[tick % SPINNER.length];
 
     const parts: string[] = [];
+    if (selected > 0) parts.push(chalk.cyan(`select ${selected}`));
     if (rendered > 0) parts.push(chalk.blue(`render ${rendered}`));
     if (skipped > 0) parts.push(chalk.gray(`skip ${skipped}`));
     if (formatted > 0) parts.push(chalk.yellow(`format ${formatted}`));
     if (written > 0) parts.push(chalk.green(`write ${written}`));
 
-    const line = `  ${chalk.dim(generatorName)} ${bar} ${chalk.white(ratio)}  ${parts.join('  ')}`;
+    const line = `  ${chalk.dim(generatorName)} ${spinner} ${parts.join('  ')}`;
 
     // Clear previous line and write new one
     if (lastLineLength > 0) {
@@ -88,7 +87,6 @@ function createCompactProgress(generatorName: string): PipelineProgress {
   return {
     onSelect(_filename: string) {
       selected++;
-      // Don't render on every select — it's too fast and causes flicker
       if (selected % 50 === 0 || selected <= 5) render();
     },
     onRender(_filename: string) {
@@ -108,9 +106,7 @@ function createCompactProgress(generatorName: string): PipelineProgress {
       render();
     },
     done() {
-      // Final render to show 100%
-      render();
-      // Clear the progress line and print summary
+      // Clear the spinner line and print final summary
       if (lastLineLength > 0) {
         process.stderr.write('\r' + ' '.repeat(lastLineLength) + '\r');
       }
@@ -122,14 +118,6 @@ function createCompactProgress(generatorName: string): PipelineProgress {
       }
     },
   };
-}
-
-function progressBar(current: number, total: number, width: number): string {
-  if (total === 0) return '';
-  const ratio = Math.min(current / total, 1);
-  const filled = Math.round(ratio * width);
-  const empty = width - filled;
-  return chalk.green('\u2588'.repeat(filled)) + chalk.dim('\u2591'.repeat(empty));
 }
 
 function stripAnsi(str: string): string {
