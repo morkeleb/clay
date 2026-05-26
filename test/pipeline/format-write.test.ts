@@ -44,21 +44,20 @@ describe('format stage', () => {
       apply: (_file: string, content: string) => content.toUpperCase(),
     }));
 
-    const generator = { steps: [], partials: [], formatters: ['my-formatter'] };
     const modelIndex = makeModelIndex();
 
     const items: ChangedItem[] = [
       {
         filename: '/tmp/test.ts',
         content: 'hello world',
-        _brand: 'changed' as const,
         md5: 'abc',
         step: dummyStep,
         modelIndex,
+        formatters: [{ pkg: 'my-formatter', options: {}, isNew: false }],
       },
     ];
 
-    const stage = createFormatStage(generator as any, cache);
+    const stage = createFormatStage(cache);
     const results = await collect(stage(fromArray(items)));
     expect(results[0].content).to.equal('HELLO WORLD');
   });
@@ -68,21 +67,20 @@ describe('format stage', () => {
       apply: () => { throw new Error('prettier crashed'); },
     }));
 
-    const generator = { steps: [], partials: [], formatters: ['bad-formatter'] };
     const modelIndex = makeModelIndex();
 
     const items: ChangedItem[] = [
       {
-        _brand: 'changed' as const,
         filename: '/tmp/test.ts',
         content: 'hello',
         md5: 'abc',
         step: dummyStep,
         modelIndex,
+        formatters: [{ pkg: 'bad-formatter', options: {}, isNew: false }],
       },
     ];
 
-    const stage = createFormatStage(generator as any, cache);
+    const stage = createFormatStage(cache);
     try {
       await collect(stage(fromArray(items)));
       expect.fail('should have thrown');
@@ -93,14 +91,13 @@ describe('format stage', () => {
 
   it('passes through unchanged when no formatters', async () => {
     const cache = new FormatterCache(() => ({ apply: (_f: string, c: string) => c }));
-    const generator = { steps: [], partials: [], formatters: [] };
     const modelIndex = makeModelIndex();
 
     const items: ChangedItem[] = [
-      { _brand: 'changed' as const, filename: '/tmp/test.ts', content: 'hello', md5: 'abc', step: dummyStep, modelIndex },
+      { filename: '/tmp/test.ts', content: 'hello', md5: 'abc', step: dummyStep, modelIndex, formatters: [] },
     ];
 
-    const stage = createFormatStage(generator as any, cache);
+    const stage = createFormatStage(cache);
     const results = await collect(stage(fromArray(items)));
     expect(results[0].content).to.equal('hello');
   });
@@ -130,7 +127,7 @@ describe('write stage', () => {
 
     const filename = path.join(testDir, 'output', 'test.ts');
     const items: FormattedItem[] = [
-      { _brand: 'formatted' as const, filename, content: 'generated code', md5: 'abc123', step: dummyStep, modelIndex },
+      { filename, content: 'generated code', md5: 'abc123', step: dummyStep, modelIndex },
     ];
 
     const stage = createWriteStage();
@@ -148,7 +145,7 @@ describe('write stage', () => {
 
     const filename = path.join(testDir, 'deep', 'nested', 'dir', 'test.ts');
     const items: FormattedItem[] = [
-      { _brand: 'formatted' as const, filename, content: 'code', md5: 'x', step: dummyStep, modelIndex },
+      { filename, content: 'code', md5: 'x', step: dummyStep, modelIndex },
     ];
 
     const stage = createWriteStage();

@@ -45,7 +45,8 @@ describe('pipeline stages', () => {
         'output/{{name}}.ts',
         'src/',
         dummyStep,
-        dummyModelIndex
+        dummyModelIndex,
+        []
       );
 
       const items = await collect(stage);
@@ -67,6 +68,7 @@ describe('pipeline stages', () => {
           outputDir: 'src/',
           step: dummyStep,
           modelIndex: dummyModelIndex,
+          formatters: [],
         },
       ];
 
@@ -86,6 +88,7 @@ describe('pipeline stages', () => {
           content: 'new content',
           step: dummyStep,
           modelIndex: { ...dummyModelIndex, getFileCheckSum: () => 'old-md5' },
+          formatters: [],
         },
       ];
 
@@ -106,6 +109,7 @@ describe('pipeline stages', () => {
           content,
           step: dummyStep,
           modelIndex: { ...dummyModelIndex, getFileCheckSum: () => md5 },
+          formatters: [],
         },
       ];
 
