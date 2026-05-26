@@ -45,4 +45,14 @@ describe('FormatterCache', () => {
 
     expect(loadCount).to.equal(2);
   });
+
+  it('throws descriptive error when formatter not found', () => {
+    const cache = new FormatterCache((_pkg: string) => {
+      throw new Error('Cannot find module');
+    });
+
+    expect(() => cache.get('nonexistent-formatter')).to.throw(
+      /Failed to load formatter "nonexistent-formatter".*npm install -g/
+    );
+  });
 });

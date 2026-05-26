@@ -63,6 +63,34 @@ describe('format stage', () => {
     expect(results[0].content).to.equal('HELLO WORLD');
   });
 
+  it('throws with diagnostic message when formatter fails', async () => {
+    const cache = new FormatterCache(() => ({
+      apply: () => { throw new Error('prettier crashed'); },
+    }));
+
+    const generator = { steps: [], partials: [], formatters: ['bad-formatter'] };
+    const modelIndex = makeModelIndex();
+
+    const items: ChangedItem[] = [
+      {
+        _brand: 'changed' as const,
+        filename: '/tmp/test.ts',
+        content: 'hello',
+        md5: 'abc',
+        step: dummyStep,
+        modelIndex,
+      },
+    ];
+
+    const stage = createFormatStage(generator as any, cache);
+    try {
+      await collect(stage(fromArray(items)));
+      expect.fail('should have thrown');
+    } catch (e: any) {
+      expect(e.message).to.equal('prettier crashed');
+    }
+  });
+
   it('passes through unchanged when no formatters', async () => {
     const cache = new FormatterCache(() => ({ apply: (_f: string, c: string) => c }));
     const generator = { steps: [], partials: [], formatters: [] };

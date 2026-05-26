@@ -26,7 +26,15 @@ export class FormatterCache {
   get(packageName: string): LoadedFormatter {
     let formatter = this.cache.get(packageName);
     if (!formatter) {
-      formatter = this.loader(packageName);
+      try {
+        formatter = this.loader(packageName);
+      } catch (e) {
+        throw new Error(
+          `Failed to load formatter "${packageName}". ` +
+            `Is it installed? Try: npm install -g ${packageName}\n` +
+            `Original error: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
       this.cache.set(packageName, formatter);
     }
     return formatter;
