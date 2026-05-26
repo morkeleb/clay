@@ -9,6 +9,7 @@ const execAsync = promisify(exec);
 /**
  * Execute a shell command asynchronously.
  * Replaces the old execSync pattern — does not block the event loop.
+ * Errors are logged but do not throw (matching original behavior).
  */
 export async function executeCommand(
   command: string,
@@ -28,10 +29,15 @@ export async function executeCommand(
     maxBuffer: 10 * 1024 * 1024,
   };
 
-  const { stdout, stderr } = await execAsync(cmd, execOptions);
+  try {
+    const { stdout, stderr } = await execAsync(cmd, execOptions);
 
-  if (options?.verbose) {
-    if (stdout) process.stdout.write(stdout);
-    if (stderr) process.stderr.write(stderr);
+    if (options?.verbose) {
+      if (stdout) process.stdout.write(stdout);
+      if (stderr) process.stderr.write(stderr);
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    ui.warn('error while executing', cmd, message);
   }
 }

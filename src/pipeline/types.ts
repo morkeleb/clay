@@ -25,6 +25,7 @@ export interface RenderedItem {
 
 /** After hashing + diffing: only items that changed pass through */
 export interface ChangedItem {
+  readonly _brand: 'changed';
   readonly filename: string;
   readonly content: string;
   readonly md5: string;
@@ -34,6 +35,7 @@ export interface ChangedItem {
 
 /** After formatting: ready to write */
 export interface FormattedItem {
+  readonly _brand: 'formatted';
   readonly filename: string;
   readonly content: string;
   readonly md5: string;

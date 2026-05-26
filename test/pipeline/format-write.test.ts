@@ -51,6 +51,7 @@ describe('format stage', () => {
       {
         filename: '/tmp/test.ts',
         content: 'hello world',
+        _brand: 'changed' as const,
         md5: 'abc',
         step: dummyStep,
         modelIndex,
@@ -68,7 +69,7 @@ describe('format stage', () => {
     const modelIndex = makeModelIndex();
 
     const items: ChangedItem[] = [
-      { filename: '/tmp/test.ts', content: 'hello', md5: 'abc', step: dummyStep, modelIndex },
+      { _brand: 'changed' as const, filename: '/tmp/test.ts', content: 'hello', md5: 'abc', step: dummyStep, modelIndex },
     ];
 
     const stage = createFormatStage(generator as any, cache);
@@ -101,7 +102,7 @@ describe('write stage', () => {
 
     const filename = path.join(testDir, 'output', 'test.ts');
     const items: FormattedItem[] = [
-      { filename, content: 'generated code', md5: 'abc123', step: dummyStep, modelIndex },
+      { _brand: 'formatted' as const, filename, content: 'generated code', md5: 'abc123', step: dummyStep, modelIndex },
     ];
 
     const stage = createWriteStage();
@@ -119,7 +120,7 @@ describe('write stage', () => {
 
     const filename = path.join(testDir, 'deep', 'nested', 'dir', 'test.ts');
     const items: FormattedItem[] = [
-      { filename, content: 'code', md5: 'x', step: dummyStep, modelIndex },
+      { _brand: 'formatted' as const, filename, content: 'code', md5: 'x', step: dummyStep, modelIndex },
     ];
 
     const stage = createWriteStage();
