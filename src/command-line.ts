@@ -99,10 +99,9 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
   const progress = createProgress('generate', verbose);
 
   // Worker pool for parallel rendering on multiple cores.
-  // Enable with CLAY_WORKERS=auto or CLAY_WORKERS=N (number of threads).
-  // Off by default — set CLAY_WORKERS to activate.
+  // On by default. Disable with CLAY_WORKERS=0, set size with CLAY_WORKERS=N.
   const workerEnv = process.env.CLAY_WORKERS;
-  const useWorkers = workerEnv === 'auto' || (!!workerEnv && parseInt(workerEnv, 10) > 0);
+  const useWorkers = workerEnv === undefined || workerEnv === 'auto' || parseInt(workerEnv, 10) > 0;
   const poolSize = workerEnv && parseInt(workerEnv, 10) > 0
     ? parseInt(workerEnv, 10)
     : RenderWorkerPool.defaultPoolSize();

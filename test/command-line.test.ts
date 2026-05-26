@@ -18,6 +18,11 @@ function sleep(ms: number): Promise<void> {
 describe('the command line interface', () => {
   const clayFilePath = path.resolve('.clay');
 
+  before(() => {
+    // Disable worker threads in tests to avoid startup overhead
+    process.env.CLAY_WORKERS = '0';
+  });
+
   beforeEach(() => {
     if (fs.existsSync(clayFilePath)) {
       fs.unlinkSync(clayFilePath);
