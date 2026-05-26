@@ -90,10 +90,15 @@ function resolve_generator(
 
 async function generateCmd(
   model_path?: string,
-  output_path?: string
+  output_path?: string,
+  options?: { force?: boolean }
 ): Promise<void> {
   const { generate: generateApi } = require('./generate-api');
-  await generateApi('.', { modelPath: model_path, outputPath: output_path });
+  await generateApi('.', {
+    modelPath: model_path,
+    outputPath: output_path,
+    force: options?.force,
+  });
 }
 
 const cleanModels = (modelsToExecute: ModelIndex[]): void => {
@@ -156,6 +161,7 @@ commander
 
 commander
   .command('generate [model_path] [output_path]')
+  .option('--force', 'skip input hash check, regenerate everything')
   .description('runs the generators')
   .action(generateCmd);
 

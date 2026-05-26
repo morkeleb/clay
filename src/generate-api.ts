@@ -18,12 +18,43 @@ import {
   clearTemplateCache,
   RenderWorkerPool,
 } from './pipeline/index';
+import {
+  collectModelDependencies,
+  collectGeneratorDependencies,
+  checkInputHash,
+} from './pipeline/input-hash';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
+
+// Read Clay version for input hash (catches upgrades)
+let clayVersion = '0.0.0';
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+  clayVersion = pkg.version;
+} catch {
+  // Fallback if package.json not found
+}
 
 interface GeneratorReference {
   generator?: string;
   output?: string;
+}
+
+function resolveGeneratorPaths(
+  name: string | GeneratorReference,
+  modelDir: string
+): string[] {
+  const generatorName = typeof name === 'string' ? name : name.generator || '';
+  return [
+    generatorName + '.json',
+    path.resolve(generatorName + '.json'),
+    path.resolve(path.join(modelDir, generatorName + '.json')),
+    path.resolve(path.join(modelDir, generatorName, 'generator.json')),
+    path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
+    generatorName,
+    path.resolve(generatorName),
+    path.resolve(path.join(modelDir, generatorName)),
+  ].filter(fs.existsSync);
 }
 
 function resolveGenerator(
@@ -31,31 +62,21 @@ function resolveGenerator(
   modelPath: string,
   indexFile: ModelIndex
 ): DecoratedGenerator {
-  const generatorName = typeof name === 'string' ? name : name.generator || '';
   const output = typeof name === 'object' ? name.output : undefined;
-
-  const generatorPaths = [
-    generatorName + '.json',
-    path.resolve(generatorName + '.json'),
-    path.resolve(path.join(modelPath, generatorName + '.json')),
-    path.resolve(path.join(modelPath, generatorName, 'generator.json')),
-    path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
-    generatorName,
-    path.resolve(generatorName),
-    path.resolve(path.join(modelPath, generatorName)),
-  ].filter(fs.existsSync);
+  const generatorPaths = resolveGeneratorPaths(name, modelPath);
 
   if (generatorPaths.length < 1) {
+    const generatorName = typeof name === 'string' ? name : name.generator || '';
     throw new Error('generator not found for: ' + generatorName);
   }
 
   ui.log('loading generator: ', generatorPaths[0]);
-
   return requireNew('./generator').load(generatorPaths[0], output, indexFile);
 }
 
 export interface GenerateResult {
   modelsProcessed: number;
+  modelsSkipped: number;
   filesWritten: number;
   filesUnchanged: number;
   models: Array<{ modelPath: string; outputPath: string }>;
@@ -64,6 +85,10 @@ export interface GenerateResult {
 /**
  * Run code generation for the given directory.
  * This is the core API that both CLI and MCP server use.
+ *
+ * Input hashing: before running the pipeline, all dependency files
+ * (model, includes, generators, templates, partials) are hashed.
+ * If the hash matches the stored value, the model is skipped entirely.
  */
 export async function generate(
   directory: string,
@@ -73,6 +98,7 @@ export async function generate(
     verbose?: boolean;
     workers?: boolean;
     workerCount?: number;
+    force?: boolean;
   }
 ): Promise<GenerateResult> {
   const originalCwd = process.cwd();
@@ -87,6 +113,7 @@ export async function generate(
     }
 
     const indexFile = loadClayFile('.');
+    const force = options?.force ?? (process.env.CLAY_FORCE === 'true');
 
     let modelsToExecute: ModelIndex[];
     if (options?.modelPath) {
@@ -112,31 +139,54 @@ export async function generate(
     const workerPool = useWorkers ? new RenderWorkerPool(poolSize) : undefined;
     const pipelineRunner = buildGeneratePipeline(formatterCache, progress, workerPool);
 
-    let totalWritten = 0;
-    let totalUnchanged = 0;
+    let modelsSkipped = 0;
 
     await Promise.all(
       modelsToExecute.map(async (modelIndex) => {
+        const modelDir = path.dirname(modelIndex.path);
+
+        // Collect all dependency file paths for input hashing
+        const deps: string[] = collectModelDependencies(modelIndex.path);
+
+        // Resolve generator paths and collect their dependencies
         const model = modelIndex.load();
+        for (const g of model.generators) {
+          const genPaths = resolveGeneratorPaths(g, modelDir);
+          if (genPaths.length > 0) {
+            const genDir = path.dirname(genPaths[0]);
+            deps.push(...collectGeneratorDependencies(genPaths[0], genDir));
+          }
+        }
+
+        // Check input hash — skip if nothing changed
+        if (!force) {
+          const { changed, hash } = checkInputHash(
+            modelIndex.input_hash,
+            deps,
+            clayVersion
+          );
+
+          if (!changed) {
+            modelsSkipped++;
+            if (verbose) {
+              ui.info(`skipping ${modelIndex.path} (unchanged)`);
+            }
+            return;
+          }
+
+          // Store the new hash (will be saved with indexFile.save())
+          modelIndex.input_hash = hash;
+        }
 
         // Check conventions
         const allViolations: Array<{ generator: string; convention: string; description: string; errors: string[] }> = [];
         for (const g of model.generators) {
           const generatorName = typeof g === 'string' ? g : (g as GeneratorReference).generator || '';
-          const generatorPaths = [
-            generatorName + '.json',
-            path.resolve(generatorName + '.json'),
-            path.resolve(path.join(path.dirname(modelIndex.path), generatorName + '.json')),
-            path.resolve(path.join(path.dirname(modelIndex.path), generatorName, 'generator.json')),
-            path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
-            generatorName,
-            path.resolve(generatorName),
-            path.resolve(path.join(path.dirname(modelIndex.path), generatorName)),
-          ].filter(fs.existsSync);
+          const genPaths = resolveGeneratorPaths(g, modelDir);
 
-          if (generatorPaths.length > 0) {
+          if (genPaths.length > 0) {
             try {
-              const conventions = loadConventions(generatorPaths[0]);
+              const conventions = loadConventions(genPaths[0]);
               if (conventions.length > 0) {
                 const violations = runConventions(conventions, model.model);
                 for (const v of violations) {
@@ -162,7 +212,7 @@ export async function generate(
           model.generators.map((g: string | GeneratorReference) =>
             resolveGenerator(
               g,
-              path.dirname(modelIndex.path),
+              modelDir,
               modelIndex
             ).generate(model, modelIndex.output || '', pipelineRunner)
           )
@@ -183,9 +233,10 @@ export async function generate(
     }));
 
     return {
-      modelsProcessed: modelsToExecute.length,
-      filesWritten: totalWritten,
-      filesUnchanged: totalUnchanged,
+      modelsProcessed: modelsToExecute.length - modelsSkipped,
+      modelsSkipped,
+      filesWritten: 0,
+      filesUnchanged: 0,
       models,
     };
   } finally {

@@ -60,6 +60,7 @@ export async function generateTool(args: unknown) {
         modelPath,
         outputPath,
         workers: true,
+        force: input.force,
       });
 
       return {
@@ -84,7 +85,7 @@ export async function generateTool(args: unknown) {
       };
     } else {
       // Generate all models
-      const result = await generate(clayRoot, { workers: true });
+      const result = await generate(clayRoot, { workers: true, force: input.force });
 
       // Read .clay file for model metadata
       const clayData = readClayFile(context.clayFilePath);
