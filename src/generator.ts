@@ -11,22 +11,18 @@ import fs from 'fs-extra';
 import path from 'path';
 import handlebars from './template-engine';
 import * as ui from './output';
-import _ from 'lodash';
-import { execSync } from 'child_process';
 import * as jph from './jsonpath-helper';
 import { requireNew } from './require-helper';
-import minimatch from 'minimatch';
-import crypto from 'crypto';
 import { z } from 'zod';
 import jp from 'jsonpath';
 import * as output from './output';
+import { buildGeneratePipeline, createFormatterCache } from './pipeline/index';
+import { clearRenderCache } from './pipeline/stages/render';
+import { executeCommand } from './pipeline/stages/command';
 import type {
   Generator,
   DecoratedGenerator,
-  GeneratorStep,
-  GeneratorStepGenerate,
   GeneratorStepCopy,
-  GeneratorStepCommand,
 } from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
 
@@ -42,21 +38,6 @@ const MAX_TEMPLATE_CACHE_SIZE = 1000; // Prevent unbounded growth in long-runnin
  */
 export function clearTemplateCache(): void {
   templateCache.clear();
-}
-
-function getCompiledTemplate(filePath: string): HandlebarsTemplateDelegate {
-  if (!templateCache.has(filePath)) {
-    // Prevent cache from growing unbounded
-    if (templateCache.size >= MAX_TEMPLATE_CACHE_SIZE) {
-      ui.warn(
-        `Template cache reached ${MAX_TEMPLATE_CACHE_SIZE} entries, clearing cache`
-      );
-      templateCache.clear();
-    }
-    const content = fs.readFileSync(filePath, 'utf8');
-    templateCache.set(filePath, handlebars.compile(content));
-  }
-  return templateCache.get(filePath)!;
 }
 
 function compileTemplate(
@@ -166,206 +147,6 @@ function validateGeneratorSchema(generator: any): Generator {
   return result.data as Generator;
 }
 
-function getMd5ForContent(content: string): string {
-  return crypto.createHash('md5').update(content).digest('hex');
-}
-
-interface FormatterSpec {
-  pkg: string;
-  options: Record<string, any>;
-  new: boolean;
-}
-
-interface FormatterModule {
-  extensions?: string[];
-  apply: (
-    fileName: string,
-    content: string,
-    options?: Record<string, any>,
-    step?: any
-  ) => string | Promise<string>;
-}
-
-async function applyFormatters(
-  generator: Generator,
-  file_name: string,
-  data: string,
-  step: GeneratorStep
-): Promise<string> {
-  const resolveGlobal = require('resolve-global');
-  const formatters = generator.formatters || [];
-  let result = data;
-
-  // Normalize each entry to { pkg, options }
-  const formatterSpecs: FormatterSpec[] = formatters.map(
-    (fmt): FormatterSpec => {
-      if (typeof fmt === 'string') {
-        // legacy: just the package name
-        return { pkg: fmt, options: {}, new: false };
-      }
-      // new: { package: "...", options: { ... } }
-      return {
-        pkg: (fmt as any).package,
-        options: (fmt as any).options || {},
-        new: true,
-      };
-    }
-  );
-
-  // Load all formatter modules
-  const loadedFormatters: FormatterModule[] = formatterSpecs.map(({ pkg }) =>
-    require(resolveGlobal(pkg))
-  );
-
-  // Apply sequentially
-  for (let i = 0; i < loadedFormatters.length; i++) {
-    const formatter = loadedFormatters[i];
-    const { options } = formatterSpecs[i];
-    const { new: isNewFormatter } = formatterSpecs[i];
-
-    // check extension match
-    const applyFormatter = Array.isArray(formatter.extensions)
-      ? formatter.extensions.some((ext) => minimatch(file_name, ext))
-      : true;
-
-    if (!applyFormatter) continue;
-
-    try {
-      // Pass options into apply if supported
-      if (isNewFormatter) {
-        // new signature: apply(file, content, options, step)
-        result = await formatter.apply(file_name, result, options, step);
-      } else {
-        // old signature: apply(file, content)
-        result = await formatter.apply(file_name, result);
-      }
-    } catch (e) {
-      ui.critical(
-        'Failed to apply formatter for:',
-        file_name,
-        'This is probably not due to Clay but the formatter itself',
-        e
-      );
-      throw e;
-    }
-  }
-
-  return result;
-}
-
-function write(file: string, data: string): void {
-  const dir = path.dirname(file);
-  fs.ensureDirSync(dir);
-  ui.write(file);
-  fs.writeFileSync(file, data, 'utf8');
-}
-
-async function generate_file(
-  generator: Generator,
-  model_partial: any[],
-  directory: string,
-  outputDir: string,
-  file: string,
-  modelIndex: ClayModelEntry,
-  step: GeneratorStepGenerate
-): Promise<void> {
-  const templatePath = path.join(directory, file);
-  const template = getCompiledTemplate(templatePath);
-  const fileNamePattern = path.join(outputDir, file);
-  // Normalize path separators to forward slashes for Handlebars templates
-  // This prevents backslash escape issues on Windows
-  const normalizedPattern = fileNamePattern.split(path.sep).join('/');
-  const file_name_template = compileTemplate(
-    normalizedPattern,
-    `filename:${normalizedPattern}`
-  );
-
-  // First pass: generate all files that need updates (without formatting)
-  const filesToFormat: Array<{
-    filename: string;
-    content: string;
-    md5: string;
-  }> = [];
-
-  await Promise.all(
-    model_partial.map(async (m) => {
-      // Get filename from template and normalize to OS-specific path separators
-      const templateResult = file_name_template(m);
-      // Ensure we always work with absolute paths for consistent checksum lookups
-      const filename = path.resolve(templateResult);
-      if (step.touch && (await fs.pathExists(filename))) {
-        ui.info('skipping touch file:', filename);
-        return;
-      }
-      try {
-        const preFormattedOutput = template(m);
-        const md5 = getMd5ForContent(preFormattedOutput);
-        const storedChecksum = modelIndex.getFileCheckSum(filename);
-        
-        // Debug output when verbose mode is enabled
-        if (process.env.VERBOSE) {
-          const relPath = path.relative(process.cwd(), filename);
-          const normalizedPath = relPath.split(path.sep).join('/');
-          ui.info(`Checking ${filename}`);
-          ui.info(`  Relative path: ${relPath}`);
-          ui.info(`  Normalized path: ${normalizedPath}`);
-          ui.info(`  Stored checksum: ${storedChecksum}`);
-          ui.info(`  Current checksum: ${md5}`);
-          ui.info(`  Changed: ${storedChecksum !== md5}`);
-        }
-        
-        // Only process files that have changed
-        // Pass full filename - getFileCheckSum will compute relative path internally
-        if (storedChecksum !== md5) {
-          filesToFormat.push({
-            filename,
-            content: preFormattedOutput,
-            md5,
-          });
-        }
-      } catch (e) {
-        ui.critical(
-          'Failed to generate content for: ',
-          filename,
-          ' This probably not due to clay but the template itself',
-          e
-        );
-        throw e;
-      }
-    })
-  );
-
-  if (process.env.VERBOSE) {
-    ui.info(`Found ${filesToFormat.length} file(s) that need to be regenerated`);
-  }
-
-  // Second pass: format and write files in parallel batches
-  // This allows formatters to potentially batch operations if they support it
-  const BATCH_SIZE = 10; // Process 10 files at a time to avoid overwhelming the formatter
-  for (let i = 0; i < filesToFormat.length; i += BATCH_SIZE) {
-    const batch = filesToFormat.slice(i, i + BATCH_SIZE);
-    await Promise.all(
-      batch.map(async ({ filename, content, md5 }) => {
-        try {
-          const formattedContent = await applyFormatters(
-            generator,
-            filename,
-            content,
-            step
-          );
-          write(filename, formattedContent);
-          if (!step.touch) {
-            // Pass full filename - setFileCheckSum will compute relative path internally
-            modelIndex.setFileCheckSum(filename, md5);
-          }
-        } catch (e) {
-          ui.critical('Failed to format/write file:', filename, e);
-          throw e;
-        }
-      })
-    );
-  }
-}
 
 function remove_file(modelIndex: ClayModelEntry, file: string): void {
   ui.warn('removing ', file);
@@ -376,126 +157,9 @@ function remove_file(modelIndex: ClayModelEntry, file: string): void {
   modelIndex.delFileCheckSum(file);
 }
 
-async function generate_directory(
-  generator: Generator,
-  model_partial: any[],
-  directory: string,
-  outputDir: string,
-  modelIndex: ClayModelEntry,
-  step: GeneratorStepGenerate
-): Promise<void> {
-  const templates = fs.readdirSync(directory);
-
-  await Promise.all(
-    templates
-      .filter((file) => fs.lstatSync(path.join(directory, file)).isDirectory())
-      .map((file) =>
-        generate_directory(
-          generator,
-          model_partial,
-          path.join(directory, file),
-          path.join(outputDir, file),
-          modelIndex,
-          step
-        )
-      )
-  );
-
-  await Promise.all(
-    templates
-      .filter((file) => fs.lstatSync(path.join(directory, file)).isFile())
-      .map((file) =>
-        generate_file(
-          generator,
-          model_partial,
-          directory,
-          outputDir,
-          file,
-          modelIndex,
-          step
-        )
-      )
-  );
-}
-
-function execute(
-  commandline: string,
-  output_dir: string,
-  npxCommand?: boolean,
-  verbose?: boolean
-): void {
-  let cmd = commandline;
-  if (npxCommand) {
-    cmd = `npx ${commandline}`;
-  }
-  ui.execute(cmd);
-  try {
-    execSync(cmd, {
-      cwd: output_dir,
-      stdio: verbose ? 'inherit' : 'pipe',
-    });
-  } catch (e: any) {
-    ui.critical('error while executing', commandline, e.message || e);
-  }
-}
-
-function generate_template(
-  generator: Generator,
-  step: GeneratorStepGenerate,
-  model: any,
-  outputDir: string,
-  dirname: string,
-  modelIndex: ClayModelEntry
-): Promise<void> {
-  if (fs.lstatSync(path.join(dirname, step.generate)).isFile()) {
-    return generate_file(
-      generator,
-      jph.select(model, step.select),
-      path.join(dirname, path.dirname(step.generate)),
-      path.join(outputDir, step.target || ''),
-      path.basename(step.generate),
-      modelIndex,
-      step
-    );
-  } else {
-    return generate_directory(
-      generator,
-      jph.select(model, step.select),
-      path.join(dirname, step.generate),
-      path.join(outputDir, step.target || ''),
-      modelIndex,
-      step
-    );
-  }
-}
-
 function remove_generated_files(modelIndex: ClayModelEntry): void {
   const files = Object.keys(modelIndex.generated_files);
   files.forEach((f) => remove_file(modelIndex, f));
-}
-
-function run_command(
-  step: GeneratorStepCommand,
-  model: any,
-  outputDir: string,
-  _dirname: string
-): void {
-  const output_dir = path.resolve(outputDir);
-  fs.ensureDirSync(output_dir);
-  const verbose =
-    step.verbose !== undefined ? step.verbose : !!process.env.VERBOSE;
-
-  if (step.select === undefined) {
-    execute(step.runCommand, output_dir, step.npxCommand, verbose);
-  } else {
-    const command = compileTemplate(
-      step.runCommand,
-      `command:${step.runCommand}`
-    );
-    jph.select(model, step.select).forEach((m) => {
-      execute(command(m), output_dir, step.npxCommand, verbose);
-    });
-  }
 }
 
 function addToIndex(modelIndex: ClayModelEntry, file: string): void {
@@ -586,6 +250,24 @@ function copy(
   }
 }
 
+/**
+ * Recursively collect all files in a directory, returning their paths
+ * relative to the root directory.
+ */
+function collectFiles(dir: string, rootDir: string): string[] {
+  const results: string[] = [];
+  const entries = fs.readdirSync(dir);
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry);
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      results.push(...collectFiles(fullPath, rootDir));
+    } else if (fs.lstatSync(fullPath).isFile()) {
+      results.push(path.relative(rootDir, fullPath));
+    }
+  }
+  return results;
+}
+
 function decorate_generator(
   g: Generator,
   p: string,
@@ -597,20 +279,59 @@ function decorate_generator(
   const decorated = g as DecoratedGenerator;
 
   decorated.generate = async (model: any, outputDir: string): Promise<void> => {
-    // Clear template cache at the start of each generation to ensure fresh templates
-    // This prevents stale cached templates when files change between generations
+    // Clear caches at the start of each generation to ensure fresh state
     clearTemplateCache();
+    clearRenderCache();
 
+    const formatterCache = createFormatterCache();
     const output = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials || [], dirname);
 
+    const pipelineRunner = buildGeneratePipeline(g, formatterCache);
+
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if ('generate' in step) {
-        await generate_template(g, step, model, output, dirname, modelIndex);
+        const templatePath = path.join(dirname, step.generate);
+        const isDir = fs.lstatSync(templatePath).isDirectory();
+        if (isDir) {
+          // Recursively collect all files, preserving directory structure
+          const files = collectFiles(templatePath, templatePath);
+          await Promise.all(
+            files.map(f => pipelineRunner(
+              model, step.select, templatePath, f, output, modelIndex, step
+            ))
+          );
+        } else {
+          await pipelineRunner(
+            model,
+            step.select,
+            path.join(dirname, path.dirname(step.generate)),
+            path.basename(step.generate),
+            output,
+            modelIndex,
+            step
+          );
+        }
       } else if ('runCommand' in step) {
-        run_command(step, model, output, dirname);
+        const output_dir = path.resolve(output);
+        const verbose = step.verbose !== undefined ? step.verbose : !!process.env.VERBOSE;
+        if (step.select === undefined) {
+          await executeCommand(step.runCommand, output_dir, {
+            npx: step.npxCommand,
+            verbose,
+          });
+        } else {
+          const command = handlebars.compile(step.runCommand);
+          const items = jph.select(model, step.select);
+          for (const m of items) {
+            await executeCommand(command(m), output_dir, {
+              npx: step.npxCommand,
+              verbose,
+            });
+          }
+        }
       } else if ('copy' in step) {
         copy(step, model, output, dirname, modelIndex);
       }
