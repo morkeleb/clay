@@ -20,9 +20,13 @@ export function createWriteStage(
         mkdirSync(dir, { recursive: true });
       }
 
-      ui.write(item.filename);
+      if (!onWrite) {
+        ui.write(item.filename);
+      }
       await fs.writeFile(item.filename, item.content, 'utf8');
-      onWrite?.(item.filename);
+      if (onWrite) {
+        onWrite(item.filename);
+      }
 
       if (!item.step.touch) {
         item.modelIndex.setFileCheckSum(item.filename, item.md5);

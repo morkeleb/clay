@@ -22,7 +22,7 @@ export async function executeCommand(
   }
 
   await fs.ensureDir(cwd);
-  ui.execute(cmd);
+  if (options?.verbose) ui.execute(cmd);
 
   const execOptions: { cwd: string; maxBuffer: number } = {
     cwd,

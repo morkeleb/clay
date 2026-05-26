@@ -21,7 +21,7 @@ import {
   createFormatterCache,
   createProgress,
 } from './pipeline/index';
-import { clearRenderCache } from './pipeline/stages/render';
+import { clearTemplateCache, compileTemplate } from './pipeline/template-cache';
 import { executeCommand } from './pipeline/stages/command';
 import type {
   Generator,
@@ -30,40 +30,6 @@ import type {
 } from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
 
-// Template compilation cache to avoid recompiling the same templates
-const templateCache = new Map<string, HandlebarsTemplateDelegate>();
-const MAX_TEMPLATE_CACHE_SIZE = 1000; // Prevent unbounded growth in long-running processes
-
-/**
- * Clear the template cache. Useful for:
- * - Long-running processes (MCP server) to prevent memory leaks
- * - Development/watch mode when templates change
- * - Testing scenarios
- */
-export function clearTemplateCache(): void {
-  templateCache.clear();
-}
-
-function compileTemplate(
-  content: string,
-  cacheKey?: string
-): HandlebarsTemplateDelegate {
-  if (cacheKey && templateCache.has(cacheKey)) {
-    return templateCache.get(cacheKey)!;
-  }
-  const compiled = handlebars.compile(content);
-  if (cacheKey) {
-    // Prevent cache from growing unbounded
-    if (templateCache.size >= MAX_TEMPLATE_CACHE_SIZE) {
-      ui.warn(
-        `Template cache reached ${MAX_TEMPLATE_CACHE_SIZE} entries, clearing cache`
-      );
-      templateCache.clear();
-    }
-    templateCache.set(cacheKey, compiled);
-  }
-  return compiled;
-}
 
 const isValidJsonPath = (
   jsonPath: string
@@ -209,7 +175,7 @@ function copy(
       out = path.join(out, path.basename(step.copy));
     }
     fs.ensureDirSync(output_dir);
-    ui.copy(source, out);
+    if (process.env.VERBOSE) ui.copy(source, out);
     fs.copySync(source, out);
     addToIndex(modelIndex, out);
   } else {
@@ -225,7 +191,7 @@ function copy(
         out = output_dir;
       }
       fs.ensureDirSync(output_dir);
-      ui.copy(source, out);
+      if (process.env.VERBOSE) ui.copy(source, out);
       fs.copySync(source, out);
       addToIndex(modelIndex, out);
 
@@ -238,7 +204,7 @@ function copy(
             // Normalize path separators to forward slashes for Handlebars
             const normalizedFile = file.split(path.sep).join('/');
             const template = compileTemplate(normalizedFile, `copy-file:${normalizedFile}`);
-            ui.move(source, out);
+            if (process.env.VERBOSE) ui.move(source, out);
             const templateResult = template(m);
             // Normalize back to OS-specific path separators
             const template_path = path.normalize(templateResult);
@@ -285,7 +251,6 @@ function decorate_generator(
   decorated.generate = async (model: any, outputDir: string): Promise<void> => {
     // Clear caches at the start of each generation to ensure fresh state
     clearTemplateCache();
-    clearRenderCache();
 
     const formatterCache = createFormatterCache();
     const output = path.join(outputDir, extra_output || '');
@@ -296,6 +261,12 @@ function decorate_generator(
     const verbose = !!process.env.VERBOSE;
     const progress = createProgress(generatorName, verbose);
     const pipelineRunner = buildGeneratePipeline(g, formatterCache, progress);
+
+    // In compact progress mode, suppress ui.* output to prevent interleaving
+    const savedIsCLI = process.isCLI;
+    if (!verbose && process.isCLI) {
+      process.isCLI = false;
+    }
 
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
@@ -344,6 +315,8 @@ function decorate_generator(
       }
     }
 
+    // Restore ui output before final summary
+    process.isCLI = savedIsCLI;
     progress.done();
   };
 

@@ -11,7 +11,8 @@ export type {
 export { concurrent } from './concurrent';
 export { FormatterCache, createFormatterCache } from './formatter-cache';
 export { createSelectStage } from './stages/select';
-export { createRenderStage, clearRenderCache } from './stages/render';
+export { createRenderStage } from './stages/render';
+export { clearTemplateCache } from './template-cache';
 export { createHashStage } from './stages/hash';
 export { createFormatStage } from './stages/format';
 export { createWriteStage } from './stages/write';
