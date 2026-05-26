@@ -1,19 +1,19 @@
 /**
  * clay_generate tool - Generate code from Clay models
+ * Calls the pipeline API directly for performance (no subprocess).
  */
 import type { GenerateInput } from '../shared/schemas.js';
 import { validateInput } from '../shared/validation.js';
 import { GenerateInputSchema } from '../shared/schemas.js';
 import path from 'path';
+import { createRequire } from 'node:module';
 import {
   requireClayFile,
   resolvePath,
 } from '../shared/workspace-manager.js';
-import {
-  executeClayCommand,
-  readClayFile,
-  parseGenerateOutput,
-} from '../shared/clay-wrapper.js';
+import { readClayFile } from '../shared/clay-wrapper.js';
+
+const require = createRequire(import.meta.url);
 
 export async function generateTool(args: unknown) {
   // Validate input
@@ -43,10 +43,11 @@ export async function generateTool(args: unknown) {
     const context = requireClayFile(input.working_directory);
     const clayRoot = context.workingDirectory;
 
-    // Determine what to generate
+    // Load the generate API from the main Clay package
+    const { generate } = require('../../dist/src/generate-api');
+
     if (input.model_path && input.output_path) {
-      // Generate specific model — resolve from user's working directory,
-      // then make relative to the .clay root so the CLI stores clean paths
+      // Generate specific model
       const userDir = input.working_directory
         ? path.resolve(input.working_directory)
         : process.cwd();
@@ -55,32 +56,11 @@ export async function generateTool(args: unknown) {
       const modelPath = path.relative(clayRoot, absoluteModelPath);
       const outputPath = path.relative(clayRoot, absoluteOutputPath);
 
-      const result = executeClayCommand(
-        'generate',
-        [modelPath, outputPath],
-        clayRoot
-      );
-
-      if (!result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  success: false,
-                  message: `Failed to generate: ${result.error}`,
-                  output: result.output,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-
-      const stats = parseGenerateOutput(result.output);
+      const result = await generate(clayRoot, {
+        modelPath,
+        outputPath,
+        workers: true,
+      });
 
       return {
         content: [
@@ -91,9 +71,9 @@ export async function generateTool(args: unknown) {
                 success: true,
                 message: 'Successfully generated code',
                 stats: {
-                  filesGenerated: stats.filesGenerated,
-                  filesCopied: stats.filesCopied,
-                  commandsExecuted: stats.commandsExecuted,
+                  modelsProcessed: result.modelsProcessed,
+                  filesWritten: result.filesWritten,
+                  filesUnchanged: result.filesUnchanged,
                 },
               },
               null,
@@ -103,31 +83,11 @@ export async function generateTool(args: unknown) {
         ],
       };
     } else {
-      // Generate all models from .clay file
-      const result = executeClayCommand('generate', [], clayRoot);
+      // Generate all models
+      const result = await generate(clayRoot, { workers: true });
 
-      if (!result.success) {
-        return {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(
-                {
-                  success: false,
-                  message: `Failed to generate: ${result.error}`,
-                  output: result.output,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-
-      // Read .clay file to get model count
+      // Read .clay file for model metadata
       const clayData = readClayFile(context.clayFilePath);
-      const stats = parseGenerateOutput(result.output);
 
       return {
         content: [
@@ -137,10 +97,9 @@ export async function generateTool(args: unknown) {
               {
                 success: true,
                 message: `Successfully regenerated all models`,
-                models_processed: clayData.models.length,
-                total_files_generated: stats.filesGenerated,
-                total_files_copied: stats.filesCopied,
-                total_commands_executed: stats.commandsExecuted,
+                models_processed: result.modelsProcessed,
+                files_written: result.filesWritten,
+                files_unchanged: result.filesUnchanged,
                 models: clayData.models.map((m) => ({
                   model_path: m.path,
                   output_path: m.output,
