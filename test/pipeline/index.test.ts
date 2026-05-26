@@ -53,7 +53,7 @@ describe('pipeline factory', () => {
     const model = { entities: [{ name: 'User' }, { name: 'Order' }] };
     const step = generator.steps[0] as any;
 
-    await run(model, '$.entities[*]', templateDir, '{{name}}.ts', outputDir, modelIndex, step, [], [], '');
+    await run(model, '$.entities[*]', templateDir, '{{name}}.ts', outputDir, modelIndex, step, []);
 
     expect(written).to.have.lengthOf(2);
     // Files should exist at outputDir/src/User.ts and outputDir/src/Order.ts
