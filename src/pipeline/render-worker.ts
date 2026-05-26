@@ -8,6 +8,13 @@ import path from 'path';
 import handlebars from '../template-engine';
 import * as jph from '../jsonpath-helper';
 
+// Workers are background renderers — suppress console output to avoid
+// interleaving with the main thread's progress display.
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+console.log = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+console.warn = () => {};
+
 interface BatchRenderRequest {
   id: number;
   modelPath: string;
