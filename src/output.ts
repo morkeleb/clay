@@ -17,12 +17,21 @@ declare global {
 }
 
 /**
- * When true, all output functions become no-ops.
+ * When true, all output functions become no-ops and console.log is suppressed.
  * Used by compact progress mode to prevent interleaving with the progress bar.
  */
 let _suppressed = false;
+let _originalConsoleLog: typeof console.log | null = null;
 
 export function suppress(value: boolean): void {
+  if (value && !_suppressed) {
+    _originalConsoleLog = console.log;
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    console.log = () => {};
+  } else if (!value && _suppressed && _originalConsoleLog) {
+    console.log = _originalConsoleLog;
+    _originalConsoleLog = null;
+  }
   _suppressed = value;
 }
 

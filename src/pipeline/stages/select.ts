@@ -1,6 +1,6 @@
 // src/pipeline/stages/select.ts
 import * as jph from '../../jsonpath-helper';
-import type { SelectItem } from '../types';
+import type { SelectItem, FormatterSpec } from '../types';
 import type { GeneratorStepGenerate } from '../../types/generator';
 import type { ClayModelEntry } from '../../types/clay-file';
 
@@ -16,6 +16,7 @@ export function createSelectStage(
   outputDir: string,
   step: GeneratorStepGenerate,
   modelIndex: ClayModelEntry,
+  formatters: readonly FormatterSpec[],
   onSelect?: (templatePath: string) => void
 ): AsyncGenerator<SelectItem> {
   const matches = jph.select(model, jsonPath);
@@ -30,6 +31,7 @@ export function createSelectStage(
         outputDir,
         step,
         modelIndex,
+        formatters,
       };
     }
   }

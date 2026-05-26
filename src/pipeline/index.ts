@@ -6,6 +6,7 @@ export type {
   RenderedItem,
   ChangedItem,
   FormattedItem,
+  FormatterSpec,
   WrittenItem,
 } from './types';
 export { concurrent } from './concurrent';
@@ -30,18 +31,19 @@ import { createHashStage } from './stages/hash';
 import { createFormatStage } from './stages/format';
 import { createWriteStage } from './stages/write';
 import type { FormatterCache } from './formatter-cache';
-import type { WrittenItem } from './types';
+import type { FormatterSpec, WrittenItem } from './types';
 import type { PipelineProgress } from './progress';
-import type { Generator, GeneratorStepGenerate } from '../types/generator';
+import type { GeneratorStepGenerate } from '../types/generator';
 import type { ClayModelEntry } from '../types/clay-file';
 
 /**
  * Build the generate pipeline: select → render → hash → format → write.
  * TypeScript verifies the stage chain at compile time.
- * Returns a function that runs the full pipeline for one generate step.
+ *
+ * This pipeline is generator-agnostic — each item carries its own formatter
+ * config, so one pipeline serves all generators.
  */
 export function buildGeneratePipeline(
-  generator: Generator,
   formatterCache: FormatterCache,
   progress?: PipelineProgress
 ): (
@@ -51,7 +53,8 @@ export function buildGeneratePipeline(
   templateFile: string,
   outputDir: string,
   modelIndex: ClayModelEntry,
-  step: GeneratorStepGenerate
+  step: GeneratorStepGenerate,
+  formatters: readonly FormatterSpec[]
 ) => Promise<WrittenItem[]> {
   // Wire up the pipeline: render → hash → format → write
   // Select is a source, not a transform, so it's called separately
@@ -64,7 +67,6 @@ export function buildGeneratePipeline(
     .pipe(createHashStage(progress ? (f) => progress.onSkip(f) : undefined))
     .pipe(
       createFormatStage(
-        generator,
         formatterCache,
         progress ? (f) => progress.onFormat(f) : undefined
       )
@@ -77,7 +79,7 @@ export function buildGeneratePipeline(
     )
     .build();
 
-  return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step) => {
+  return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step, formatters) => {
     const templatePath = path.join(templateDir, templateFile);
     const fileNamePattern = path.join(outputDir, step.target || '', templateFile);
 
@@ -90,6 +92,7 @@ export function buildGeneratePipeline(
       outputDir,
       step,
       modelIndex,
+      formatters,
       progress ? (f) => progress.onSelect(f) : undefined
     );
 

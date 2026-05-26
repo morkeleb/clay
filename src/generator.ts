@@ -16,19 +16,39 @@ import { requireNew } from './require-helper';
 import { z } from 'zod';
 import jp from 'jsonpath';
 import * as output from './output';
-import {
-  buildGeneratePipeline,
-  createFormatterCache,
-  createProgress,
-} from './pipeline/index';
-import { clearTemplateCache, compileTemplate } from './pipeline/template-cache';
+import { compileTemplate } from './pipeline/template-cache';
 import { executeCommand } from './pipeline/stages/command';
+import type { FormatterSpec, WrittenItem } from './pipeline/types';
 import type {
   Generator,
   DecoratedGenerator,
+  GeneratorStepGenerate,
   GeneratorStepCopy,
 } from './types/generator';
 import type { ClayModelEntry } from './types/clay-file';
+
+/** The pipeline runner function signature, provided by the orchestrator */
+export type PipelineRunner = (
+  model: unknown,
+  jsonPath: string,
+  templateDir: string,
+  templateFile: string,
+  outputDir: string,
+  modelIndex: ClayModelEntry,
+  step: GeneratorStepGenerate,
+  formatters: readonly FormatterSpec[]
+) => Promise<WrittenItem[]>;
+
+/** Normalize generator's formatter config into FormatterSpec[] */
+export function normalizeFormatters(generator: Generator): FormatterSpec[] {
+  return (generator.formatters || []).map((fmt): FormatterSpec => {
+    if (typeof fmt === 'string') {
+      return { pkg: fmt, options: {}, isNew: false };
+    }
+    const obj = fmt as { package: string; options?: Record<string, unknown> };
+    return { pkg: obj.package, options: obj.options || {}, isNew: true };
+  });
+}
 
 
 const isValidJsonPath = (
@@ -247,32 +267,26 @@ function decorate_generator(
   validateGeneratorSchema(g);
 
   const decorated = g as DecoratedGenerator;
+  const formatterSpecs = normalizeFormatters(g);
 
-  decorated.generate = async (model: any, outputDir: string): Promise<void> => {
-    // Clear caches at the start of each generation to ensure fresh state
-    clearTemplateCache();
-
-    const formatterCache = createFormatterCache();
-    const output = path.join(outputDir, extra_output || '');
+  decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<void> => {
+    const outputPath = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
     handlebars.load_partials(g.partials || [], dirname);
-
-    const generatorName = path.basename(p, '.json');
-    const verbose = !!process.env.VERBOSE;
-    const progress = createProgress(generatorName, verbose);
-    const pipelineRunner = buildGeneratePipeline(g, formatterCache, progress);
 
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if ('generate' in step) {
+        if (!pipelineRunner) {
+          throw new Error('Pipeline runner required for generate steps');
+        }
         const templatePath = path.join(dirname, step.generate);
         const isDir = fs.lstatSync(templatePath).isDirectory();
         if (isDir) {
-          // Recursively collect all files, preserving directory structure
           const files = collectFiles(templatePath, templatePath);
           await Promise.all(
             files.map(f => pipelineRunner(
-              model, step.select, templatePath, f, output, modelIndex, step
+              model, step.select, templatePath, f, outputPath, modelIndex, step, formatterSpecs
             ))
           );
         } else {
@@ -281,13 +295,14 @@ function decorate_generator(
             step.select,
             path.join(dirname, path.dirname(step.generate)),
             path.basename(step.generate),
-            output,
+            outputPath,
             modelIndex,
-            step
+            step,
+            formatterSpecs
           );
         }
       } else if ('runCommand' in step) {
-        const output_dir = path.resolve(output);
+        const output_dir = path.resolve(outputPath);
         const verbose = step.verbose !== undefined ? step.verbose : !!process.env.VERBOSE;
         if (step.select === undefined) {
           await executeCommand(step.runCommand, output_dir, {
@@ -305,11 +320,9 @@ function decorate_generator(
           }
         }
       } else if ('copy' in step) {
-        copy(step, model, output, dirname, modelIndex);
+        copy(step, model, outputPath, dirname, modelIndex);
       }
     }
-
-    progress.done();
   };
 
   decorated.clean = (_model: any, _outputDir: string): void => {

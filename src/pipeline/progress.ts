@@ -10,12 +10,6 @@ export interface PipelineProgress {
   done(): void;
 }
 
-interface StageCounter {
-  label: string;
-  count: number;
-  color: (s: string) => string;
-}
-
 /**
  * Creates a progress tracker for the pipeline.
  * In compact mode (TTY + non-verbose), updates the terminal in-place.
@@ -50,32 +44,38 @@ function createVerboseProgress(): PipelineProgress {
   };
 }
 
+/**
+ * Compact progress: one in-place line with a staged progress bar.
+ *
+ * The bar represents total pipeline completion:
+ * each item goes through select → render → (skip | format → write)
+ * so total work = items * 4 stages (select, render, hash-result, write/skip)
+ *
+ * Display: ████████░░░░░░░ 1200/1746  render 1180  skip 1170  write 10
+ */
 function createCompactProgress(generatorName: string): PipelineProgress {
-  const stages: Record<string, StageCounter> = {
-    select: { label: 'select', count: 0, color: chalk.cyan },
-    render: { label: 'render', count: 0, color: chalk.blue },
-    skip: { label: 'skip', count: 0, color: chalk.gray },
-    format: { label: 'format', count: 0, color: chalk.yellow },
-    write: { label: 'write', count: 0, color: chalk.green },
-  };
-
-  let total = 0;
+  let selected = 0;
+  let rendered = 0;
+  let skipped = 0;
+  let formatted = 0;
+  let written = 0;
   let lastLineLength = 0;
 
   function render() {
+    const finished = skipped + written;
+    const total = selected;
+
+    // Progress bar based on final outcomes (skip + write) vs total selected
+    const bar = total > 0 ? progressBar(finished, total, 20) : '';
+    const ratio = total > 0 ? `${finished}/${total}` : '';
+
     const parts: string[] = [];
-    for (const stage of Object.values(stages)) {
-      if (stage.count > 0) {
-        parts.push(stage.color(`${stage.label} ${stage.count}`));
-      }
-    }
+    if (rendered > 0) parts.push(chalk.blue(`render ${rendered}`));
+    if (skipped > 0) parts.push(chalk.gray(`skip ${skipped}`));
+    if (formatted > 0) parts.push(chalk.yellow(`format ${formatted}`));
+    if (written > 0) parts.push(chalk.green(`write ${written}`));
 
-    const written = stages.write.count;
-    const skipped = stages.skip.count;
-    const processed = written + skipped;
-    const bar = total > 0 ? progressBar(processed, total, 15) : '';
-
-    const line = `  ${chalk.dim(generatorName)} ${bar} ${parts.join('  ')}`;
+    const line = `  ${chalk.dim(generatorName)} ${bar} ${chalk.white(ratio)}  ${parts.join('  ')}`;
 
     // Clear previous line and write new one
     if (lastLineLength > 0) {
@@ -85,35 +85,35 @@ function createCompactProgress(generatorName: string): PipelineProgress {
     lastLineLength = stripAnsi(line).length;
   }
 
-  function increment(stage: string) {
-    stages[stage].count++;
-    render();
-  }
-
   return {
     onSelect(_filename: string) {
-      total++;
-      increment('select');
+      selected++;
+      // Don't render on every select — it's too fast and causes flicker
+      if (selected % 50 === 0 || selected <= 5) render();
     },
     onRender(_filename: string) {
-      increment('render');
+      rendered++;
+      if (rendered % 20 === 0) render();
     },
     onSkip(_filename: string) {
-      increment('skip');
+      skipped++;
+      if (skipped % 20 === 0) render();
     },
     onFormat(_filename: string) {
-      increment('format');
+      formatted++;
+      render();
     },
     onWrite(_filename: string) {
-      increment('write');
+      written++;
+      render();
     },
     done() {
-      // Clear the progress line and print final summary
+      // Final render to show 100%
+      render();
+      // Clear the progress line and print summary
       if (lastLineLength > 0) {
         process.stderr.write('\r' + ' '.repeat(lastLineLength) + '\r');
       }
-      const written = stages.write.count;
-      const skipped = stages.skip.count;
       if (written > 0 || skipped > 0) {
         const parts = [];
         if (written > 0) parts.push(chalk.green(`${written} written`));
@@ -126,7 +126,8 @@ function createCompactProgress(generatorName: string): PipelineProgress {
 
 function progressBar(current: number, total: number, width: number): string {
   if (total === 0) return '';
-  const filled = Math.round((current / total) * width);
+  const ratio = Math.min(current / total, 1);
+  const filled = Math.round(ratio * width);
   const empty = width - filled;
   return chalk.green('\u2588'.repeat(filled)) + chalk.dim('\u2591'.repeat(empty));
 }

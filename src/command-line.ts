@@ -89,6 +89,16 @@ function resolve_generator(
 }
 
 const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
+  const verbose = !!process.env.VERBOSE;
+  if (!verbose) ui.suppress(true);
+
+  // One pipeline, one progress bar for all generators
+  const { buildGeneratePipeline, createFormatterCache, createProgress, clearTemplateCache } = require('./pipeline/index');
+  clearTemplateCache();
+  const formatterCache = createFormatterCache();
+  const progress = createProgress('generate', verbose);
+  const pipelineRunner = buildGeneratePipeline(formatterCache, progress);
+
   await Promise.all(
     modelsToExecute.map(async (modelIndex) => {
       const model = modelIndex.load();
@@ -138,11 +148,14 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
             g,
             path.dirname(modelIndex.path),
             modelIndex
-          ).generate(model, modelIndex.output || '')
+          ).generate(model, modelIndex.output || '', pipelineRunner)
         )
       );
     })
   );
+
+  progress.done();
+  if (!verbose) ui.suppress(false);
 };
 
 async function generate(
@@ -168,10 +181,7 @@ async function generate(
     );
   }
 
-  const verbose = !!process.env.VERBOSE;
-  if (!verbose) ui.suppress(true);
   await generateModels(modelsToExecute);
-  if (!verbose) ui.suppress(false);
   indexFile.save();
   updateGitattributes('.');
 }

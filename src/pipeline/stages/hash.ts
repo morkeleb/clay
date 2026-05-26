@@ -17,12 +17,12 @@ export function createHashStage(
 
       if (storedChecksum !== md5) {
         yield {
-          _brand: 'changed' as const,
           filename: item.filename,
           content: item.content,
           md5,
           step: item.step,
           modelIndex: item.modelIndex,
+          formatters: item.formatters,
         };
       } else {
         onSkip?.(item.filename);

@@ -9,7 +9,7 @@ import type { Stage, SelectItem, RenderedItem } from '../types';
  * Renders Handlebars template with model data.
  * Skips touch files that already exist on disk.
  * Input: SelectItem (model data + template path)
- * Output: RenderedItem (filename + rendered content)
+ * Output: RenderedItem (filename + rendered content + formatters)
  */
 export function createRenderStage(
   onRender?: (filename: string) => void,
@@ -42,6 +42,7 @@ export function createRenderStage(
         content,
         step: item.step,
         modelIndex: item.modelIndex,
+        formatters: item.formatters,
       };
     }
   };
