@@ -20,7 +20,6 @@ export { createWriteStage } from './stages/write';
 export { executeCopy } from './stages/copy';
 export { executeCommand } from './stages/command';
 export { createProgress } from './progress';
-export { RenderWorkerPool } from './worker-pool';
 export type { PipelineProgress } from './progress';
 
 import path from 'path';
@@ -34,7 +33,6 @@ import { createWriteStage } from './stages/write';
 import type { FormatterCache } from './formatter-cache';
 import type { FormatterSpec, WrittenItem } from './types';
 import type { PipelineProgress } from './progress';
-import type { RenderWorkerPool } from './worker-pool';
 import type { GeneratorStepGenerate } from '../types/generator';
 import type { ClayModelEntry } from '../types/clay-file';
 
@@ -42,13 +40,12 @@ import type { ClayModelEntry } from '../types/clay-file';
  * Build the generate pipeline: select → render → hash → format → write.
  * TypeScript verifies the stage chain at compile time.
  *
- * When a workerPool is provided, template rendering runs on worker threads
- * for true multi-core parallelism. Otherwise renders on the main thread.
+ * This pipeline is generator-agnostic — each item carries its own formatter
+ * config, so one pipeline serves all generators.
  */
 export function buildGeneratePipeline(
   formatterCache: FormatterCache,
-  progress?: PipelineProgress,
-  workerPool?: RenderWorkerPool
+  progress?: PipelineProgress
 ): (
   model: unknown,
   jsonPath: string,
@@ -57,21 +54,17 @@ export function buildGeneratePipeline(
   outputDir: string,
   modelIndex: ClayModelEntry,
   step: GeneratorStepGenerate,
-  formatters: readonly FormatterSpec[],
-  partials: readonly string[],
-  partialsDir: string
+  formatters: readonly FormatterSpec[]
 ) => Promise<WrittenItem[]> {
   // Wire up the pipeline: render → hash → format → write
-  // When worker pool is provided, rendering uses worker threads.
-  // concurrent() wrapper handles dispatch of items to the render stage.
+  // Select is a source, not a transform, so it's called separately
   const processingPipeline = pipeline(
     concurrent(
       createRenderStage(
         progress ? (f) => progress.onRender(f) : undefined,
-        progress ? (f) => progress.onSkip(f) : undefined,
-        workerPool
+        progress ? (f) => progress.onSkip(f) : undefined
       ),
-      { concurrency: workerPool ? 1 : 20 }
+      { concurrency: 20 }
     )
   )
     .pipe(createHashStage(progress ? (f) => progress.onSkip(f) : undefined))
@@ -89,10 +82,11 @@ export function buildGeneratePipeline(
     )
     .build();
 
-  return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step, formatters, partials, partialsDir) => {
+  return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step, formatters) => {
     const templatePath = path.join(templateDir, templateFile);
     const fileNamePattern = path.join(outputDir, step.target || '', templateFile);
 
+    // Select stage produces the source items
     const source = createSelectStage(
       model,
       jsonPath,
@@ -102,11 +96,10 @@ export function buildGeneratePipeline(
       step,
       modelIndex,
       formatters,
-      partials,
-      partialsDir,
       progress ? (f) => progress.onSelect(f) : undefined
     );
 
+    // Run through the pipeline
     const results: WrittenItem[] = [];
     for await (const item of processingPipeline(source)) {
       results.push(item);

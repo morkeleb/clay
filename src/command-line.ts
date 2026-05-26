@@ -92,23 +92,12 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
   const verbose = !!process.env.VERBOSE;
   if (!verbose) ui.suppress(true);
 
-  // One pipeline, one progress bar, one worker pool for all generators
-  const { buildGeneratePipeline, createFormatterCache, createProgress, clearTemplateCache, RenderWorkerPool } = require('./pipeline/index');
+  // One pipeline, one progress bar for all generators
+  const { buildGeneratePipeline, createFormatterCache, createProgress, clearTemplateCache } = require('./pipeline/index');
   clearTemplateCache();
   const formatterCache = createFormatterCache();
   const progress = createProgress('generate', verbose);
-
-  // Worker pool for parallel rendering: auto-enable for multi-model projects,
-  // disable with CLAY_WORKERS=0, force with CLAY_WORKERS=N
-  const workerEnv = process.env.CLAY_WORKERS;
-  const useWorkers = workerEnv === undefined
-    ? modelsToExecute.length > 1
-    : parseInt(workerEnv, 10) !== 0;
-  const poolSize = workerEnv && parseInt(workerEnv, 10) > 0
-    ? parseInt(workerEnv, 10)
-    : RenderWorkerPool.defaultPoolSize();
-  const workerPool = useWorkers ? new RenderWorkerPool(poolSize, [], '') : undefined;
-  const pipelineRunner = buildGeneratePipeline(formatterCache, progress, workerPool);
+  const pipelineRunner = buildGeneratePipeline(formatterCache, progress);
 
   await Promise.all(
     modelsToExecute.map(async (modelIndex) => {
@@ -165,7 +154,6 @@ const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
     })
   );
 
-  if (workerPool) await workerPool.terminate();
   progress.done();
   if (!verbose) ui.suppress(false);
 };
