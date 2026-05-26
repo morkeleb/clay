@@ -168,7 +168,10 @@ async function generate(
     );
   }
 
+  const verbose = !!process.env.VERBOSE;
+  if (!verbose) ui.suppress(true);
   await generateModels(modelsToExecute);
+  if (!verbose) ui.suppress(false);
   indexFile.save();
   updateGitattributes('.');
 }

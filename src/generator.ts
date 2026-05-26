@@ -262,12 +262,6 @@ function decorate_generator(
     const progress = createProgress(generatorName, verbose);
     const pipelineRunner = buildGeneratePipeline(g, formatterCache, progress);
 
-    // In compact progress mode, suppress ui.* output to prevent interleaving
-    const savedIsCLI = process.isCLI;
-    if (!verbose && process.isCLI) {
-      process.isCLI = false;
-    }
-
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
       if ('generate' in step) {
@@ -315,8 +309,6 @@ function decorate_generator(
       }
     }
 
-    // Restore ui output before final summary
-    process.isCLI = savedIsCLI;
     progress.done();
   };
 
