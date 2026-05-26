@@ -42,7 +42,7 @@ export function createFormatStage(
             content = await formatter.apply(item.filename, content);
           }
         } catch (e) {
-          ui.critical(
+          ui.warn(
             'Failed to apply formatter for:',
             item.filename,
             'This is probably not due to Clay but the formatter itself',

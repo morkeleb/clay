@@ -41,7 +41,8 @@ function getFileNameTemplate(pattern: string): HandlebarsTemplateDelegate {
  * Output: RenderedItem (filename + rendered content)
  */
 export function createRenderStage(
-  onRender?: (filename: string) => void
+  onRender?: (filename: string) => void,
+  onTouchSkip?: (filename: string) => void
 ): Stage<SelectItem, RenderedItem> {
   return async function* (input) {
     for await (const item of input) {
@@ -51,6 +52,7 @@ export function createRenderStage(
       // Skip touch files that already exist — they're user-customizable scaffolds
       if (item.step.touch && fs.existsSync(filename)) {
         ui.info('skipping touch file:', filename);
+        onTouchSkip?.(filename);
         continue;
       }
 
