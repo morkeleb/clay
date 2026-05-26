@@ -36,7 +36,10 @@ export type PipelineRunner = (
   outputDir: string,
   modelIndex: ClayModelEntry,
   step: GeneratorStepGenerate,
-  formatters: readonly FormatterSpec[]
+  formatters: readonly FormatterSpec[],
+  modelPath?: string,
+  partials?: readonly string[],
+  partialsDir?: string
 ) => Promise<WrittenItem[]>;
 
 /** Normalize generator's formatter config into FormatterSpec[] */
@@ -272,7 +275,8 @@ function decorate_generator(
   decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<void> => {
     const outputPath = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
-    handlebars.load_partials(g.partials || [], dirname);
+    const generatorPartials = g.partials || [];
+    handlebars.load_partials(generatorPartials, dirname);
 
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
@@ -286,7 +290,8 @@ function decorate_generator(
           const files = collectFiles(templatePath, templatePath);
           await Promise.all(
             files.map(f => pipelineRunner(
-              model, step.select, templatePath, f, outputPath, modelIndex, step, formatterSpecs
+              model, step.select, templatePath, f, outputPath, modelIndex, step, formatterSpecs,
+              modelIndex.path, generatorPartials, dirname
             ))
           );
         } else {
@@ -298,7 +303,10 @@ function decorate_generator(
             outputPath,
             modelIndex,
             step,
-            formatterSpecs
+            formatterSpecs,
+            modelIndex.path,
+            generatorPartials,
+            dirname
           );
         }
       } else if ('runCommand' in step) {
