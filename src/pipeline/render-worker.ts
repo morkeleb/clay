@@ -33,7 +33,9 @@ interface BatchRenderResponse {
 // Track which partial dirs have been loaded
 const loadedPartialDirs = new Set<string>();
 
-// Template caches (per worker)
+// Caches (per worker) — model loaded once, templates compiled once
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const modelCache = new Map<string, any>();
 const fileCache = new Map<string, HandlebarsTemplateDelegate>();
 const patternCache = new Map<string, HandlebarsTemplateDelegate>();
 
@@ -62,8 +64,11 @@ parentPort!.on('message', (msg: BatchRenderRequest) => {
       loadedPartialDirs.add(msg.partialsDir);
     }
 
-    // Load model from disk (each worker has its own copy with functions intact)
-    const model = require('../model').load(msg.modelPath);
+    // Load model (cached per worker — only loaded once per unique path)
+    if (!modelCache.has(msg.modelPath)) {
+      modelCache.set(msg.modelPath, require('../model').load(msg.modelPath));
+    }
+    const model = modelCache.get(msg.modelPath);
 
     // Select items via JSONPath
     const items = jph.select(model, msg.jsonPath);
