@@ -122,6 +122,25 @@ describe('input-hash', () => {
       expect(deps).to.include(path.resolve(partial));
     });
 
+    it('collects convention include files', () => {
+      const convFile = path.join(testDir, 'conventions', 'naming.json');
+      fs.mkdirSync(path.join(testDir, 'conventions'));
+      fs.writeJsonSync(convFile, { rules: [] });
+
+      const genPath = path.join(testDir, 'generator.json');
+      fs.writeJsonSync(genPath, {
+        steps: [],
+        partials: [],
+        conventions: [
+          { name: 'inline-conv', description: 'test', function: '() => []' },
+          { include: 'conventions/naming.json' },
+        ],
+      });
+
+      const deps = collectGeneratorDependencies(genPath, testDir);
+      expect(deps).to.include(path.resolve(convFile));
+    });
+
     it('skips git+ copy sources', () => {
       const genPath = path.join(testDir, 'generator.json');
       fs.writeJsonSync(genPath, {
