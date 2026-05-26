@@ -46,7 +46,9 @@ describe('pipeline stages', () => {
         'src/',
         dummyStep,
         dummyModelIndex,
-        []
+        [],
+        [],
+        ''
       );
 
       const items = await collect(stage);
@@ -69,6 +71,8 @@ describe('pipeline stages', () => {
           step: dummyStep,
           modelIndex: dummyModelIndex,
           formatters: [],
+          partials: [],
+          partialsDir: '',
         },
       ];
 
