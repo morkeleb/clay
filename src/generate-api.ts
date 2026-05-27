@@ -77,8 +77,6 @@ function resolveGenerator(
 export interface GenerateResult {
   modelsProcessed: number;
   modelsSkipped: number;
-  filesWritten: number;
-  filesUnchanged: number;
   models: Array<{ modelPath: string; outputPath: string }>;
 }
 
@@ -102,6 +100,10 @@ export async function generate(
   }
 ): Promise<GenerateResult> {
   const originalCwd = process.cwd();
+  const verbose = options?.verbose ?? !!process.env.VERBOSE;
+  let workerPool: InstanceType<typeof RenderWorkerPool> | undefined;
+  let progressTracker: ReturnType<typeof createProgress> | undefined;
+
   process.chdir(directory);
 
   try {
@@ -124,20 +126,19 @@ export async function generate(
       );
     }
 
-    const verbose = options?.verbose ?? !!process.env.VERBOSE;
     if (!verbose) ui.suppress(true);
 
     clearTemplateCache();
     const formatterCache = createFormatterCache();
-    const progress = createProgress('generate', verbose);
+    progressTracker = createProgress('generate', verbose);
 
     const useWorkers = options?.workers ?? (process.env.CLAY_WORKERS !== '0');
     const poolSize = options?.workerCount
       ?? (process.env.CLAY_WORKERS && parseInt(process.env.CLAY_WORKERS, 10) > 0
         ? parseInt(process.env.CLAY_WORKERS, 10)
         : RenderWorkerPool.defaultPoolSize());
-    const workerPool = useWorkers ? new RenderWorkerPool(poolSize) : undefined;
-    const pipelineRunner = buildGeneratePipeline(formatterCache, progress, workerPool);
+    workerPool = useWorkers ? new RenderWorkerPool(poolSize) : undefined;
+    const pipelineRunner = buildGeneratePipeline(formatterCache, progressTracker, workerPool);
 
     let modelsSkipped = 0;
 
@@ -217,10 +218,6 @@ export async function generate(
       })
     );
 
-    if (workerPool) await workerPool.terminate();
-    progress.done();
-    if (!verbose) ui.suppress(false);
-
     indexFile.save();
     updateGitattributes('.');
 
@@ -232,11 +229,13 @@ export async function generate(
     return {
       modelsProcessed: modelsToExecute.length - modelsSkipped,
       modelsSkipped,
-      filesWritten: 0,
-      filesUnchanged: 0,
       models,
     };
   } finally {
+    // Cleanup in finally to handle errors in MCP server (persistent process)
+    if (workerPool) await workerPool.terminate();
+    progressTracker?.done();
+    if (!verbose) ui.suppress(false);
     process.chdir(originalCwd);
   }
 }
