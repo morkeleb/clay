@@ -502,6 +502,24 @@ class ClayMCPServer {
             'Understand the typical Clay workflow from creating models to generating code',
           arguments: [],
         },
+        {
+          name: 'clay-architecture-mindset',
+          description:
+            'Learn how to think with Clay: model-first development, generated vs hand-written code, extension points, and pattern recognition',
+          arguments: [],
+        },
+        {
+          name: 'clay-analyze',
+          description:
+            'Analyze a codebase to identify repeating patterns and propose a Clay model and generators',
+          arguments: [],
+        },
+        {
+          name: 'clay-refactor-to-generator',
+          description:
+            'Extract a Clay generator from a set of similar files by identifying the common structure and variable parts',
+          arguments: [],
+        },
       ],
     }));
 
@@ -520,7 +538,7 @@ class ClayMCPServer {
                   text: `# Clay Architecture and Basic Tools
 
 ## Overview
-Clay is a code generator that transforms JSON models into code using Handlebars templates. The architecture follows a simple pattern:
+Clay is a code generator that transforms JSON models into code using templates. It supports multiple template engines: Handlebars (.hbs) for simple templates, EJS (.ejs) for templates needing inline logic, and TypeScript/JavaScript (.ts/.js) via the CodeGenerator base class for fully programmatic generation. The architecture follows a simple pattern:
 
 **Model → Generator → Generated Code**
 
@@ -536,8 +554,9 @@ project/
 ├── generators/            # Template-based generators
 │   └── typescript-api/
 │       ├── generator.json # Generator configuration
-│       └── templates/     # Handlebars templates
-│           └── controller.hbs
+│       └── templates/     # Templates (Handlebars, EJS, or TypeScript)
+│           ├── controller.hbs
+│           └── service.ts
 └── output/                # Generated code (git-ignored)
     └── controllers/
         └── UserController.ts
@@ -586,13 +605,34 @@ Generators define how to transform models into code:
 }
 \`\`\`
 
-**templates/controller.hbs:**
+**templates/controller.hbs** (Handlebars — simple substitution):
 \`\`\`typescript
 export class {{pascalCase name}}Controller {
   {{#each fields}}
   private {{camelCase name}}: {{type}};
   {{/each}}
 }
+\`\`\`
+
+**templates/service.ts** (TypeScript — programmatic generation):
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const { pascalCase, camelCase } = helpers;
+    return \\\`export class \${pascalCase(data.name)}Service {
+  \${data.fields.map((f: any) => \\\`private \${camelCase(f.name)}: \${f.type};\\\`).join('\\n  ')}
+}\\\`;
+  }
+}
+\`\`\`
+
+Generator steps use the optional \`engine\` field to select the template engine (\`"handlebars"\` is the default):
+\`\`\`json
+{ "generate": "controller.hbs", "select": "$.model.entities[*]", "target": "{{pascalCase name}}Controller.ts" }
+{ "generate": "service.ts", "select": "$.model.entities[*]", "target": "{{pascalCase name}}Service.ts", "engine": "ts" }
+{ "generate": "index.ejs", "select": "$.model", "target": "index.ts", "engine": "ejs" }
 \`\`\`
 
 ### 3. The .clay File
@@ -788,13 +828,40 @@ clay_clean({})
 }
 \`\`\`
 
+## Choosing a Template Engine
+
+| Engine | Best for | Syntax |
+|---|---|---|
+| **Handlebars** (default) | Simple substitution, iteration, conditionals | \`{{pascalCase name}}\`, \`{{#each fields}}\` |
+| **EJS** | Templates that need inline logic (filtering, computation) | \`<%= helpers.pascalCase(name) %>\`, \`<% if (...) { %>\` |
+| **TypeScript** | Complex generation: cross-entity references, unique imports, graph traversal | \`CodeGenerator\` class with full JS/TS |
+
+**Rules of thumb:**
+- Start with Handlebars — it covers most templates
+- Switch to EJS when you need a few lines of logic inside an otherwise template-like file
+- Switch to TypeScript when the generation logic is more code than template (e.g., wiring files, DI containers, route registrations, index files that aggregate across entities)
+
+TypeScript templates use the \`CodeGenerator\` base class:
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers, model }: RenderContext): string {
+    // data: the selected model item
+    // helpers: Clay helpers (pascalCase, camelCase, pluralize, etc.)
+    // model: the full root model for cross-references
+    return \\\`...\\\`;
+  }
+}
+\`\`\`
+
 ## Next Steps
 
 Once comfortable with basics, explore:
 - **Context Variables:** \`clay_key\`, \`clay_parent\`, \`clay_index\` (use \`clay_explain_concepts\`)
 - **JSONPath Selectors:** Complex data queries (use \`clay_test_path\` to experiment)
 - **Mixins:** Transform models before generation
-- **Handlebars Helpers:** 47+ helpers for string manipulation, logic, etc.
+- **Template Helpers:** 47+ helpers for string manipulation, logic, etc. (available in all engines)
 
 Use \`clay_explain_concepts({ topic: 'all' })\` for comprehensive documentation!`,
                 },
@@ -1102,6 +1169,621 @@ For more advanced usage, explore:
 - **Conditional generation** with helpers
 
 Use \`clay_explain_concepts({ topic: 'all' })\` for complete documentation.`,
+                },
+              },
+            ],
+          };
+
+        case 'clay-architecture-mindset':
+          return {
+            messages: [
+              {
+                role: 'user',
+                content: {
+                  type: 'text',
+                  text: `# Clay Architecture Mindset
+
+## How to Think With Clay
+
+Clay is not just a code generator — it is a way to encode architectural patterns so they stay consistent as a project grows. When working in a Clay project, adopt a **model-first** mindset: define the structure in the model, let generators produce the scaffolding, and focus your effort on the parts that require human judgment.
+
+## The Core Principle
+
+Every codebase has two kinds of code:
+
+1. **Structural code** — follows repeating patterns. Controllers that all look the same, entities with the same base fields, event handlers wired up identically. This code is Clay's job.
+2. **Business logic** — unique to each feature. Validation rules, calculations, domain-specific behavior. This is your job.
+
+Clay generates the first kind. You fill in the second kind at designated **extension points**.
+
+## Model First, Code Second
+
+When adding a new feature to a Clay project:
+
+1. **Update the model** — add the new entity, command, or event to the model JSON
+2. **Run \`clay_generate({})\`** — let generators produce all the structural files
+3. **Find the extension points** — look for touch files and fill in the business logic
+4. **Never hand-write structural code** — if it follows a pattern that already has a generator, it belongs in the model
+
+This is the opposite of the typical approach where you copy an existing file and modify it. With Clay, you declare the *what* (model) and the generators handle the *how* (code structure).
+
+## Understanding What Clay Owns
+
+### The .clay Inventory File
+
+The \`.clay\` file tracks every generated file with its MD5 checksum. Use it to understand:
+- **Which files are generated** — listed in \`generated_files\` with checksums
+- **Which models produce which files** — each model entry maps to its outputs
+- **When files were last generated** — \`last_generated\` timestamp
+
+\`\`\`json
+{
+  "models": [
+    {
+      "path": "clay/model.json",
+      "output": "src/",
+      "generated_files": {
+        "src/entities/Order.ts": { "md5": "abc123", "date": "..." },
+        "src/entities/User.ts": { "md5": "def456", "date": "..." }
+      }
+    }
+  ]
+}
+\`\`\`
+
+**Rule: Never manually edit files tracked in \`.clay\`.** They will be overwritten on the next generation. If you need to change the structure, change the template. If you need to change the data, change the model.
+
+### Touch Files — Extension Points
+
+Generator steps with \`touch: true\` create files **once** but never overwrite them:
+
+\`\`\`json
+{
+  "generate": "templates/service-impl.hbs",
+  "select": "$.model.types[*]",
+  "target": "src/services/{{pascalCase name}}Service.ts",
+  "touch": true
+}
+\`\`\`
+
+Touch files are **not tracked** in \`.clay\` (no checksum). This is the explicit contract:
+- Clay creates the initial scaffold (imports, class skeleton, method stubs)
+- You fill in the implementation (business logic, validation, custom behavior)
+- Clay will never overwrite your work
+
+**When you see a touch file, that is where business logic belongs.**
+
+## Recognizing Patterns
+
+When you encounter a codebase, look for these signals that code should be generated:
+
+### Strong Signals
+- **N files with identical structure** — only names and a few values differ
+- **Copy-paste with find-replace** — developers duplicating files and changing names
+- **Boilerplate that must stay in sync** — when changing a pattern means updating every instance
+- **Structural code that matches a JSONPath query** — if you can describe "all X that have Y" in a path expression, it is probably a generator step
+
+### What to Look For
+- How are entities/types structured? Same fields appearing across files?
+- Is there a naming convention? (PascalCase classes, kebab-case files, etc.)
+- Are there parallel file sets? (entity + controller + test + migration per type)
+- What parts vary between instances vs. what stays the same?
+
+### What Does NOT Belong in a Generator
+- One-off configuration files
+- Business logic that differs meaningfully per instance
+- Code that requires human judgment to write correctly
+
+## Working With an Existing Clay Project
+
+When you encounter a project that already uses Clay:
+
+1. **Read \`.clay\`** to understand which models and generators exist
+2. **Read the model files** to understand the domain structure
+3. **Use \`clay_get_model_structure\`** to see the model shape
+4. **Identify touch files** — files generated with \`touch: true\` that contain hand-written business logic
+5. **Check \`generated_files\`** in \`.clay\` to know which files you should NOT edit directly
+
+### Adding to an Existing Model
+
+\`\`\`typescript
+// 1. Add the new entity
+clay_model_add({
+  model_path: 'clay/model.json',
+  json_path: '$.model.types',
+  value: { "name": "Invoice", "fields": [...] }
+})
+
+// 2. Generate — new files appear
+clay_generate({})
+
+// 3. Find and fill in touch files (extension points)
+\`\`\`
+
+### Modifying Generated Structure
+
+If the generated code needs a different structure:
+- **Change the template**, not the generated file
+- **Change the model**, not the generated file
+- **Add a mixin** if you need to transform model data before generation
+- **Add a convention** if you need to validate the model structure
+
+## Choosing the Right Template Engine
+
+Generator steps support an optional \`engine\` field: \`"handlebars"\` (default), \`"ejs"\`, or \`"ts"\`.
+
+| Use case | Engine | Why |
+|---|---|---|
+| Entity files, DTOs, interfaces | Handlebars | Simple substitution, easy to read |
+| Touch file scaffolds | Handlebars | Just a skeleton, simplicity wins |
+| Files needing inline computation | EJS | Filter, deduplicate, compute inside template |
+| Wiring files (DI, routes, registrations) | TypeScript | Need to compute across all entities |
+| Complex structural files (sagas, pipelines) | TypeScript | Cross-references, conditional logic |
+
+TypeScript templates use the \`CodeGenerator\` base class. All available data is passed via the \`RenderContext\` parameter:
+
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers, model, parent }: RenderContext): string {
+    // data: the selected model item
+    // helpers: all Clay helpers (pascalCase, camelCase, pluralize, etc.)
+    // model: the full root model for cross-entity references
+    // parent: parent object in the JSON hierarchy
+    return \\\`...\\\`;
+  }
+}
+\`\`\`
+
+**The key insight:** Handlebars handles the 80% of templates that are mostly output with simple substitution. TypeScript handles the 20% that are mostly logic — the architectural glue files that need to reason across the model.
+
+## AI-Assisted Generation
+
+TypeScript CodeGenerator templates can use Claude Code in headless mode (\`claude -p "prompt"\`) to generate business logic at generation time. This runs on the user's existing Claude subscription — no separate API tokens needed.
+
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import { execSync } from 'child_process';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const prompt = \\\`Generate validation logic for \${data.name} with fields: \${JSON.stringify(data.fields)}\\\`;
+    const generated = execSync(\\\`claude -p "\${prompt}"\\\`, { encoding: 'utf-8' }).trim();
+    return \\\`export class \${helpers.pascalCase(data.name)}Validator {
+  \${generated}
+}\\\`;
+  }
+}
+\`\`\`
+
+This lets Clay handle the structural patterns while Claude fills in the business logic. AI-generated output is non-deterministic, so consider using \`touch: true\` for these files — generate once, then refine by hand.
+
+## Using $schema for Validation
+
+If a model has a \`$schema\` reference, all mutations are validated against it:
+
+\`\`\`json
+{
+  "$schema": "./schemas/api-model.schema.json",
+  "name": "my-api",
+  "model": { ... }
+}
+\`\`\`
+
+Use \`clay_model_set_schema\` to add schema validation to a model. This catches structural errors (typos, missing required fields) before generation runs.
+
+## Summary
+
+| Situation | Action |
+|---|---|
+| Adding a new entity/feature | Update the model, generate, fill in touch files |
+| Fixing generated code structure | Edit the template, regenerate |
+| Fixing business logic | Edit the touch file directly |
+| See N similar files | Consider whether they should be a generator |
+| Need to change model data | Use clay_model_update, not manual JSON editing |
+| Not sure what is generated | Check .clay for the file's checksum |`,
+                },
+              },
+            ],
+          };
+
+        case 'clay-analyze':
+          return {
+            messages: [
+              {
+                role: 'user',
+                content: {
+                  type: 'text',
+                  text: `# Clay Analyze — Identify Patterns in a Codebase
+
+## Purpose
+
+Analyze a codebase to discover repeating structural patterns that could be captured as Clay generators. The goal is to find code that follows consistent patterns and propose a model + generator structure that would produce it.
+
+## Step-by-Step Workflow
+
+### Step 1: Survey the Project Structure
+
+Start by understanding the project layout:
+
+\`\`\`
+- List the top-level directories
+- Identify where source code lives (src/, lib/, app/, etc.)
+- Look for existing patterns in directory naming
+- Check for an existing .clay file (project may already use Clay)
+\`\`\`
+
+**What to look for:**
+- Parallel directory structures (e.g., \`controllers/\`, \`services/\`, \`repositories/\` each with matching files)
+- Naming conventions in filenames (PascalCase, kebab-case, suffixes like Controller, Service, etc.)
+- Configuration files that enumerate things (routes, DI containers, module registrations)
+
+### Step 2: Identify Repeating File Sets
+
+Find groups of files that follow the same pattern. For each group:
+
+1. **Pick 3+ files** that look structurally similar
+2. **Diff them mentally** — what stays the same vs. what changes?
+3. **Categorize the variable parts:**
+   - **Names** — entity/type names in different casings (PascalCase, camelCase, etc.)
+   - **Fields/properties** — lists of attributes that vary per entity
+   - **Relationships** — references to other entities
+   - **Configuration** — flags, options, settings that differ per instance
+
+**Example finding:**
+\`\`\`
+Found 8 files matching pattern: src/controllers/*Controller.ts
+- All export a class named {Name}Controller
+- All have the same CRUD methods (list, get, create, update, delete)
+- All inject a {Name}Service in the constructor
+- The fields in create/update DTOs vary per entity
+→ This is a strong generator candidate
+\`\`\`
+
+### Step 3: Map Findings to a Model Structure
+
+For each group of similar files, determine what model data would be needed to generate them:
+
+\`\`\`json
+{
+  "model": {
+    "types": [
+      {
+        "name": "Order",
+        "fields": [
+          { "name": "customerId", "type": "string" },
+          { "name": "totalAmount", "type": "number" }
+        ],
+        "commands": [
+          { "name": "create" },
+          { "name": "cancel" }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
+
+**Key questions:**
+- What is the top-level grouping? (types, entities, resources, endpoints?)
+- What properties does each item need? (name, fields, relationships, flags?)
+- Are there nested structures? (fields within types, parameters within commands?)
+- What JSONPath would select these items? (e.g., \`$.model.types[*]\`)
+
+### Step 4: Map Each File Pattern to a Generator Step
+
+For each repeating file pattern, define a generator step:
+
+\`\`\`json
+{
+  "steps": [
+    {
+      "generate": "templates/controller.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/controllers/{{pascalCase name}}Controller.ts"
+    },
+    {
+      "generate": "templates/service.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/services/{{pascalCase name}}Service.ts"
+    },
+    {
+      "generate": "templates/service-impl.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/services/impl/{{pascalCase name}}ServiceImpl.ts",
+      "touch": true
+    }
+  ]
+}
+\`\`\`
+
+**Deciding between generate and touch:**
+- If the file is purely structural (same pattern every time) → \`generate\`
+- If the file needs hand-written business logic → \`touch: true\`
+- If unsure, look at the file: does it contain logic that differs meaningfully between instances, or just boilerplate with different names?
+
+**Choosing the template engine:**
+
+Generator steps support an optional \`engine\` field. Choose based on complexity:
+- **Handlebars** (default, no \`engine\` field needed) — simple per-entity files where the output is mostly static with name substitution and field iteration
+- **EJS** (\`"engine": "ejs"\`) — when you need a few lines of computation inside an otherwise template-like file
+- **TypeScript** (\`"engine": "ts"\`) — when the file requires real logic: unique imports, cross-entity references, conditional wiring, aggregation
+
+\`\`\`json
+{ "generate": "templates/entity.hbs", "select": "$.model.types[*]", "target": "..." },
+{ "generate": "templates/di-container.ts", "select": "$.model", "target": "...", "engine": "ts" }
+\`\`\`
+
+### Step 5: Identify Index/Registry/Wiring Files
+
+Look for files that aggregate or register all instances:
+
+- Route registrations (\`routes/index.ts\`)
+- Module imports (\`index.ts\` barrel files)
+- DI container registrations
+- Configuration arrays
+
+These files often need to compute across all entities (unique imports, conditional registrations). They are strong candidates for the **TypeScript engine** with the \`CodeGenerator\` base class:
+
+\`\`\`json
+{
+  "generate": "templates/routes-index.ts",
+  "select": "$.model",
+  "target": "src/routes/index.ts",
+  "engine": "ts"
+}
+\`\`\`
+
+\`\`\`typescript
+// templates/routes-index.ts
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const { pascalCase, kebabCase } = helpers;
+    const types = data.model.types;
+
+    const imports = types
+      .map((t: any) => \\\`import { \${pascalCase(t.name)}Controller } from './\${pascalCase(t.name)}Controller';\\\`)
+      .join('\\n');
+
+    const routes = types
+      .map((t: any) => \\\`  router.use('/\${kebabCase(t.name)}', new \${pascalCase(t.name)}Controller().routes());\\\`)
+      .join('\\n');
+
+    return \\\`\${imports}\\n\\nexport function registerRoutes(router: Router) {\\n\${routes}\\n}\\\`;
+  }
+}
+\`\`\`
+
+For simple index files (barrel exports), Handlebars may still suffice. Use TypeScript when the file needs filtering, deduplication, or conditional logic.
+
+### Step 6: Present Findings
+
+Summarize your analysis as:
+
+1. **Patterns found** — each group of similar files with the count and what varies
+2. **Proposed model structure** — the JSON model that captures the domain
+3. **Proposed generator steps** — which templates to create, with generate vs. touch decisions
+4. **Extension points** — which files should be touch files where business logic goes
+5. **What does NOT fit** — files that are unique and should remain hand-written
+
+## Tips
+
+- **Start with the most repeated pattern.** If there are 12 controllers and 3 utility files, focus on the controllers first.
+- **Use \`clay_test_path\`** to validate your JSONPath expressions against the proposed model.
+- **Check for existing generators** with \`clay_list_generators\` — the project may already have generators for some patterns.
+- **Look at imports** — they often reveal relationships between entities that should be in the model.
+- **Count the files** — if a pattern only appears twice, it might not be worth generating. Three or more is the sweet spot.`,
+                },
+              },
+            ],
+          };
+
+        case 'clay-refactor-to-generator':
+          return {
+            messages: [
+              {
+                role: 'user',
+                content: {
+                  type: 'text',
+                  text: `# Clay Refactor to Generator — Extract a Generator From Similar Files
+
+## Purpose
+
+Take a set of similar files and extract a Clay generator: a template (Handlebars, EJS, or TypeScript) that produces all of them, a model that captures what varies, and a generator step that wires them together.
+
+## Step-by-Step Workflow
+
+### Step 1: Collect the Source Files
+
+Gather 3 or more files that follow the same pattern. Read them all and confirm they are structurally similar.
+
+**Good candidates:**
+- Files with the same suffix (UserController.ts, OrderController.ts, ProductController.ts)
+- Files in the same directory with matching structure
+- Files that were clearly copy-pasted and modified
+
+### Step 2: Create a Diff Table
+
+For each file, identify what is **constant** (same across all files) vs. **variable** (differs per file).
+
+\`\`\`
+File: UserController.ts    OrderController.ts    ProductController.ts
+──────────────────────────────────────────────────────────────────────
+Class name:   UserController       OrderController       ProductController
+              → {{pascalCase name}}Controller
+
+Service:      UserService          OrderService          ProductService
+              → {{pascalCase name}}Service
+
+Fields:       id, email, name      id, total, status     id, title, price
+              → {{#each fields}}
+
+Methods:      getAll, getById,     getAll, getById,      getAll, getById,
+              create, update       create, update,       create, update
+                                   cancel
+              → mostly constant, some vary → consider commands array
+\`\`\`
+
+### Step 3: Identify the Variable Types
+
+Classify each variable part:
+
+| Variable part | Template approach |
+|---|---|
+| Entity name in different casings | \`{{pascalCase name}}\`, \`{{camelCase name}}\`, \`{{kebabCase name}}\` |
+| List of fields/properties | \`{{#each fields}}...{{/each}}\` |
+| Optional sections | \`{{#if hasTimestamps}}...{{/if}}\` |
+| Conditional logic | \`{{#eq type "string"}}...{{/eq}}\` |
+| References to other entities | \`{{pascalCase type}}\` on field with type reference |
+| Repeated sub-patterns | Handlebars partial: \`{{> fieldDeclaration}}\` |
+
+### Step 4: Build the Template
+
+Start from one of the source files and replace variable parts with Handlebars expressions:
+
+**Before (UserController.ts):**
+\`\`\`typescript
+import { UserService } from '../services/UserService';
+
+export class UserController {
+  constructor(private service: UserService) {}
+
+  async getAll(): Promise<User[]> {
+    return this.service.findAll();
+  }
+
+  async getById(id: string): Promise<User> {
+    return this.service.findById(id);
+  }
+
+  async create(data: CreateUserDTO): Promise<User> {
+    return this.service.create(data);
+  }
+}
+\`\`\`
+
+**After (controller.hbs):**
+\`\`\`typescript
+import { {{pascalCase name}}Service } from '../services/{{pascalCase name}}Service';
+
+export class {{pascalCase name}}Controller {
+  constructor(private service: {{pascalCase name}}Service) {}
+
+  async getAll(): Promise<{{pascalCase name}}[]> {
+    return this.service.findAll();
+  }
+
+  async getById(id: string): Promise<{{pascalCase name}}> {
+    return this.service.findById(id);
+  }
+
+  async create(data: Create{{pascalCase name}}DTO): Promise<{{pascalCase name}}> {
+    return this.service.create(data);
+  }
+}
+\`\`\`
+
+### Step 5: Build the Model Entry
+
+Define what data each instance needs:
+
+\`\`\`json
+{
+  "model": {
+    "types": [
+      {
+        "name": "user",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "email", "type": "string" },
+          { "name": "name", "type": "string" }
+        ]
+      },
+      {
+        "name": "order",
+        "fields": [
+          { "name": "id", "type": "string" },
+          { "name": "total", "type": "number" },
+          { "name": "status", "type": "string" }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
+
+### Step 6: Define the Generator Step
+
+\`\`\`json
+{
+  "steps": [
+    {
+      "generate": "templates/controller.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/controllers/{{pascalCase name}}Controller.ts"
+    }
+  ]
+}
+\`\`\`
+
+### Step 7: Decide What Gets Generated vs. Touched
+
+For each file in the set, ask: **"If I regenerate this, will I lose important work?"**
+
+- **Pure scaffolding** (no hand-written logic inside) → \`generate\` (Clay owns it)
+- **Skeleton with business logic** (hand-written implementations inside) → \`touch: true\` (Clay creates it once, you own it)
+- **Mix of both** → split into two files: a generated base/interface + a touch implementation
+
+**Common pattern:**
+\`\`\`json
+{
+  "steps": [
+    {
+      "generate": "templates/service-interface.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/services/I{{pascalCase name}}Service.ts"
+    },
+    {
+      "generate": "templates/service-impl.hbs",
+      "select": "$.model.types[*]",
+      "target": "src/services/{{pascalCase name}}ServiceImpl.ts",
+      "touch": true
+    }
+  ]
+}
+\`\`\`
+
+### Step 8: Verify Round-Trip
+
+After creating the template and model:
+
+1. **Use \`clay_test_path\`** to verify the JSONPath selects the right items
+2. **Run \`clay_generate\`** to produce the files
+3. **Diff generated output against originals** — they should be structurally identical
+4. If there are differences, adjust the template or model until they match
+
+### Step 9: Handle Edge Cases
+
+Things that commonly trip up template extraction:
+
+- **Imports that vary** — may need a conditional or an imports array in the model
+- **Optional sections** — use \`{{#if property}}...{{/if}}\` or \`{{#propertyExists this "property"}}...{{/propertyExists}}\`
+- **Pluralization** — use \`{{pluralize name}}\` and \`{{singularize name}}\` helpers
+- **Nested iterations** — \`{{#each fields}}...{{/each}}\` inside \`{{#each commands}}...{{/each}}\`
+- **Cross-references** — use \`{{clay_model}}\` to access the full model from within a selected item
+
+## Available Helpers
+
+Use \`clay_list_helpers()\` for the complete list. The most commonly needed ones for refactoring:
+
+- **Casing:** \`pascalCase\`, \`camelCase\`, \`kebabCase\`, \`snakeCase\`, \`constantCase\`
+- **Pluralization:** \`pluralize\`, \`singularize\`
+- **Conditionals:** \`eq\`, \`ne\`, \`propertyExists\`, \`and\`, \`or\`
+- **Iteration:** \`eachUnique\`, \`times\`, \`group\`
+- **Context:** \`clay_model\` (full model), \`clay_parent\` (parent object), \`clay_key\` (current key)`,
                 },
               },
             ],

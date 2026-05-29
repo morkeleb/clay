@@ -209,7 +209,7 @@ describe('MCP Server', function () {
       }, 1000);
     });
 
-    it('should list 2 Clay prompts', (done) => {
+    it('should list 5 Clay prompts', (done) => {
       serverProcess = spawn('node', [mcpBin], {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -246,11 +246,14 @@ describe('MCP Server', function () {
 
               const prompts = response.result.prompts;
               expect(prompts).to.be.an('array');
-              expect(prompts.length).to.equal(2);
+              expect(prompts.length).to.equal(5);
 
               const promptNames = prompts.map((p: { name: string }) => p.name);
               expect(promptNames).to.include('clay-getting-started');
               expect(promptNames).to.include('clay-workflow');
+              expect(promptNames).to.include('clay-architecture-mindset');
+              expect(promptNames).to.include('clay-analyze');
+              expect(promptNames).to.include('clay-refactor-to-generator');
 
               done();
               return;

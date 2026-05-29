@@ -78,6 +78,11 @@
               "touch": {
                 "type": "boolean",
                 "description": "If true, the file will not be overwritten if it exists."
+              },
+              "engine": {
+                "type": "string",
+                "enum": ["handlebars", "ejs", "ts"],
+                "description": "Template engine to use. 'handlebars' (default) for .hbs templates, 'ejs' for EJS templates, 'ts' for TypeScript/JavaScript CodeGenerator classes."
               }
             },
             "required": ["generate", "target", "select"]

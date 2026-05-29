@@ -14,10 +14,10 @@ export { FormatterCache, createFormatterCache } from './formatter-cache';
 export { createSelectStage } from './stages/select';
 export { createRenderStage } from './stages/render';
 export { clearTemplateCache } from './template-cache';
+export { clearEngineCaches } from './engines';
 export { createHashStage } from './stages/hash';
 export { createFormatStage } from './stages/format';
 export { createWriteStage } from './stages/write';
-export { executeCopy } from './stages/copy';
 export { executeCommand } from './stages/command';
 export { createProgress } from './progress';
 export { RenderWorkerPool } from './worker-pool';
@@ -122,7 +122,8 @@ export function buildGeneratePipeline(
         fileNamePattern,
         (partials || []) as string[],
         partialsDir || '',
-        !!step.touch
+        !!step.touch,
+        step.engine
       );
 
       // Report progress for worker results

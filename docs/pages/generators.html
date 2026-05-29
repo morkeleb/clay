@@ -66,13 +66,20 @@
         <h2>Step Types</h2>
 
         <h3>1. Generate (Template)</h3>
-        <p>Generate files from Handlebars templates:</p>
+        <p>Generate files from templates. Supports Handlebars (.hbs), EJS (.ejs), and TypeScript (.ts) engines:</p>
         <pre><code>{
   "generate": "templates/model.js",
   "select": "$.model.types[*]",
   "target": "src/models/{{kebabCase name}}.model.js",
   "touch": false
 }</code></pre>
+
+        <p>With different template engines:</p>
+        <pre><code>// EJS — inline JavaScript logic
+{ "generate": "templates/service.ejs", "select": "$.model.types[*]", "target": "src/{{name}}Service.ts", "engine": "ejs" }
+
+// TypeScript — fully programmatic via CodeGenerator class
+{ "generate": "templates/routes.ts", "select": "$.model", "target": "src/routes/index.ts", "engine": "ts" }</code></pre>
 
         <p><strong>Parameters:</strong></p>
         <ul>
@@ -81,6 +88,9 @@
           <li><code>target</code> - Output path (can use Handlebars)</li>
           <li>
             <code>touch</code> - If true, only generate if file doesn't exist
+          </li>
+          <li>
+            <code>engine</code> - Template engine: <code>"handlebars"</code> (default), <code>"ejs"</code>, or <code>"ts"</code>
           </li>
         </ul>
 

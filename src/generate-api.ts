@@ -16,6 +16,7 @@ import {
   createFormatterCache,
   createProgress,
   clearTemplateCache,
+  clearEngineCaches,
   RenderWorkerPool,
 } from './pipeline/index';
 import {
@@ -129,6 +130,7 @@ export async function generate(
     if (!verbose) ui.suppress(true);
 
     clearTemplateCache();
+    clearEngineCaches();
     const formatterCache = createFormatterCache();
     progressTracker = createProgress('generate', verbose);
 

@@ -58,7 +58,7 @@ describe('pipeline stages', () => {
   });
 
   describe('render', () => {
-    it('renders template with model data', async () => {
+    it('renders Handlebars template with model data', async () => {
       const templatePath = path.resolve('test/samples/templates/simple.hbs');
       const items: SelectItem[] = [
         {
@@ -77,6 +77,56 @@ describe('pipeline stages', () => {
       expect(results).to.have.lengthOf(1);
       expect(results[0].filename).to.include('User');
       expect(results[0].content).to.equal('export class User {}');
+    });
+
+    it('renders EJS template when engine is ejs', async () => {
+      const templatePath = path.resolve('test/samples/templates/simple.ejs');
+      const ejsStep: GeneratorStepGenerate = {
+        generate: 'simple.ejs',
+        select: '$.entities[*]',
+        engine: 'ejs',
+      };
+      const items: SelectItem[] = [
+        {
+          modelData: { name: 'Order' },
+          templatePath,
+          fileNamePattern: 'output/{{name}}.ts',
+          outputDir: 'src/',
+          step: ejsStep,
+          modelIndex: dummyModelIndex,
+          formatters: [],
+        },
+      ];
+
+      const stage = createRenderStage();
+      const results = await collect(stage(fromArray(items)));
+      expect(results).to.have.lengthOf(1);
+      expect(results[0].content).to.equal('export class Order {}');
+    });
+
+    it('renders TypeScript CodeGenerator when engine is ts', async () => {
+      const templatePath = path.resolve('test/samples/templates/simple-generator.ts');
+      const tsStep: GeneratorStepGenerate = {
+        generate: 'simple-generator.ts',
+        select: '$.entities[*]',
+        engine: 'ts',
+      };
+      const items: SelectItem[] = [
+        {
+          modelData: { name: 'Product' },
+          templatePath,
+          fileNamePattern: 'output/{{name}}.ts',
+          outputDir: 'src/',
+          step: tsStep,
+          modelIndex: dummyModelIndex,
+          formatters: [],
+        },
+      ];
+
+      const stage = createRenderStage();
+      const results = await collect(stage(fromArray(items)));
+      expect(results).to.have.lengthOf(1);
+      expect(results[0].content).to.equal('export class Product {}');
     });
   });
 

@@ -15,6 +15,7 @@ interface BatchRenderRequest {
   partials: string[];
   partialsDir: string;
   touch: boolean;
+  engine?: 'handlebars' | 'ejs' | 'ts';
 }
 
 interface RenderResult {
@@ -85,7 +86,8 @@ export class RenderWorkerPool {
     fileNamePattern: string,
     partials: string[],
     partialsDir: string,
-    touch: boolean
+    touch: boolean,
+    engine?: 'handlebars' | 'ejs' | 'ts'
   ): Promise<RenderResult[]> {
     if (this.terminated) {
       return Promise.reject(new Error('Worker pool terminated'));
@@ -106,6 +108,7 @@ export class RenderWorkerPool {
         partials,
         partialsDir,
         touch,
+        engine,
       };
       worker.postMessage(request);
     });

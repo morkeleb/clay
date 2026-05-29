@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Templates - Clay Documentation</title>
+    <title>Templates &amp; Template Engines - Clay Documentation</title>
     <link rel="stylesheet" href="../css/terminal.css" />
     <link rel="stylesheet" href="../css/docs.css" />
   </head>
@@ -17,21 +17,62 @@
           <span>›</span>
           <span>Templates</span>
         </div>
-        <h1>Templates & Helpers</h1>
+        <h1>Templates &amp; Template Engines</h1>
         <div class="subtitle">
-          Write powerful Handlebars templates with 47+ built-in helpers
+          Three template engines for every use case — from simple substitution to fully programmatic generation
         </div>
       </div>
 
       <div class="doc-content">
         <h2>Overview</h2>
         <p>
-          Clay uses Handlebars templates to generate code. Templates can access
-          your model data and use a rich set of helpers for formatting, logic,
-          and iteration.
+          Clay supports three template engines, selectable per generator step via the optional <code>engine</code> field.
+          All engines have access to Clay's 47+ built-in helpers for string manipulation, logic, and iteration.
         </p>
 
-        <h2>Basic Template Syntax</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Engine</th>
+              <th>Best For</th>
+              <th>Syntax</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Handlebars</strong> (default)</td>
+              <td>Simple substitution, iteration, conditionals</td>
+              <td><code>{{pascalCase name}}</code></td>
+            </tr>
+            <tr>
+              <td><strong>EJS</strong></td>
+              <td>Templates needing inline JavaScript logic</td>
+              <td><code>&lt;%= helpers.pascalCase(name) %&gt;</code></td>
+            </tr>
+            <tr>
+              <td><strong>TypeScript</strong></td>
+              <td>Complex generation: cross-references, unique imports, graph traversal</td>
+              <td><code>CodeGenerator</code> class</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Choosing an Engine</h3>
+        <ul>
+          <li><strong>Start with Handlebars</strong> — it covers most templates and is the easiest to read</li>
+          <li><strong>Switch to EJS</strong> when you need a few lines of logic inside an otherwise template-like file</li>
+          <li><strong>Switch to TypeScript</strong> when the generation logic is more code than template (wiring files, DI containers, route registrations, index files)</li>
+        </ul>
+
+        <h3>Generator Step Configuration</h3>
+        <p>Use the <code>engine</code> field on generate steps to select the engine:</p>
+        <pre><code>{ "generate": "entity.hbs", "select": "$.model.types[*]", "target": "{{pascalCase name}}.ts" }
+{ "generate": "service.ejs", "select": "$.model.types[*]", "target": "{{pascalCase name}}Service.ts", "engine": "ejs" }
+{ "generate": "routes.ts", "select": "$.model", "target": "routes/index.ts", "engine": "ts" }</code></pre>
+
+        <h2>Handlebars Templates</h2>
+
+        <h3>Basic Syntax</h3>
         <p>Templates use double curly braces to output values:</p>
         <pre><code>// {{name}} Model
 class {{pascalCase name}} {
@@ -467,19 +508,229 @@ Step {{inc @index}}
           helpers when working with AI assistants!
         </div>
 
+        <h2>EJS Templates</h2>
+        <p>
+          EJS templates embed JavaScript directly in the template using <code>&lt;% %&gt;</code> tags.
+          Use EJS when you need a few lines of computation inside an otherwise template-like file.
+        </p>
+
+        <h3>Basic Syntax</h3>
+        <pre><code>&lt;% // JavaScript code (no output) %&gt;
+&lt;%= expression %&gt;   &lt;!-- Output (escaped) --&gt;
+&lt;%- expression %&gt;   &lt;!-- Output (unescaped) --&gt;</code></pre>
+
+        <h3>Example: Entity with Computed Imports</h3>
+        <pre><code>&lt;% const uniqueRefs = [...new Set(
+  (fields || []).filter(f =&gt; f.type === 'reference').map(f =&gt; f.reference)
+)]; %&gt;
+&lt;% uniqueRefs.forEach(ref =&gt; { %&gt;
+import { &lt;%= helpers.pascalCase(ref) %&gt; } from './&lt;%= helpers.pascalCase(ref) %&gt;';
+&lt;% }); %&gt;
+
+export class &lt;%= helpers.pascalCase(name) %&gt; {
+&lt;% (fields || []).forEach(f =&gt; { %&gt;
+  &lt;%= helpers.camelCase(f.name) %&gt;: &lt;%= f.type %&gt;;
+&lt;% }); %&gt;
+}</code></pre>
+
+        <h3>Accessing Helpers</h3>
+        <p>
+          In EJS templates, Clay helpers are available via the <code>helpers</code> object:
+        </p>
+        <pre><code>&lt;%= helpers.pascalCase(name) %&gt;
+&lt;%= helpers.pluralize(name) %&gt;
+&lt;%= helpers.camelCase(fieldName) %&gt;</code></pre>
+
+        <h2>TypeScript Templates (CodeGenerator)</h2>
+        <p>
+          For fully programmatic generation, use the <code>CodeGenerator</code> base class.
+          TypeScript templates are ideal for complex wiring files, DI containers, route registrations,
+          and any file where the generation logic is more code than template.
+        </p>
+
+        <h3>Basic Structure</h3>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers, model }: RenderContext): string {
+    const { pascalCase, camelCase } = helpers;
+    return `export class ${pascalCase(data.name)} {}`;
+  }
+}</code></pre>
+
+        <h3>RenderContext</h3>
+        <p>The <code>render()</code> method receives a <code>RenderContext</code> with all available data:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>data</code></td>
+              <td><code>Record&lt;string, any&gt;</code></td>
+              <td>The selected model item (e.g., one entity from <code>$.model.types[*]</code>)</td>
+            </tr>
+            <tr>
+              <td><code>helpers</code></td>
+              <td><code>ClayHelpers</code></td>
+              <td>All Clay helpers — pascalCase, camelCase, pluralize, etc.</td>
+            </tr>
+            <tr>
+              <td><code>model</code></td>
+              <td><code>Record&lt;string, any&gt;</code></td>
+              <td>The full root model (equivalent to <code>clay_model</code> in Handlebars)</td>
+            </tr>
+            <tr>
+              <td><code>parent</code></td>
+              <td><code>Record&lt;string, any&gt;</code></td>
+              <td>Parent object in the JSON hierarchy (equivalent to <code>clay_parent</code>)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Async Render</h3>
+        <p>The <code>render()</code> method can be async. This enables database queries, API calls, or file reads during generation:</p>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  async render({ data, helpers }: RenderContext): Promise&lt;string&gt; {
+    // Can do async operations — database queries, API calls, etc.
+    return `export class ${helpers.pascalCase(data.name)}Service {}`;
+  }
+}</code></pre>
+
+        <h3>Full Example: Route Registration</h3>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const { pascalCase, kebabCase } = helpers;
+    const types = data.model.types;
+
+    const imports = types
+      .map((t: any) =&gt;
+        `import { ${pascalCase(t.name)}Controller } from './${pascalCase(t.name)}Controller';`
+      )
+      .join('\n');
+
+    const routes = types
+      .map((t: any) =&gt;
+        `  router.use('/${kebabCase(t.name)}', new ${pascalCase(t.name)}Controller().routes());`
+      )
+      .join('\n');
+
+    return `${imports}
+
+export function registerRoutes(router: Router) {
+${routes}
+}`;
+  }
+}</code></pre>
+
+        <h3>npm Package Access</h3>
+        <p>
+          TypeScript templates can import any npm package installed in your project.
+          This enables powerful use cases like querying databases or fetching API specs during generation:
+        </p>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import { Client } from 'pg';
+
+export default class extends CodeGenerator {
+  async render({ data, helpers }: RenderContext): Promise&lt;string&gt; {
+    const client = new Client();
+    await client.connect();
+    const columns = await client.query(
+      'SELECT column_name, data_type FROM information_schema.columns WHERE table_name = $1',
+      [data.name]
+    );
+    await client.end();
+    // Generate code based on actual database schema
+    return `// Generated from database schema for ${data.name}\n...`;
+  }
+}</code></pre>
+
+        <h3>AI-Assisted Generation with Claude</h3>
+        <p>
+          Because TypeScript templates support async rendering and npm imports,
+          you can use <a href="https://code.claude.com/docs/en/headless" target="_blank">Claude Code headless mode</a>
+          to generate business logic at generation time. Headless mode runs on your existing Claude subscription
+          — no separate API tokens needed.
+        </p>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import { execSync } from 'child_process';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const { pascalCase } = helpers;
+    const fieldList = data.fields.map((f: any) =&gt; `${f.name}: ${f.type}`).join(', ');
+
+    const prompt = `Generate TypeScript validation logic for a ${data.name} entity with fields: ${fieldList}. Return only the method body, no explanation.`;
+    const generated = execSync(
+      `claude -p "${prompt}"`,
+      { encoding: 'utf-8', timeout: 30000 }
+    ).trim();
+
+    return `export class ${pascalCase(data.name)}Validator {
+  validate(input: unknown): boolean {
+${generated}
+  }
+}`;
+  }
+}</code></pre>
+        <p>This lets Clay handle the structural patterns while Claude fills in the business logic at generation time. Use cases include:</p>
+        <ul>
+          <li>Generating validation logic based on field types and constraints</li>
+          <li>Creating test fixtures from entity definitions</li>
+          <li>Writing documentation from model descriptions</li>
+          <li>Bootstrapping first-draft implementations for touch files</li>
+        </ul>
+        <div class="note">
+          <strong>Note:</strong> AI generation is non-deterministic — regenerating may produce different output.
+          Consider using touch files for AI-generated code so it is only created once and can be refined by hand afterward.
+        </div>
+
+        <h2>Helper Availability Across Engines</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Engine</th>
+              <th>How to Access Helpers</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Handlebars</td>
+              <td><code>{{pascalCase name}}</code> — registered as Handlebars helpers</td>
+            </tr>
+            <tr>
+              <td>EJS</td>
+              <td><code>helpers.pascalCase(name)</code> — via <code>helpers</code> object</td>
+            </tr>
+            <tr>
+              <td>TypeScript</td>
+              <td><code>helpers.pascalCase(name)</code> — via <code>RenderContext.helpers</code></td>
+            </tr>
+          </tbody>
+        </table>
+
         <h2>Best Practices</h2>
         <ul>
           <li>
             Use case helpers (pascalCase, camelCase, etc.) for consistent naming
           </li>
           <li>
-            Leverage partials for reusable components like headers and footers
+            Leverage partials for reusable Handlebars components like headers and footers
           </li>
           <li>
-            Use <code>clay_model</code> to access the full model when needed
+            Use <code>clay_model</code> (Handlebars) or <code>model</code> (TS/EJS) to access the full model when needed
           </li>
-          <li>Test complex logic in smaller templates first</li>
-          <li>Use formatters (like Prettier) to clean up generated code</li>
+          <li>Start with Handlebars — switch to EJS or TypeScript only when you need the extra power</li>
+          <li>Use formatters (like Prettier) to clean up generated code from any engine</li>
+          <li>TypeScript templates are ideal for files that aggregate across entities (indexes, DI, routing)</li>
         </ul>
       </div>
 

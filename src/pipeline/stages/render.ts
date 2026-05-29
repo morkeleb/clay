@@ -2,11 +2,12 @@
 import path from 'path';
 import fs from 'fs';
 import * as ui from '../../output';
-import { getCompiledTemplate, compileTemplate } from '../template-cache';
+import { compileTemplate } from '../template-cache';
+import { renderWithEngine } from '../engines';
 import type { Stage, SelectItem, RenderedItem } from '../types';
 
 /**
- * Renders Handlebars template with model data.
+ * Renders templates with model data using the configured engine.
  * Skips touch files that already exist on disk.
  * Input: SelectItem (model data + template path)
  * Output: RenderedItem (filename + rendered content + formatters)
@@ -33,8 +34,12 @@ export function createRenderStage(
         continue;
       }
 
-      const template = getCompiledTemplate(item.templatePath);
-      const content = template(item.modelData);
+      const engine = item.step.engine ?? 'handlebars';
+      const content = await renderWithEngine(
+        engine,
+        item.templatePath,
+        item.modelData
+      );
 
       onRender?.(filename);
       yield {

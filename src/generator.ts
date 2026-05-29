@@ -83,6 +83,7 @@ const GeneratorStepSchema = z.union([
     touch: z.boolean().optional(),
     select: SelectSchema,
     target: z.string().optional(),
+    engine: z.enum(['handlebars', 'ejs', 'ts']).optional(),
   }),
   z.object({
     copy: z.string(),

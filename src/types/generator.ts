@@ -11,6 +11,7 @@ export interface GeneratorStepGenerate {
   select: string;
   target?: string;
   touch?: boolean;
+  engine?: 'handlebars' | 'ejs' | 'ts';
 }
 
 /**
