@@ -46,9 +46,17 @@ export class FormatterCache {
 }
 
 /**
- * Create a FormatterCache using resolve-global + require for real formatter loading.
+ * Create a FormatterCache using resolve-global + createRequire for real formatter loading.
+ * Uses createRequire from the formatter's path so that the formatter's internal
+ * require() calls (e.g., require('prettier')) resolve from the formatter's own
+ * node_modules, not from Clay's.
  */
 export function createFormatterCache(): FormatterCache {
+  const { createRequire } = require('module');
   const resolveGlobal = require('resolve-global');
-  return new FormatterCache((pkg: string) => require(resolveGlobal(pkg)));
+  return new FormatterCache((pkg: string) => {
+    const formatterPath = resolveGlobal(pkg);
+    const formatterRequire = createRequire(formatterPath);
+    return formatterRequire(formatterPath);
+  });
 }
