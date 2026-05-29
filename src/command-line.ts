@@ -110,6 +110,8 @@ const cleanModels = (modelsToExecute: ModelIndex[]): void => {
         modelIndex.output || ''
       )
     );
+    // Clear input hash so next generate doesn't skip this model
+    modelIndex.input_hash = undefined;
   });
 };
 
