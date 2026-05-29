@@ -83,10 +83,6 @@ async function executeTsHook(
     throw new Error(`Hook ${hookPath} must export a class with a run(context: HookContext) method`);
   }
 
-  if (instance.run.length < 1) {
-    throw new Error(`Hook ${hookPath} run() must accept a HookContext argument`);
-  }
-
   const helpers = getHelpers();
 
   if (hook.select) {
@@ -98,12 +94,13 @@ async function executeTsHook(
       const batch = items.slice(i, i + CONCURRENCY);
       await Promise.all(
         batch.map(async (item: any) => {
-          // Determine which touch files belong to this item
-          const itemTouchFiles = newTouchFiles.filter(f =>
-            f.includes(item.name || '')
-          );
+          // Pass all new touch files to the hook — the hook has the model
+          // item data and can determine which files are relevant.
+          // We cannot reliably match files to items here without provenance
+          // tracking through the pipeline.
+          const itemTouchFiles = newTouchFiles;
 
-          // Skip if onlyNewTouchFiles and no new touch files for this item
+          // Skip if onlyNewTouchFiles and no new touch files at all
           if (hook.onlyNewTouchFiles && itemTouchFiles.length === 0) {
             return;
           }

@@ -3,6 +3,8 @@
  * Core data structures used throughout the application
  */
 
+import type { WrittenItem } from '../pipeline/types';
+
 /**
  * Generator step that generates files from Handlebars templates
  */
@@ -83,9 +85,6 @@ export interface DecoratedGenerator extends Generator {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clean: (model: any, outputDir: string) => void;
 }
-
-// Import WrittenItem for the return type (avoid circular deps by using import type)
-import type { WrittenItem } from '../pipeline/types';
 
 /**
  * Type guards for generator steps
