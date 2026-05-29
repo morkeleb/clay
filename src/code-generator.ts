@@ -76,3 +76,51 @@ export interface ClayHelpers {
 export abstract class CodeGenerator {
   abstract render(context: RenderContext): string | Promise<string>;
 }
+
+/**
+ * Context passed to PostGenerateHook.run() — extends RenderContext with
+ * hook-specific data about what was generated.
+ */
+export interface HookContext {
+  /** The selected model item */
+  data: Record<string, any>;
+  /** Clay helpers — pascalCase, camelCase, pluralize, etc. */
+  helpers: ClayHelpers;
+  /** The full root model */
+  model: Record<string, any>;
+  /** Parent object in the JSON hierarchy */
+  parent?: Record<string, any>;
+  /** Touch files that were newly created during this generation run */
+  touchFiles: string[];
+  /** The output directory for this generator */
+  outputDir: string;
+  /** All files generated during this run (not just touch files) */
+  generatedFiles: string[];
+}
+
+/**
+ * Abstract base class for post-generation hooks.
+ * Extend this and implement run() to execute logic after files are generated.
+ *
+ * @example
+ * ```typescript
+ * import { PostGenerateHook, type HookContext } from 'clay-generator/types';
+ * import { execSync } from 'child_process';
+ * import fs from 'fs';
+ *
+ * export default class extends PostGenerateHook {
+ *   async run({ data, helpers, touchFiles, outputDir }: HookContext): Promise<void> {
+ *     const { pascalCase } = helpers;
+ *     const iface = fs.readFileSync(
+ *       `${outputDir}/src/services/I${pascalCase(data.name)}Service.ts`, 'utf-8'
+ *     );
+ *     for (const file of touchFiles) {
+ *       execSync(`claude -p 'Implement ${file} following: ${iface}'`, { cwd: outputDir });
+ *     }
+ *   }
+ * }
+ * ```
+ */
+export abstract class PostGenerateHook {
+  abstract run(context: HookContext): void | Promise<void>;
+}

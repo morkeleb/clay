@@ -195,6 +195,110 @@
 └── foundation/            # Files to copy
     └── config.js</code></pre>
 
+        <h2>Post-Generation Hooks</h2>
+        <p>
+          Generators can define <code>postGenerate</code> hooks that run after all steps complete and files are on disk.
+          Hooks are best-effort — failures log warnings but never fail the generation.
+        </p>
+
+        <h3>TypeScript Hooks</h3>
+        <p>
+          The primary hook type uses the <code>PostGenerateHook</code> base class, following the same pattern as <code>CodeGenerator</code>.
+          Import from <code>clay-generator/types</code>.
+        </p>
+        <pre><code>{
+  "steps": [...],
+  "postGenerate": [
+    { "run": "hooks/fill-services.ts", "select": "$.model.types[*]", "onlyNewTouchFiles": true },
+    { "runCommand": "prettier --write src/" }
+  ]
+}</code></pre>
+
+        <p><strong>Parameters (TypeScript hook):</strong></p>
+        <ul>
+          <li><code>run</code> - Path to a TypeScript PostGenerateHook file</li>
+          <li><code>select</code> - JSONPath to select model items (hook runs once per match, in parallel)</li>
+          <li><code>onlyNewTouchFiles</code> - If true, skip items where no touch files were newly created</li>
+        </ul>
+
+        <p><strong>Parameters (command hook):</strong></p>
+        <ul>
+          <li><code>runCommand</code> - Shell command (supports Handlebars templating)</li>
+          <li><code>select</code> - JSONPath to select model items</li>
+          <li><code>verbose</code> - Log command output</li>
+        </ul>
+
+        <h3>HookContext</h3>
+        <p>The <code>run()</code> method receives a <code>HookContext</code> with:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>data</code></td>
+              <td>The selected model item</td>
+            </tr>
+            <tr>
+              <td><code>helpers</code></td>
+              <td>Clay helpers (pascalCase, camelCase, etc.)</td>
+            </tr>
+            <tr>
+              <td><code>model</code></td>
+              <td>The full root model</td>
+            </tr>
+            <tr>
+              <td><code>touchFiles</code></td>
+              <td>Only files <strong>newly created</strong> this run</td>
+            </tr>
+            <tr>
+              <td><code>outputDir</code></td>
+              <td>Generator output directory</td>
+            </tr>
+            <tr>
+              <td><code>generatedFiles</code></td>
+              <td>All files generated this run</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Example: AI-Assisted Fill-in with Claude</h3>
+        <p>
+          Use <a href="https://code.claude.com/docs/en/headless" target="_blank">Claude Code headless mode</a>
+          to fill in touch files after generation. Each hook spawns a focused Claude instance with
+          tight context — the interface contract and entity data — rather than the entire project.
+          Runs on your existing Claude subscription.
+        </p>
+        <pre><code>import { PostGenerateHook, type HookContext } from 'clay-generator/types';
+import { execSync } from 'child_process';
+import fs from 'fs';
+
+export default class extends PostGenerateHook {
+  async run({ data, helpers, touchFiles, outputDir }: HookContext): Promise&lt;void&gt; {
+    const { pascalCase } = helpers;
+
+    // Read the generated interface for context
+    const iface = fs.readFileSync(
+      `${outputDir}/src/services/I${pascalCase(data.name)}Service.ts`, 'utf-8'
+    );
+
+    for (const file of touchFiles) {
+      const prompt = `Implement ${pascalCase(data.name)}ServiceImpl following this interface:\n${iface}`;
+      execSync(`claude -p '${prompt}'`, { cwd: outputDir, timeout: 60000 });
+    }
+  }
+}</code></pre>
+
+        <h3>Execution Order</h3>
+        <ul>
+          <li>Hooks run <strong>sequentially</strong> — hook 2 waits for hook 1 to finish</li>
+          <li>Within a hook with <code>select</code>, per-item calls run <strong>in parallel</strong> (concurrency: 5)</li>
+          <li>Hooks are skipped when the model is skipped (input hash unchanged)</li>
+        </ul>
+
         <h2>Best Practices</h2>
         <ul>
           <li>Order steps logically (create directories before files)</li>

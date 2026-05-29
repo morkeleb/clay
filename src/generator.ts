@@ -109,6 +109,19 @@ const ConventionSchema = z.union([
   }),
 ]);
 
+const PostGenerateStepSchema = z.union([
+  z.object({
+    run: z.string(),
+    select: SelectSchema,
+    onlyNewTouchFiles: z.boolean().optional(),
+  }),
+  z.object({
+    runCommand: z.string(),
+    select: SelectSchema,
+    verbose: z.boolean().optional(),
+  }),
+]);
+
 const GeneratorSchema = z.object({
   steps: z.array(GeneratorStepSchema),
   partials: z.array(z.string()).optional(),
@@ -124,6 +137,7 @@ const GeneratorSchema = z.object({
     )
     .optional(),
   conventions: z.array(ConventionSchema).optional(),
+  postGenerate: z.array(PostGenerateStepSchema).optional(),
 });
 
 function validateGeneratorSchema(generator: any): Generator {
@@ -273,11 +287,13 @@ function decorate_generator(
   const decorated = g as DecoratedGenerator;
   const formatterSpecs = normalizeFormatters(g);
 
-  decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<void> => {
+  decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<WrittenItem[]> => {
     const outputPath = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
     const generatorPartials = g.partials || [];
     handlebars.load_partials(generatorPartials, dirname);
+
+    const allWrittenItems: WrittenItem[] = [];
 
     for (let index = 0; index < g.steps.length; index++) {
       const step = g.steps[index];
@@ -289,14 +305,15 @@ function decorate_generator(
         const isDir = fs.lstatSync(templatePath).isDirectory();
         if (isDir) {
           const files = collectFiles(templatePath, templatePath);
-          await Promise.all(
+          const results = await Promise.all(
             files.map(f => pipelineRunner(
               model, step.select, templatePath, f, outputPath, modelIndex, step, formatterSpecs,
               modelIndex.path, generatorPartials, dirname
             ))
           );
+          allWrittenItems.push(...results.flat());
         } else {
-          await pipelineRunner(
+          const results = await pipelineRunner(
             model,
             step.select,
             path.join(dirname, path.dirname(step.generate)),
@@ -309,6 +326,7 @@ function decorate_generator(
             generatorPartials,
             dirname
           );
+          allWrittenItems.push(...results);
         }
       } else if ('runCommand' in step) {
         const output_dir = path.resolve(outputPath);
@@ -332,6 +350,20 @@ function decorate_generator(
         copy(step, model, outputPath, dirname, modelIndex);
       }
     }
+
+    // Run post-generation hooks if defined
+    if (g.postGenerate && g.postGenerate.length > 0) {
+      const { executePostGenerateHooks } = require('./pipeline/hooks');
+      await executePostGenerateHooks(
+        g.postGenerate,
+        model,
+        allWrittenItems,
+        path.resolve(outputPath),
+        dirname
+      );
+    }
+
+    return allWrittenItems;
   };
 
   decorated.clean = (_model: any, _outputDir: string): void => {

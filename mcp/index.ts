@@ -1352,6 +1352,71 @@ If a model has a \`$schema\` reference, all mutations are validated against it:
 
 Use \`clay_model_set_schema\` to add schema validation to a model. This catches structural errors (typos, missing required fields) before generation runs.
 
+## Post-Generation Hooks
+
+Generators can define \`postGenerate\` hooks that run after all files are written to disk. Hooks are best-effort — failures are warnings, not errors.
+
+### TypeScript hooks (PostGenerateHook)
+
+The primary hook type. Uses the same pattern as \`CodeGenerator\` — a base class with a typed context:
+
+\`\`\`json
+{
+  "steps": [...],
+  "postGenerate": [
+    { "run": "hooks/fill-services.ts", "select": "$.model.types[*]", "onlyNewTouchFiles": true },
+    { "runCommand": "prettier --write src/" }
+  ]
+}
+\`\`\`
+
+\`\`\`typescript
+import { PostGenerateHook, type HookContext } from 'clay-generator/types';
+import { execSync } from 'child_process';
+import fs from 'fs';
+
+export default class extends PostGenerateHook {
+  async run({ data, helpers, touchFiles, outputDir }: HookContext): Promise<void> {
+    const { pascalCase } = helpers;
+
+    // Read the generated interface for context
+    const iface = fs.readFileSync(
+      \\\`\${outputDir}/src/services/I\${pascalCase(data.name)}Service.ts\\\`, 'utf-8'
+    );
+
+    for (const file of touchFiles) {
+      const prompt = \\\`Implement \${pascalCase(data.name)}ServiceImpl following this interface:\\n\${iface}\\\`;
+      execSync(\\\`claude -p '\${prompt}'\\\`, { cwd: outputDir, timeout: 60000 });
+    }
+  }
+}
+\`\`\`
+
+### HookContext
+
+The \`run()\` method receives:
+- \`data\` — the selected model item (same as CodeGenerator)
+- \`helpers\` — Clay helpers (pascalCase, camelCase, etc.)
+- \`model\` — full root model
+- \`touchFiles\` — only files **newly created** this run (not previously existing)
+- \`outputDir\` — generator output directory
+- \`generatedFiles\` — all files generated this run
+
+### Key flags
+- \`onlyNewTouchFiles: true\` — skip items where no new touch files were created. This prevents re-running Claude on files the developer already customized.
+- Hooks run **sequentially** (hook 2 waits for hook 1). Within a hook with \`select\`, per-item calls run **in parallel**.
+
+### AI-assisted workflow
+
+The intended workflow with a governing Claude process:
+1. Governing Claude updates the Clay model
+2. Runs \`clay generate\`
+3. Clay generates structural files + touch file skeletons
+4. Post-generate hooks fire — each spawns a focused \`claude -p\` with tight context (interface + entity data)
+5. Governing Claude reviews the results
+
+This is more effective than the governing Claude filling in every file because each worker Claude gets a **smaller, focused context** instead of the entire project.
+
 ## Summary
 
 | Situation | Action |
