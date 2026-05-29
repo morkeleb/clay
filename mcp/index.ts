@@ -1338,27 +1338,6 @@ export default class extends CodeGenerator {
 
 **The key insight:** Handlebars handles the 80% of templates that are mostly output with simple substitution. TypeScript handles the 20% that are mostly logic — the architectural glue files that need to reason across the model.
 
-## AI-Assisted Generation
-
-TypeScript CodeGenerator templates can use Claude Code in headless mode (\`claude -p "prompt"\`) to generate business logic at generation time. This runs on the user's existing Claude subscription — no separate API tokens needed.
-
-\`\`\`typescript
-import { CodeGenerator, type RenderContext } from 'clay-generator/types';
-import { execSync } from 'child_process';
-
-export default class extends CodeGenerator {
-  render({ data, helpers }: RenderContext): string {
-    const prompt = \\\`Generate validation logic for \${data.name} with fields: \${JSON.stringify(data.fields)}\\\`;
-    const generated = execSync(\\\`claude -p "\${prompt}"\\\`, { encoding: 'utf-8' }).trim();
-    return \\\`export class \${helpers.pascalCase(data.name)}Validator {
-  \${generated}
-}\\\`;
-  }
-}
-\`\`\`
-
-This lets Clay handle the structural patterns while Claude fills in the business logic. AI-generated output is non-deterministic, so consider using \`touch: true\` for these files — generate once, then refine by hand.
-
 ## Using $schema for Validation
 
 If a model has a \`$schema\` reference, all mutations are validated against it:

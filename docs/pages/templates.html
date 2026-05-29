@@ -653,46 +653,6 @@ export default class extends CodeGenerator {
   }
 }</code></pre>
 
-        <h3>AI-Assisted Generation with Claude</h3>
-        <p>
-          Because TypeScript templates support async rendering and npm imports,
-          you can use <a href="https://code.claude.com/docs/en/headless" target="_blank">Claude Code headless mode</a>
-          to generate business logic at generation time. Headless mode runs on your existing Claude subscription
-          — no separate API tokens needed.
-        </p>
-        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
-import { execSync } from 'child_process';
-
-export default class extends CodeGenerator {
-  render({ data, helpers }: RenderContext): string {
-    const { pascalCase } = helpers;
-    const fieldList = data.fields.map((f: any) =&gt; `${f.name}: ${f.type}`).join(', ');
-
-    const prompt = `Generate TypeScript validation logic for a ${data.name} entity with fields: ${fieldList}. Return only the method body, no explanation.`;
-    const generated = execSync(
-      `claude -p "${prompt}"`,
-      { encoding: 'utf-8', timeout: 30000 }
-    ).trim();
-
-    return `export class ${pascalCase(data.name)}Validator {
-  validate(input: unknown): boolean {
-${generated}
-  }
-}`;
-  }
-}</code></pre>
-        <p>This lets Clay handle the structural patterns while Claude fills in the business logic at generation time. Use cases include:</p>
-        <ul>
-          <li>Generating validation logic based on field types and constraints</li>
-          <li>Creating test fixtures from entity definitions</li>
-          <li>Writing documentation from model descriptions</li>
-          <li>Bootstrapping first-draft implementations for touch files</li>
-        </ul>
-        <div class="note">
-          <strong>Note:</strong> AI generation is non-deterministic — regenerating may produce different output.
-          Consider using touch files for AI-generated code so it is only created once and can be refined by hand afterward.
-        </div>
-
         <h2>Helper Availability Across Engines</h2>
         <table>
           <thead>
