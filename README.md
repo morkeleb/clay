@@ -36,6 +36,7 @@ clay generate ./clay/model.json ./output
 - ✅ **[Type-Safe](https://morkeleb.github.io/clay/)** - Built with TypeScript for reliability
 - ✅ **[Model-Driven](https://morkeleb.github.io/clay/pages/models.html)** - Define your domain once, generate everywhere
 - ✅ **[Watch Mode](https://morkeleb.github.io/clay/pages/cli.html)** - Auto-regenerate on model changes
+- ✅ **[Git Integration](https://morkeleb.github.io/clay/pages/cli.html)** - Collapsed diffs in PRs, auto-merge for .clay conflicts
 - ✅ **[AI-Powered](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server for Claude & GitHub Copilot
 
 **[→ View Full Documentation](https://morkeleb.github.io/clay/)**
