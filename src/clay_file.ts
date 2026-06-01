@@ -11,7 +11,7 @@ const newModelEntry = (
   outputPath?: string
 ): ClayModelEntry => ({
   path: modelPath,
-  output: outputPath || '',
+  output: outputPath && outputPath !== '' ? outputPath : '.',
   generated_files: {},
   setFileCheckSum: () => {},
   getFileCheckSum: () => null,
@@ -46,10 +46,11 @@ export function load(directory: string): ClayFileManager {
     modelPath: string,
     outputPath?: string
   ): ClayModelEntry {
-    const resolvedOutput = outputPath || '';
+    // Normalize empty output to "." — both mean "current directory"
+    const resolvedOutput = outputPath && outputPath !== '' ? outputPath : '.';
     let model = _.find(
       data.models,
-      (m) => m.path === modelPath && m.output === resolvedOutput
+      (m) => m.path === modelPath && (m.output || '.') === resolvedOutput
     );
     if (!model) {
       model = newModelEntry(modelPath, resolvedOutput);
