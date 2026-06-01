@@ -631,6 +631,34 @@ ${routes}
   }
 }</code></pre>
 
+        <h3>Filesystem-Aware Generation</h3>
+        <p>
+          TypeScript templates can read the filesystem, making them ideal for barrel files,
+          route registrations, and DI containers that must reflect what actually exists on disk.
+          No stale exports for deleted files, no missing exports for new ones.
+        </p>
+        <pre><code>import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import fs from 'fs';
+import path from 'path';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const dir = path.resolve('src/services');
+    const files = fs.readdirSync(dir)
+      .filter(f =&gt; f.endsWith('.ts') &amp;&amp; f !== 'index.ts')
+      .map(f =&gt; f.replace('.ts', ''));
+
+    return files.map(f =&gt; `export * from './${f}';`).join('\n');
+  }
+}</code></pre>
+        <p>This pattern works for any file that aggregates across a directory:</p>
+        <ul>
+          <li><strong>Barrel files</strong> &mdash; export * from every module in a directory</li>
+          <li><strong>Route registrations</strong> &mdash; scan for controller files, generate router setup</li>
+          <li><strong>DI containers</strong> &mdash; scan for service files, generate bindings</li>
+          <li><strong>Module declarations</strong> &mdash; scan for feature directories, generate imports</li>
+        </ul>
+
         <h3>npm Package Access</h3>
         <p>
           TypeScript templates can import any npm package installed in your project.

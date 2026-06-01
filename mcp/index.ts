@@ -855,6 +855,23 @@ export default class extends CodeGenerator {
 }
 \`\`\`
 
+TypeScript templates can also read the filesystem, making them ideal for barrel files and registrations that must reflect what actually exists on disk:
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import fs from 'fs';
+import path from 'path';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const dir = path.resolve('src/services');
+    const files = fs.readdirSync(dir)
+      .filter(f => f.endsWith('.ts') && f !== 'index.ts')
+      .map(f => f.replace('.ts', ''));
+    return files.map(f => \\\`export * from './\${f}';\\\`).join('\\n');
+  }
+}
+\`\`\`
+
 ## Next Steps
 
 Once comfortable with basics, explore:
@@ -1336,7 +1353,28 @@ export default class extends CodeGenerator {
 }
 \`\`\`
 
-**The key insight:** Handlebars handles the 80% of templates that are mostly output with simple substitution. TypeScript handles the 20% that are mostly logic — the architectural glue files that need to reason across the model.
+**Filesystem-aware generation:** Because TypeScript templates can read the filesystem, they are ideal for barrel files, route registrations, and DI containers that need to reflect what actually exists on disk:
+
+\`\`\`typescript
+import { CodeGenerator, type RenderContext } from 'clay-generator/types';
+import fs from 'fs';
+import path from 'path';
+
+export default class extends CodeGenerator {
+  render({ data, helpers }: RenderContext): string {
+    const dir = path.resolve('src/services');
+    const files = fs.readdirSync(dir)
+      .filter(f => f.endsWith('.ts') && f !== 'index.ts')
+      .map(f => f.replace('.ts', ''));
+
+    return files.map(f => \\\`export * from './\${f}';\\\`).join('\\n');
+  }
+}
+\`\`\`
+
+This pattern ensures barrel files, route registrations, and module declarations always match what is actually on disk — no stale exports for deleted files, no missing exports for new ones.
+
+**The key insight:** Handlebars handles the 80% of templates that are mostly output with simple substitution. TypeScript handles the 20% that are mostly logic — the architectural glue files that need to reason across the model or the filesystem.
 
 ## Using $schema for Validation
 
