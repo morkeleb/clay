@@ -139,13 +139,7 @@ export function load(directory: string): ClayFileManager {
 
     function normalizeFilePath(file: string): string {
       const relFile = path.relative(process.cwd(), file);
-      // Normalize to forward slashes for cross-platform compatibility
-      const normalized = relFile.split(path.sep).join('/');
-      // Assert: never store absolute paths or paths starting with ./
-      if (path.isAbsolute(normalized)) {
-        output.warn(`Clay: refusing to store absolute path in .clay: ${normalized}`);
-      }
-      return normalized;
+      return relFile.split(path.sep).join('/');
     }
 
     function getFileCheckSum(file: string): string | null {
@@ -173,37 +167,6 @@ export function load(directory: string): ClayFileManager {
   }
 
   function save(): void {
-    // Validate invariants before writing
-    const seen = new Set<string>();
-    for (const model of data.models) {
-      const key = `${model.path}::${model.output}`;
-      if (seen.has(key)) {
-        output.warn(`Clay: duplicate model entry detected on save: ${key}. Deduplicating.`);
-        // Self-heal: re-run dedup
-        const healed = healClayData(data);
-        data.models = healed.models;
-        break;
-      }
-      seen.add(key);
-
-      // Check for absolute paths in generated_files
-      for (const filePath of Object.keys(model.generated_files || {})) {
-        if (path.isAbsolute(filePath)) {
-          output.warn(`Clay: absolute path in generated_files on save: ${filePath}. Converting to relative.`);
-          const relPath = path.relative(process.cwd(), filePath).split(path.sep).join('/');
-          model.generated_files[relPath] = model.generated_files[filePath];
-          delete model.generated_files[filePath];
-        }
-      }
-
-      // Check for unnormalized path/output
-      if (model.path !== canonicalizePath(model.path) || model.output !== canonicalizePath(model.output)) {
-        output.warn(`Clay: unnormalized model entry on save: ${model.path} / ${model.output}. Normalizing.`);
-        model.path = canonicalizePath(model.path);
-        model.output = canonicalizePath(model.output);
-      }
-    }
-
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
   }
 
