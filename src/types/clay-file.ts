@@ -20,6 +20,7 @@ export interface ClayModelEntry {
     [filePath: string]: ClayFileEntry;
   };
   last_generated?: string;
+  input_hash?: string;
 
   // Methods for managing file checksums
   setFileCheckSum: (filePath: string, md5: string) => void;

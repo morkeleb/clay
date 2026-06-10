@@ -264,6 +264,58 @@ clay generate</code></pre>
           </tbody>
         </table>
 
+        <h2>Git Integration</h2>
+        <p>
+          Clay includes two git features that improve the experience of committing
+          generated code. Both are configured during <code>clay init</code>.
+        </p>
+
+        <h3>Collapsed Diffs (gitattributes)</h3>
+        <p>
+          When enabled (<code>clay config gitattributes true</code>), Clay marks all generated files
+          with <code>linguist-generated=true</code> in <code>.gitattributes</code>. This causes
+          GitHub to collapse their diffs in pull requests, keeping PRs focused on the model
+          and template changes rather than the generated output.
+        </p>
+        <pre><code># Managed by Clay — do not edit between markers
+# clay:generated:start
+src/models/User.ts linguist-generated=true
+src/models/Order.ts linguist-generated=true
+src/controllers/UserController.ts linguist-generated=true
+# clay:generated:end</code></pre>
+        <p>
+          The managed block is updated automatically on each <code>clay generate</code> run.
+          Files outside the markers are left untouched.
+        </p>
+
+        <h3>Auto-Merge (.clay conflicts)</h3>
+        <p>
+          When enabled (<code>clay config automerge true</code>), Clay registers a custom git merge
+          driver that automatically resolves <code>.clay</code> file conflicts. This prevents
+          the most common merge conflict in Clay projects — two branches that generated
+          different files.
+        </p>
+        <p>The merge strategy:</p>
+        <ul>
+          <li>Models added on either branch are included</li>
+          <li>Models deleted on one branch stay deleted</li>
+          <li>When both branches have the same model, generated files are unioned — newer entry wins for conflicts</li>
+          <li>Config flags use last-writer-wins</li>
+        </ul>
+        <pre><code># Enable both features
+clay config gitattributes true
+clay config automerge true
+
+# Or during init (both enabled by default)
+clay init --yes</code></pre>
+
+        <h3>Configuration</h3>
+        <pre><code># Toggle features
+clay config gitattributes true   # Enable collapsed diffs
+clay config gitattributes false  # Disable collapsed diffs
+clay config automerge true       # Enable auto-merge driver
+clay config automerge false      # Disable auto-merge driver</code></pre>
+
         <h2>Tips & Tricks</h2>
         <ul>
           <li>

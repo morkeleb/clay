@@ -78,6 +78,11 @@
               "touch": {
                 "type": "boolean",
                 "description": "If true, the file will not be overwritten if it exists."
+              },
+              "engine": {
+                "type": "string",
+                "enum": ["handlebars", "ejs", "ts"],
+                "description": "Template engine to use. 'handlebars' (default) for .hbs templates, 'ejs' for EJS templates, 'ts' for TypeScript/JavaScript CodeGenerator classes."
               }
             },
             "required": ["generate", "target", "select"]
@@ -104,6 +109,32 @@
               "include": { "type": "string", "description": "Path to convention JSON file" }
             },
             "required": ["include"]
+          }
+        ]
+      }
+    },
+    "postGenerate": {
+      "type": "array",
+      "description": "Hooks that run after all generation steps complete. Best-effort — failures are warnings, not errors.",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "run": { "type": "string", "description": "Path to a TypeScript/JavaScript PostGenerateHook file." },
+              "select": { "type": "string", "description": "JSONPath to select model items. Hook runs once per match." },
+              "onlyNewTouchFiles": { "type": "boolean", "description": "If true, only run for items where touch files were newly created." }
+            },
+            "required": ["run"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "runCommand": { "type": "string", "description": "Shell command to execute. Supports Handlebars templating with selected model data." },
+              "select": { "type": "string", "description": "JSONPath to select model items. Command runs once per match." },
+              "verbose": { "type": "boolean", "description": "Log command output." }
+            },
+            "required": ["runCommand"]
           }
         ]
       }

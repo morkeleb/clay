@@ -15,7 +15,7 @@
 
 **📚 [Full Documentation](https://morkeleb.github.io/clay/)** | **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** | **[NPM Package](https://www.npmjs.com/package/clay-generator)**
 
-Clay is a template-focused code generator that transforms JSON models into actual code using Handlebars templates, shell commands, and file operations. Built with TypeScript for type safety and reliability.
+Clay is a template-focused code generator that transforms JSON models into actual code using multiple template engines, shell commands, and file operations. Supports Handlebars for simple templates, EJS for inline logic, and TypeScript CodeGenerator classes for fully programmatic generation. Built with TypeScript for type safety and reliability.
 
 ## Quick Start
 
@@ -32,10 +32,11 @@ clay generate ./clay/model.json ./output
 
 ## Why Clay?
 
-- ✅ **[Template-Based Generation](https://morkeleb.github.io/clay/pages/templates.html)** - 47+ Handlebars helpers for flexible code generation
+- ✅ **[Template-Based Generation](https://morkeleb.github.io/clay/pages/templates.html)** - Three engines: Handlebars, EJS, and TypeScript CodeGenerator with 47+ helpers
 - ✅ **[Type-Safe](https://morkeleb.github.io/clay/)** - Built with TypeScript for reliability
 - ✅ **[Model-Driven](https://morkeleb.github.io/clay/pages/models.html)** - Define your domain once, generate everywhere
 - ✅ **[Watch Mode](https://morkeleb.github.io/clay/pages/cli.html)** - Auto-regenerate on model changes
+- ✅ **[Git Integration](https://morkeleb.github.io/clay/pages/cli.html)** - Collapsed diffs in PRs, auto-merge for .clay conflicts
 - ✅ **[AI-Powered](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server for Claude & GitHub Copilot
 
 **[→ View Full Documentation](https://morkeleb.github.io/clay/)**
@@ -46,7 +47,7 @@ clay generate ./clay/model.json ./output
 - **[Philosophy](https://morkeleb.github.io/clay/pages/philosophy.html)** - Benefits and trade-offs of code generation
 - **[Models](https://morkeleb.github.io/clay/pages/models.html)** - Define domain models in JSON with mixins and includes
 - **[Generators](https://morkeleb.github.io/clay/pages/generators.html)** - Configure generation steps and workflows
-- **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars templates with 47+ helpers
+- **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars, EJS, and TypeScript template engines with 47+ helpers
 - **[AI Integration](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server for Claude & Copilot
 - **[CLI Reference](https://morkeleb.github.io/clay/pages/cli.html)** - Complete command-line guide
 
@@ -54,7 +55,7 @@ clay generate ./clay/model.json ./output
 
 ### [Template-Based Generation](https://morkeleb.github.io/clay/pages/templates.html)
 
-Generate files from Handlebars templates with access to your full model data. Use 47+ built-in helpers for string manipulation, logic, iteration, and more.
+Generate files using three template engines: **Handlebars** for simple substitution, **EJS** for inline JavaScript logic, and **TypeScript CodeGenerator** classes for fully programmatic generation. All engines share 47+ built-in helpers and work in parallel via worker threads.
 
 ### [JSONPath Selectors](https://morkeleb.github.io/clay/pages/models.html)
 
@@ -392,7 +393,13 @@ Generators define steps to generate files, run commands, or copy existing files.
 
 **[→ See Complete Template & Helper Documentation](https://morkeleb.github.io/clay/pages/templates.html)**
 
-Clay uses Handlebars templates with custom helpers for case conversion, pluralization, and more. Templates support partials for reusable code snippets.
+Clay supports three template engines, selectable per generator step via the optional `engine` field:
+
+- **Handlebars** (default) — simple substitution and iteration with `{{helpers}}`
+- **EJS** (`"engine": "ejs"`) — inline JavaScript for filtering, deduplication, computed logic
+- **TypeScript** (`"engine": "ts"`) — `CodeGenerator` base class for fully programmatic generation, with access to npm packages, async/await, and database queries
+
+All engines share 47+ built-in helpers for case conversion, pluralization, and more. Templates support partials for reusable code snippets.
 
 # Files and Project Structure
 
@@ -404,7 +411,7 @@ clay/
 ├── generators/                 # Custom generators
 │   └── my-generator/
 │       ├── generator.json     # Generator configuration
-│       ├── templates/         # Handlebars templates
+│       ├── templates/         # Templates (Handlebars, EJS, or TypeScript)
 │       └── partials/          # Reusable template parts
 └── mixins/                    # Model transformation functions
 ```

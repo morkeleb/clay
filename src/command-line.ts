@@ -16,7 +16,6 @@ import type { ClayConfigKey } from './clay_file';
 import * as generatorManager from './generator-manager';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
-import { loadConventions, runConventions } from './conventions';
 import { updateGitattributes, configureGitMergeDriver } from './gitattributes';
 import { runMergeDriver } from './merge-driver';
 
@@ -88,89 +87,18 @@ function resolve_generator(
   return requireNew('./generator').load(generator_path[0], output, indexFile);
 }
 
-const generateModels = async (modelsToExecute: ModelIndex[]): Promise<void> => {
-  await Promise.all(
-    modelsToExecute.map(async (modelIndex) => {
-      const model = modelIndex.load();
 
-      // Check conventions from all generators before generating
-      const allViolations: Array<{ generator: string; convention: string; description: string; errors: string[] }> = [];
-      for (const g of model.generators) {
-        const generatorName = typeof g === 'string' ? g : (g as GeneratorReference).generator || '';
-        const generatorPaths = [
-          generatorName + '.json',
-          path.resolve(generatorName + '.json'),
-          path.resolve(path.join(path.dirname(modelIndex.path), generatorName + '.json')),
-          path.resolve(path.join(path.dirname(modelIndex.path), generatorName, 'generator.json')),
-          path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
-          generatorName,
-          path.resolve(generatorName),
-          path.resolve(path.join(path.dirname(modelIndex.path), generatorName)),
-        ].filter(fs.existsSync);
-
-        if (generatorPaths.length > 0) {
-          try {
-            const conventions = loadConventions(generatorPaths[0]);
-            if (conventions.length > 0) {
-              const violations = runConventions(conventions, model.model);
-              for (const v of violations) {
-                allViolations.push({ generator: generatorName, convention: v.convention, description: v.description, errors: v.errors });
-              }
-            }
-          } catch (e) {
-            if (process.env.VERBOSE) {
-              ui.warn(`Could not load conventions for generator '${generatorName}': ${e instanceof Error ? e.message : String(e)}`);
-            }
-          }
-        }
-      }
-
-      if (allViolations.length > 0) {
-        const messages = allViolations.flatMap(v =>
-          v.errors.map(e => `[${v.generator}/${v.convention}] ${e}`)
-        );
-        throw new Error(`Convention violations found:\n${messages.join('\n')}`);
-      }
-
-      await Promise.all(
-        model.generators.map((g: string | GeneratorReference) =>
-          resolve_generator(
-            g,
-            path.dirname(modelIndex.path),
-            modelIndex
-          ).generate(model, modelIndex.output || '')
-        )
-      );
-    })
-  );
-};
-
-async function generate(
+async function generateCmd(
   model_path?: string,
-  output_path?: string
+  output_path?: string,
+  options?: { force?: boolean }
 ): Promise<void> {
-  const clayFilePath = path.resolve('.clay');
-  if (!fs.existsSync(clayFilePath)) {
-    throw new Error(
-      'This folder has not been initiated with clay. Please create a .clay file.'
-    );
-  }
-
-  const indexFile = loadClayFile('.');
-
-  let modelsToExecute: ModelIndex[];
-
-  if (model_path) {
-    modelsToExecute = [indexFile.getModelIndex(model_path, output_path)];
-  } else {
-    modelsToExecute = indexFile.models.map((m) =>
-      indexFile.getModelIndex(m.path, m.output)
-    );
-  }
-
-  await generateModels(modelsToExecute);
-  indexFile.save();
-  updateGitattributes('.');
+  const { generate: generateApi } = require('./generate-api');
+  await generateApi('.', {
+    modelPath: model_path,
+    outputPath: output_path,
+    force: options?.force,
+  });
 }
 
 const cleanModels = (modelsToExecute: ModelIndex[]): void => {
@@ -182,6 +110,8 @@ const cleanModels = (modelsToExecute: ModelIndex[]): void => {
         modelIndex.output || ''
       )
     );
+    // Clear input hash so next generate doesn't skip this model
+    modelIndex.input_hash = undefined;
   });
 };
 
@@ -233,8 +163,9 @@ commander
 
 commander
   .command('generate [model_path] [output_path]')
+  .option('--force', 'skip input hash check, regenerate everything')
   .description('runs the generators')
-  .action(generate);
+  .action(generateCmd);
 
 async function init(
   type?: string,
@@ -450,7 +381,8 @@ function watch(model_path?: string, output_path?: string): void {
       .watch(model_directory, { ignored: /(^|[\/\\])\../, ignoreInitial: true })
       .on('all', (_event, _path) => {
         modelsToExecute.forEach((modelIndex) => {
-          generate(modelIndex.path, modelIndex.output);
+          const { generate: generateApi } = require('./generate-api');
+          generateApi('.', { modelPath: modelIndex.path, outputPath: modelIndex.output });
 
           ui.watch(model_directory);
         });

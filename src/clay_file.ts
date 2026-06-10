@@ -6,12 +6,29 @@ import type { ClayFile, ClayModelEntry } from './types/clay-file';
 
 const emptyIndex: ClayFile = { models: [] };
 
+/**
+ * Canonicalize a path for consistent .clay lookups.
+ * Strips leading ./, normalizes separators to POSIX, removes trailing /.
+ * Empty string becomes ".".
+ */
+function canonicalizePath(p: string | undefined): string {
+  if (!p || p === '') return '.';
+  // Normalize to POSIX forward slashes
+  let normalized = p.split(path.sep).join('/');
+  // Strip leading ./
+  normalized = normalized.replace(/^\.\//, '');
+  // Strip trailing /
+  normalized = normalized.replace(/\/+$/, '');
+  // Empty after stripping becomes "."
+  return normalized || '.';
+}
+
 const newModelEntry = (
   modelPath: string,
   outputPath?: string
 ): ClayModelEntry => ({
-  path: modelPath,
-  output: outputPath || '',
+  path: canonicalizePath(modelPath),
+  output: canonicalizePath(outputPath),
   generated_files: {},
   setFileCheckSum: () => {},
   getFileCheckSum: () => null,
@@ -35,38 +52,103 @@ interface ClayFileManager {
   save: () => void;
 }
 
+/**
+ * Heal a .clay file on load:
+ * - Deduplicate model entries with the same canonical path+output
+ * - Normalize path and output fields to canonical form
+ * - Convert absolute generated_files keys to relative
+ */
+function healClayData(data: ClayFile): ClayFile {
+  const seen = new Map<string, ClayModelEntry>();
+
+  for (const model of data.models) {
+    const key = `${canonicalizePath(model.path)}::${canonicalizePath(model.output)}`;
+    const existing = seen.get(key);
+
+    if (existing) {
+      // Merge generated_files: keep the entry with more files, union the rest
+      for (const [file, entry] of Object.entries(model.generated_files || {})) {
+        const canonicalFile = file.split(path.sep).join('/');
+        const existingEntry = existing.generated_files[canonicalFile];
+        if (!existingEntry || (entry.date && (!existingEntry.date || entry.date > existingEntry.date))) {
+          existing.generated_files[canonicalFile] = entry;
+        }
+      }
+      // Keep the newer last_generated / input_hash
+      if (model.last_generated && (!existing.last_generated || model.last_generated > existing.last_generated)) {
+        existing.last_generated = model.last_generated;
+      }
+      if (model.input_hash && !existing.input_hash) {
+        existing.input_hash = model.input_hash;
+      }
+    } else {
+      // Normalize path and output
+      model.path = canonicalizePath(model.path);
+      model.output = canonicalizePath(model.output);
+
+      // Convert absolute paths in generated_files to relative
+      const healed: Record<string, { md5: string; date: string }> = {};
+      for (const [file, entry] of Object.entries(model.generated_files || {})) {
+        let normalizedFile = file;
+        // Strip absolute paths — convert to relative from cwd
+        if (path.isAbsolute(file)) {
+          normalizedFile = path.relative(process.cwd(), file);
+        }
+        // Normalize to forward slashes
+        normalizedFile = normalizedFile.split(path.sep).join('/');
+        healed[normalizedFile] = entry;
+      }
+      model.generated_files = healed;
+
+      seen.set(key, model);
+    }
+  }
+
+  data.models = [...seen.values()];
+  return data;
+}
+
 export function load(directory: string): ClayFileManager {
   const filePath = path.join(directory, '.clay');
   const indexExists = fs.existsSync(filePath);
   const fileContent = indexExists ? fs.readFileSync(filePath) : null;
   const data: ClayFile =
-    gitMergeAcceptAllIncomingChanges(fileContent) || emptyIndex;
+    healClayData(gitMergeAcceptAllIncomingChanges(fileContent) || emptyIndex);
 
   function getModelIndex(
     modelPath: string,
     outputPath?: string
   ): ClayModelEntry {
-    const resolvedOutput = outputPath || '';
+    const canonicalPath = canonicalizePath(modelPath);
+    const canonicalOutput = canonicalizePath(outputPath);
+
+    // Find existing entry using canonical comparison — handles ./clay/foo.json vs clay/foo.json etc.
     let model = _.find(
       data.models,
-      (m) => m.path === modelPath && m.output === resolvedOutput
+      (m) => canonicalizePath(m.path) === canonicalPath && canonicalizePath(m.output) === canonicalOutput
     );
+
     if (!model) {
-      model = newModelEntry(modelPath, resolvedOutput);
+      model = newModelEntry(modelPath, outputPath);
       data.models.push(model);
+    } else {
+      // Heal existing entry: normalize stored path/output to canonical form
+      model.path = canonicalPath;
+      model.output = canonicalOutput;
+    }
+
+    function normalizeFilePath(file: string): string {
+      const relFile = path.relative(process.cwd(), file);
+      return relFile.split(path.sep).join('/');
     }
 
     function getFileCheckSum(file: string): string | null {
-      const relFile = path.relative(process.cwd(), file);
-      // Normalize to forward slashes for cross-platform compatibility
-      const normalizedPath = relFile.split(path.sep).join('/');
+      const normalizedPath = normalizeFilePath(file);
       return _.get(model, "generated_files['" + normalizedPath + "'].md5", null);
     }
 
     function setFileCheckSum(file: string, md5: string): void {
-      const relFile = path.relative(process.cwd(), file);
-      // Normalize to forward slashes for cross-platform compatibility
-      const normalizedPath = relFile.split(path.sep).join('/');
+      const normalizedPath = normalizeFilePath(file);
       const date = new Date().toISOString();
       _.set(model!, "generated_files['" + normalizedPath + "'].md5", md5);
       _.set(model!, "generated_files['" + normalizedPath + "'].date", date);
@@ -76,9 +158,7 @@ export function load(directory: string): ClayFileManager {
     model.setFileCheckSum = setFileCheckSum;
     model.getFileCheckSum = getFileCheckSum;
     model.delFileCheckSum = (file: string) => {
-      const relFile = path.relative(process.cwd(), file);
-      // Normalize to forward slashes for cross-platform compatibility
-      const normalizedPath = relFile.split(path.sep).join('/');
+      const normalizedPath = normalizeFilePath(file);
       delete model!.generated_files[normalizedPath];
     };
     model.load = () => require('./model').load(modelPath);

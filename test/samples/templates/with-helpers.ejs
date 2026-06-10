@@ -1,0 +1,3 @@
+export class <%= helpers.pascalCase(name) %> {
+<% (fields || []).forEach(function(f) { %>  <%= helpers.camelCase(f.name) %>: <%= f.type %>;
+<% }); %>}

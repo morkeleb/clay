@@ -3,6 +3,8 @@
  * Core data structures used throughout the application
  */
 
+import type { WrittenItem } from '../pipeline/types';
+
 /**
  * Generator step that generates files from Handlebars templates
  */
@@ -11,6 +13,7 @@ export interface GeneratorStepGenerate {
   select: string;
   target?: string;
   touch?: boolean;
+  engine?: 'handlebars' | 'ejs' | 'ts';
 }
 
 /**
@@ -41,12 +44,36 @@ export type GeneratorStep =
   | GeneratorStepCommand;
 
 /**
+ * Post-generation hook that runs a TypeScript file
+ */
+export interface PostGenerateHookStep {
+  run: string;
+  select?: string;
+  onlyNewTouchFiles?: boolean;
+}
+
+/**
+ * Post-generation hook that runs a shell command
+ */
+export interface PostGenerateCommandStep {
+  runCommand: string;
+  select?: string;
+  verbose?: boolean;
+}
+
+/**
+ * Union type for post-generation hook steps
+ */
+export type PostGenerateStep = PostGenerateHookStep | PostGenerateCommandStep;
+
+/**
  * Generator configuration
  */
 export interface Generator {
   partials: string[];
   formatters: string[];
   steps: GeneratorStep[];
+  postGenerate?: PostGenerateStep[];
 }
 
 /**
@@ -54,7 +81,7 @@ export interface Generator {
  */
 export interface DecoratedGenerator extends Generator {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  generate: (model: any, outputDir: string) => Promise<void>;
+  generate: (model: any, outputDir: string, pipelineRunner?: any) => Promise<WrittenItem[]>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clean: (model: any, outputDir: string) => void;
 }

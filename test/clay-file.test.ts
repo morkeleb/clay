@@ -61,8 +61,8 @@ describe('clay_file', () => {
         .getModelIndex('./test/include-example.json', './tmp/test-output/')
         .setFileCheckSum('order.txt', fileMd5);
       expect(clay_index.models[1]).to.include({
-        output: './tmp/test-output/',
-        path: './test/include-example.json',
+        output: 'tmp/test-output',
+        path: 'test/include-example.json',
       });
     });
 

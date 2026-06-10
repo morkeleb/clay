@@ -33,6 +33,7 @@ export const GenerateInputSchema = z
     working_directory: WorkingDirectorySchema,
     model_path: ModelPathSchema.optional(),
     output_path: OutputPathSchema.optional(),
+    force: z.boolean().optional().describe('Skip input hash check and regenerate everything'),
   })
   .describe('Generate code from Clay models');
 
