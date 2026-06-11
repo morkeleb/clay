@@ -28,15 +28,20 @@ describe('MCP Server Integration', function () {
   afterEach(async () => {
     // Kill server process
     if (serverProcess && !serverProcess.killed) {
-      serverProcess.kill('SIGTERM');
+      const proc = serverProcess;
+      proc.kill('SIGTERM');
       await new Promise((resolve) => {
-        serverProcess!.once('exit', resolve);
-        setTimeout(() => {
-          if (serverProcess && !serverProcess.killed) {
-            serverProcess.kill('SIGKILL');
-            resolve(undefined);
-          }
+        // Clear the SIGKILL fallback once the process exits — a leaked
+        // timer here would kill the NEXT test's server via the shared
+        // serverProcess variable.
+        const killTimer = setTimeout(() => {
+          proc.kill('SIGKILL');
+          resolve(undefined);
         }, 2000);
+        proc.once('exit', () => {
+          clearTimeout(killTimer);
+          resolve(undefined);
+        });
       });
       serverProcess = null;
     }
@@ -56,6 +61,8 @@ describe('MCP Server Integration', function () {
     serverProcess = spawn('node', [mcpBin], {
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+    // Drain stderr so the server can never block on a full pipe buffer
+    serverProcess.stderr!.resume();
 
     // Initialize the server
     await sendRequest({
@@ -96,12 +103,16 @@ describe('MCP Server Integration', function () {
         }
       }, 10000);
 
+      // Buffer stdout across chunks — a large response is split over
+      // multiple 'data' events and can only be parsed once its full
+      // newline-terminated line has arrived.
+      let buffered = '';
       const dataHandler = (data: Buffer) => {
-        const lines = data
-          .toString()
-          .split('\n')
-          .filter((l) => l.trim());
+        buffered += data.toString();
+        const lines = buffered.split('\n');
+        buffered = lines.pop() ?? '';
         for (const line of lines) {
+          if (!line.trim()) continue;
           try {
             const response = JSON.parse(line);
             if (response.id === requestId) {
@@ -112,7 +123,7 @@ describe('MCP Server Integration', function () {
               return;
             }
           } catch {
-            // Not JSON or not complete yet
+            // Not JSON (e.g. log line) — ignore
           }
         }
       };
@@ -192,8 +203,7 @@ describe('MCP Server Integration', function () {
   });
 
   describe('clay_generate', () => {
-    // Skip as clay_generate spawns child processes which can timeout
-    it.skip('should fail gracefully if no .clay file exists and no model provided', async () => {
+    it('should fail gracefully if no .clay file exists and no model provided', async () => {
       await startServer();
 
       const result = await callTool('clay_generate', {
@@ -214,9 +224,55 @@ describe('MCP Server Integration', function () {
     });
   });
 
+  describe('clay_generate precheck failures', () => {
+    it('reports precheck violations in the error result', async function () {
+      this.timeout(20000);
+
+      // Project with a generator whose precheck always fails
+      const genDir = path.join(testDir, 'badgen');
+      await fs.ensureDir(path.join(genDir, 'checks'));
+      await fs.writeJson(path.join(genDir, 'generator.json'), {
+        preChecks: [{ run: 'checks/fail.ts' }],
+        steps: [],
+      });
+      await fs.writeFile(
+        path.join(genDir, 'checks', 'fail.ts'),
+        `export default class {
+  check() {
+    return ['cloudkit invariant broken'];
+  }
+}
+`
+      );
+      await fs.writeJson(path.join(testDir, 'model.json'), {
+        name: 'precheck-test',
+        generators: ['./badgen'],
+        model: { types: [] },
+      });
+      await fs.writeJson(path.join(testDir, '.clay'), {
+        models: [{ path: 'model.json', output: 'out', generated_files: {} }],
+      });
+
+      await startServer();
+
+      const result = await callTool('clay_generate', {
+        working_directory: testDir,
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.result).to.have.property('success', false);
+      const r = result.result as {
+        message: string;
+        precheck_violations?: string[];
+      };
+      expect(r.message).to.include('cloudkit invariant broken');
+      expect(r.precheck_violations).to.be.an('array').with.lengthOf(1);
+      expect(r.precheck_violations![0]).to.include('cloudkit invariant broken');
+    });
+  });
+
   describe('clay_list_generators', () => {
-    // Skip as this can timeout when spawning CLI processes
-    it.skip('should not crash when listing generators', async () => {
+    it('should not crash when listing generators', async () => {
       await startServer();
 
       const result = await callTool('clay_list_generators', {
@@ -230,10 +286,7 @@ describe('MCP Server Integration', function () {
   });
 
   describe('clay_get_model_structure', () => {
-    // TODO: These tests are flaky due to MCP server startup timing/cleanup issues
-    // Manual testing confirms the functionality works correctly
-    // Skipping until server lifecycle management is improved
-    it.skip('should return model structure when .clay file exists', async function() {
+    it('should return model structure when .clay file exists', async function() {
       this.timeout(15000);
       
       // Manually create .clay file without calling clay_init
@@ -279,7 +332,7 @@ describe('MCP Server Integration', function () {
       expect((models[0] as { structure: { name: string } }).structure).to.have.property('name', 'TestEntity');
     });
 
-    it.skip('should return all models when no model_path specified', async function() {
+    it('should return all models when no model_path specified', async function() {
       this.timeout(15000); // Increase timeout for this specific test
       
       // Manually create .clay file and models
@@ -315,7 +368,7 @@ describe('MCP Server Integration', function () {
       expect(models[1]).to.have.property('name', 'model2');
     });
 
-    it.skip('should handle absolute paths correctly', async function() {
+    it('should handle absolute paths correctly', async function() {
       this.timeout(15000);
       
       // Manually create .clay file and model
@@ -354,8 +407,7 @@ describe('MCP Server Integration', function () {
   });
 
   describe('clay_list_helpers', () => {
-    // Skip this test as it requires spawning clay CLI which can be slow
-    it.skip('should not crash when listing Handlebars helpers', async () => {
+    it('should not crash when listing Handlebars helpers', async () => {
       await startServer();
 
       const result = await callTool('clay_list_helpers', {});
@@ -367,8 +419,7 @@ describe('MCP Server Integration', function () {
   });
 
   describe('clay_explain_concepts', () => {
-    // TODO: Server lifecycle management needs improvement - tests timeout after several invocations
-    it.skip('should return documentation for a topic', async () => {
+    it('should return documentation for a topic', async () => {
       await startServer();
 
       const result = await callTool('clay_explain_concepts', {
@@ -390,8 +441,7 @@ describe('MCP Server Integration', function () {
   });
 
   describe('clay_test_path', () => {
-    // TODO: Server lifecycle management needs improvement - tests timeout after several invocations
-    it.skip('should not crash when testing a path', async () => {
+    it('should not crash when testing a path', async () => {
       await startServer();
 
       const result = await callTool('clay_test_path', {
