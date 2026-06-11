@@ -110,6 +110,10 @@ const concepts = {
 {
   "partials": ["header.hbs", "footer.hbs"],
   "formatters": ["clay-generator-formatter-prettier"],
+  "preChecks": [
+    { "run": "checks/invariants.ts" },
+    { "runCommand": "node checks/naming.mjs", "select": "$.model.types[*]" }
+  ],
   "steps": [
     {
       "generate": "templates/{{pascalCase name}}.java",
@@ -161,6 +165,35 @@ const concepts = {
      "npxCommand": false
    }
    \`\`\`
+
+**Pre-Generation Checks (preChecks):**
+Validate the fully resolved model (after includes and mixins) BEFORE any step runs.
+Prechecks are pure validators — they must not write files or mutate the model.
+Any violation aborts the generation for that model: nothing is rendered, written,
+copied, or executed. All prechecks run even if an early one fails; every violation
+is aggregated into a single error.
+
+1. **TypeScript check** — a default-exported class extending \`PreCheck\` with a
+   \`check(context)\` method. Return a non-empty array of violation strings (or
+   throw) to fail; return an empty array or nothing to pass:
+   \`\`\`typescript
+   import { PreCheck, type PreCheckContext } from 'clay-generator/types';
+
+   export default class extends PreCheck {
+     check({ data }: PreCheckContext): string[] | void {
+       if (!data.name) return ['every type needs a name'];
+     }
+   }
+   \`\`\`
+   The context carries \`data\`, \`helpers\`, \`model\`, and \`parent\` — the same
+   shape as \`CodeGenerator.render()\`.
+
+2. **Command check** — \`runCommand\` receives the model path as its last argument
+   and fails the generation on non-zero exit (stderr is surfaced). Note this is
+   stricter than \`runCommand\` steps and postGenerate hooks, which warn and continue.
+
+With \`select\`, a check runs once per selected item (with clay_parent/clay_model
+context injected as usual); without it, once against the root model.
 
 **Partials:**
 Reusable template fragments:

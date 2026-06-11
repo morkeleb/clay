@@ -67,12 +67,35 @@ export interface PostGenerateCommandStep {
 export type PostGenerateStep = PostGenerateHookStep | PostGenerateCommandStep;
 
 /**
+ * Pre-generation check that runs a TypeScript file
+ */
+export interface PreCheckRunStep {
+  run: string;
+  select?: string;
+}
+
+/**
+ * Pre-generation check that runs a shell command
+ */
+export interface PreCheckCommandStep {
+  runCommand: string;
+  select?: string;
+  verbose?: boolean;
+}
+
+/**
+ * Union type for pre-generation check steps
+ */
+export type PreCheckStep = PreCheckRunStep | PreCheckCommandStep;
+
+/**
  * Generator configuration
  */
 export interface Generator {
   partials: string[];
   formatters: string[];
   steps: GeneratorStep[];
+  preChecks?: PreCheckStep[];
   postGenerate?: PostGenerateStep[];
 }
 

@@ -122,8 +122,27 @@ const PostGenerateStepSchema = z.union([
   }),
 ]);
 
+// Precheck entries are strict: unknown keys are rejected so typos
+// (e.g. "runCommands") fail loudly instead of silently skipping a check.
+const PreCheckStepSchema = z.union([
+  z
+    .object({
+      run: z.string(),
+      select: SelectSchema,
+    })
+    .strict(),
+  z
+    .object({
+      runCommand: z.string(),
+      select: SelectSchema,
+      verbose: z.boolean().optional(),
+    })
+    .strict(),
+]);
+
 const GeneratorSchema = z.object({
   steps: z.array(GeneratorStepSchema),
+  preChecks: z.array(PreCheckStepSchema).optional(),
   partials: z.array(z.string()).optional(),
   formatters: z
     .array(
@@ -290,6 +309,14 @@ function decorate_generator(
   decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<WrittenItem[]> => {
     const outputPath = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
+
+    // Prechecks validate the resolved model before any step runs.
+    // A PreCheckFailedError propagates and aborts the whole generation.
+    if (g.preChecks && g.preChecks.length > 0) {
+      const { executePreChecks } = require('./pipeline/prechecks');
+      await executePreChecks(g.preChecks, model, dirname, modelIndex.path);
+    }
+
     const generatorPartials = g.partials || [];
     handlebars.load_partials(generatorPartials, dirname);
 

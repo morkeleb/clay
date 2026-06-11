@@ -1,0 +1,12 @@
+{
+  "partials": [],
+  "preChecks": [
+    { "run": "prechecks/passing-check.ts" }
+  ],
+  "steps": [
+    {
+      "copy": "foundation/simple",
+      "target": "copies/"
+    }
+  ]
+}

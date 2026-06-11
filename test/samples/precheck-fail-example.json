@@ -1,0 +1,12 @@
+{
+  "partials": [],
+  "preChecks": [
+    { "run": "prechecks/failing-check.ts", "select": "$.model.types.*" }
+  ],
+  "steps": [
+    {
+      "copy": "foundation/simple",
+      "target": "copies/"
+    }
+  ]
+}

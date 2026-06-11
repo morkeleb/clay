@@ -113,6 +113,9 @@ export async function generateTool(args: unknown) {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    // PreCheckFailedError carries the aggregated violations — surface them
+    // as structured data so callers see every violation, not just a string.
+    const violations = (error as { violations?: unknown })?.violations;
     return {
       content: [
         {
@@ -121,6 +124,9 @@ export async function generateTool(args: unknown) {
             {
               success: false,
               message: `Error: ${errorMessage}`,
+              ...(Array.isArray(violations)
+                ? { precheck_violations: violations }
+                : {}),
             },
             null,
             2
