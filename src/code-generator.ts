@@ -124,3 +124,43 @@ export interface HookContext {
 export abstract class PostGenerateHook {
   abstract run(context: HookContext): void | Promise<void>;
 }
+
+/**
+ * Context passed to PreCheck.check() — the fully resolved model (after
+ * includes and mixins), before any generation step runs.
+ */
+export interface PreCheckContext {
+  /** The selected model item (the root model when no `select` is given) */
+  data: Record<string, any>;
+  /** Clay helpers — pascalCase, camelCase, pluralize, etc. */
+  helpers: ClayHelpers;
+  /** The full root model */
+  model: Record<string, any>;
+  /** Parent object in the JSON hierarchy */
+  parent?: Record<string, any>;
+}
+
+/**
+ * Abstract base class for pre-generation checks.
+ * Extend this and implement check() to validate model invariants before
+ * any generation step runs. Checks are pure validators — they must not
+ * write files or mutate the model. Return a non-empty array of violation
+ * strings (or throw) to fail the check; return an empty array or nothing
+ * to pass. Any violation aborts the generation before files are touched.
+ *
+ * @example
+ * ```typescript
+ * import { PreCheck, type PreCheckContext } from 'clay-generator/types';
+ *
+ * export default class extends PreCheck {
+ *   check({ data }: PreCheckContext): string[] | void {
+ *     if (!data.name) return ['every type needs a name'];
+ *   }
+ * }
+ * ```
+ */
+export abstract class PreCheck {
+  abstract check(
+    context: PreCheckContext
+  ): string[] | void | Promise<string[] | void>;
+}

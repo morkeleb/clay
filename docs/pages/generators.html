@@ -195,6 +195,58 @@
 └── foundation/            # Files to copy
     └── config.js</code></pre>
 
+        <h2>Pre-Generation Checks</h2>
+        <p>
+          Generators can define <code>preChecks</code> that validate the fully resolved model
+          (after includes and mixins) <strong>before any step runs</strong>. Prechecks are pure
+          validators — model in, verdict out — and must not write files or mutate the model.
+          Unlike steps and postGenerate hooks, a precheck failure <strong>aborts the generation</strong>
+          for that model: nothing is rendered, written, copied, or executed. All prechecks run
+          even if an early one fails, and every violation is aggregated into a single error.
+        </p>
+        <pre><code>{
+  "preChecks": [
+    { "run": "checks/cloudkit-invariants.ts" },
+    { "runCommand": "node checks/naming.mjs", "select": "$.model.types[*]" }
+  ],
+  "steps": [...]
+}</code></pre>
+
+        <h3>TypeScript Checks</h3>
+        <p>
+          Use the <code>PreCheck</code> base class, following the same pattern as
+          <code>PostGenerateHook</code>. Import from <code>clay-generator/types</code>.
+          Return a non-empty array of violation strings (or throw) to fail the check;
+          return an empty array or nothing to pass.
+        </p>
+        <pre><code>import { PreCheck, type PreCheckContext } from 'clay-generator/types';
+
+export default class extends PreCheck {
+  check({ data }: PreCheckContext): string[] | void {
+    if (!data.name) return ['every type needs a name'];
+  }
+}</code></pre>
+
+        <p><strong>Parameters (TypeScript check):</strong></p>
+        <ul>
+          <li><code>run</code> - Path to a TypeScript PreCheck file</li>
+          <li><code>select</code> - JSONPath to select model items (check runs once per match); without it the check runs once against the root model</li>
+        </ul>
+
+        <p><strong>Parameters (command check):</strong></p>
+        <ul>
+          <li><code>runCommand</code> - Shell command (supports Handlebars templating with <code>select</code>); receives the model path as its last argument and fails the generation on non-zero exit, surfacing stderr</li>
+          <li><code>select</code> - JSONPath to select model items</li>
+          <li><code>verbose</code> - Log command output</li>
+        </ul>
+
+        <h3>PreCheckContext</h3>
+        <p>The <code>check()</code> method receives a <code>PreCheckContext</code> with
+          <code>data</code> (the selected item), <code>helpers</code>, <code>model</code>
+          (the full root model), and <code>parent</code> — the same context shape as
+          <code>CodeGenerator.render()</code>.
+        </p>
+
         <h2>Post-Generation Hooks</h2>
         <p>
           Generators can define <code>postGenerate</code> hooks that run after all steps complete and files are on disk.

@@ -1390,6 +1390,36 @@ If a model has a \`$schema\` reference, all mutations are validated against it:
 
 Use \`clay_model_set_schema\` to add schema validation to a model. This catches structural errors (typos, missing required fields) before generation runs.
 
+## Pre-Generation Checks
+
+Generators can define \`preChecks\` that validate the fully resolved model (after includes and mixins) **before any step runs**. Prechecks are pure validators — model in, verdict out — and must not write files or mutate the model. Unlike steps and postGenerate hooks, a failing precheck **aborts the generation** for that model: nothing is rendered, written, copied, or executed. All prechecks run even if an early one fails, and every violation is aggregated into a single error.
+
+\`\`\`json
+{
+  "preChecks": [
+    { "run": "checks/cloudkit-invariants.ts" },
+    { "runCommand": "node checks/naming.mjs", "select": "$.model.types[*]" }
+  ],
+  "steps": [...]
+}
+\`\`\`
+
+TypeScript checks use the \`PreCheck\` base class — a default-exported class with a \`check(context)\` method. The context carries \`data\`, \`helpers\`, \`model\`, and \`parent\` (same shape as \`CodeGenerator.render()\`). Return a non-empty array of violation strings (or throw) to fail the check; return an empty array or nothing to pass:
+
+\`\`\`typescript
+import { PreCheck, type PreCheckContext } from 'clay-generator/types';
+
+export default class extends PreCheck {
+  check({ data }: PreCheckContext): string[] | void {
+    if (!data.name) return ['every type needs a name'];
+  }
+}
+\`\`\`
+
+Command checks (\`runCommand\`) receive the model path as their last argument and fail the generation on non-zero exit, surfacing stderr. With \`select\`, a check runs once per selected item; without, once against the root model.
+
+Use prechecks to enforce model invariants (naming rules, required relationships, platform constraints) so violations surface before any file changes — \`clay_generate\` reports them in \`precheck_violations\`.
+
 ## Post-Generation Hooks
 
 Generators can define \`postGenerate\` hooks that run after all files are written to disk. Hooks are best-effort — failures are warnings, not errors.

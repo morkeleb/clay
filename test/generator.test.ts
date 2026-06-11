@@ -5,6 +5,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as generator from '../src/generator';
+import { PreCheckFailedError } from '../src/pipeline/prechecks';
 import { expect } from 'chai';
 import sinon from 'sinon';
 import * as output from '../src/output';
@@ -104,6 +105,85 @@ describe('a generator', () => {
       );
 
       expect(criticalStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('preChecks', () => {
+    let warnStub: sinon.SinonStub;
+
+    const loadModelIndex = () => {
+      const clayFile = require('../src/clay_file');
+      return clayFile
+        .load('./test/samples')
+        .getModelIndex('./test/include-example.json', './tmp/test-output/');
+    };
+
+    beforeEach(() => {
+      warnStub = sinon.stub(output, 'warn');
+    });
+
+    afterEach(() => {
+      warnStub.restore();
+    });
+
+    it('accepts a generator that declares preChecks', () => {
+      const g = generator.load(
+        './test/samples/precheck-pass-example.json',
+        '',
+        loadModelIndex()
+      );
+      expect(g.preChecks).to.deep.equal([
+        { run: 'prechecks/passing-check.ts' },
+      ]);
+    });
+
+    it('rejects unknown keys inside precheck entries', () => {
+      expect(() =>
+        generator.load(
+          './test/samples/precheck-bad-schema.json',
+          '',
+          loadModelIndex()
+        )
+      ).to.throw(/Invalid generator schema/);
+    });
+
+    it('runs steps normally when all prechecks pass', async () => {
+      const g = generator.load(
+        './test/samples/precheck-pass-example.json',
+        '',
+        loadModelIndex()
+      );
+
+      await g.generate(
+        model.load('./test/samples/example-unknown-generator.json'),
+        './tmp/precheck-output'
+      );
+
+      expect(fs.existsSync('./tmp/precheck-output/copies')).to.be.true;
+    });
+
+    it('aborts generation and leaves the output directory untouched when a precheck fails', async () => {
+      const g = generator.load(
+        './test/samples/precheck-fail-example.json',
+        '',
+        loadModelIndex()
+      );
+
+      try {
+        await g.generate(
+          model.load('./test/samples/example-unknown-generator.json'),
+          './tmp/precheck-output'
+        );
+        expect.fail('expected generate to reject');
+      } catch (e) {
+        expect(e).to.be.instanceOf(PreCheckFailedError);
+        const err = e as PreCheckFailedError;
+        expect(err.violations).to.have.lengthOf(2);
+        expect(err.message).to.include('order violates an invariant');
+        expect(err.message).to.include('product violates an invariant');
+      }
+
+      expect(fs.existsSync('./tmp/precheck-output')).to.be.false;
     });
   });
 
