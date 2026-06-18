@@ -24,6 +24,8 @@ import {
   collectGeneratorDependencies,
   checkInputHash,
 } from './pipeline/input-hash';
+import { clearHookCaches } from './pipeline/hooks';
+import { clearPrecheckCaches } from './pipeline/prechecks';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 
@@ -131,6 +133,8 @@ export async function generate(
 
     clearTemplateCache();
     clearEngineCaches();
+    clearHookCaches();
+    clearPrecheckCaches();
     const formatterCache = createFormatterCache();
     progressTracker = createProgress('generate', verbose);
 

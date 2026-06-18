@@ -65,10 +65,10 @@
         </ul>
 
         <h3>Generator Step Configuration</h3>
-        <p>Use the <code>engine</code> field on generate steps to select the engine:</p>
-        <pre><code>{ "generate": "entity.hbs", "select": "$.model.types[*]", "target": "{{pascalCase name}}.ts" }
-{ "generate": "service.ejs", "select": "$.model.types[*]", "target": "{{pascalCase name}}Service.ts", "engine": "ejs" }
-{ "generate": "routes.ts", "select": "$.model", "target": "routes/index.ts", "engine": "ts" }</code></pre>
+        <p>Use the <code>engine</code> field on generate steps to select the engine. The generated file is named after the <strong>template's own filename</strong> (rendered as a Handlebars template); <code>target</code> is an optional output <strong>subdirectory</strong>, not the filename. Name the template with the final extension and the per-entity name &mdash; don't add <code>.hbs</code>/<code>.ejs</code> (it is stripped from the output name):</p>
+        <pre><code>{ "generate": "{{pascalCase name}}.ts", "select": "$.model.types[*]" }
+{ "generate": "{{pascalCase name}}Service.ts", "select": "$.model.types[*]", "engine": "ejs" }
+{ "generate": "index.ts", "select": "$.model", "target": "routes/", "engine": "ts" }</code></pre>
 
         <h2>Handlebars Templates</h2>
 

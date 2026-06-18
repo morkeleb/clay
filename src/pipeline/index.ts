@@ -111,7 +111,13 @@ export function buildGeneratePipeline(
 
   return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step, formatters, modelPath, partials, partialsDir) => {
     const templatePath = path.join(templateDir, templateFile);
-    const fileNamePattern = path.join(outputDir, step.target || '', templateFile);
+    // The generated file is named after the template's own filename. A trailing
+    // template-engine extension (.hbs/.ejs) is stripped from the OUTPUT name so a
+    // template named e.g. `{{pascalCase name}}Controller.ts.hbs` writes
+    // `...Controller.ts`, not `...Controller.ts.hbs`. The engine is chosen by the
+    // step's `engine` field, not the extension, so this never affects rendering.
+    const outputName = templateFile.replace(/\.(hbs|ejs)$/i, '');
+    const fileNamePattern = path.join(outputDir, step.target || '', outputName);
 
     // Worker path: batch select+render in a worker thread
     if (workerPool && modelPath) {

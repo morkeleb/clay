@@ -64,4 +64,38 @@ describe('pipeline factory', () => {
     expect(fs.readFileSync(userFile, 'utf8')).to.equal('export class User {}');
     expect(fs.readFileSync(orderFile, 'utf8')).to.equal('export class Order {}');
   });
+
+  it('strips a trailing .hbs/.ejs from the output filename', async () => {
+    const templateDir = path.join(testDir, 'templates');
+    fs.mkdirSync(templateDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(templateDir, '{{name}}.ts.hbs'),
+      'export class {{name}} {}',
+      'utf8'
+    );
+
+    const written: string[] = [];
+    const modelIndex: ClayModelEntry = {
+      path: 'model.json',
+      generated_files: {},
+      setFileCheckSum: (f: string) => { written.push(f); },
+      getFileCheckSum: () => null,
+      delFileCheckSum: () => {},
+      load: () => ({}),
+    };
+
+    const outputDir = path.join(testDir, 'output');
+    const cache = new FormatterCache(() => ({ apply: (_f: string, c: string) => c }));
+    const run = buildGeneratePipeline(cache);
+    const model = { entities: [{ name: 'User' }] };
+    const step: any = { generate: '{{name}}.ts.hbs', select: '$.entities[*]', target: 'src/' };
+
+    await run(model, '$.entities[*]', templateDir, '{{name}}.ts.hbs', outputDir, modelIndex, step, []);
+
+    // Output keeps the real .ts extension; the .hbs template suffix is stripped.
+    const userFile = path.join(outputDir, 'src', 'User.ts');
+    expect(fs.existsSync(userFile)).to.be.true;
+    expect(fs.existsSync(path.join(outputDir, 'src', 'User.ts.hbs'))).to.be.false;
+    expect(fs.readFileSync(userFile, 'utf8')).to.equal('export class User {}');
+  });
 });

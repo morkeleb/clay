@@ -85,9 +85,9 @@ cat > clay/generators/api/generator.json << 'EOF'
   "partials": [],
   "steps": [
     {
-      "generate": "templates/model.js",
+      "generate": "templates/{{name}}.model.js",
       "select": "$.model.types[*]",
-      "target": "src/models/{{kebabCase name}}.model.js"
+      "target": "src/models/"
     }
   ],
   "formatters": []
@@ -95,8 +95,8 @@ cat > clay/generators/api/generator.json << 'EOF'
 EOF</code></pre>
 
         <h3>4. Create a Template</h3>
-        <p>Create a Handlebars template for the generated files:</p>
-        <pre><code>cat > clay/generators/api/templates/model.js << 'EOF'
+        <p>Create a Handlebars template for the generated files. The template's filename becomes the output filename (rendered as Handlebars), so name it <code>{{name}}.model.js</code> — each selected type writes its own file (e.g. <code>src/models/User.model.js</code>):</p>
+        <pre><code>cat > "clay/generators/api/templates/{{name}}.model.js" << 'EOF'
 // Generated Model: {{name}}
 
 class {{pascalCase name}} {

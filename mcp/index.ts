@@ -628,12 +628,13 @@ export default class extends CodeGenerator {
 }
 \`\`\`
 
-Generator steps use the optional \`engine\` field to select the template engine (\`"handlebars"\` is the default):
+Generator steps use the optional \`engine\` field to select the template engine (\`"handlebars"\` is the default). The output filename comes from the TEMPLATE'S filename (rendered as Handlebars); \`target\` is an optional output SUBDIRECTORY, not the filename. Name the template with the final extension and the per-entity name — don't add \`.hbs\`/\`.ejs\` (it's stripped):
 \`\`\`json
-{ "generate": "controller.hbs", "select": "$.model.entities[*]", "target": "{{pascalCase name}}Controller.ts" }
-{ "generate": "service.ts", "select": "$.model.entities[*]", "target": "{{pascalCase name}}Service.ts", "engine": "ts" }
-{ "generate": "index.ejs", "select": "$.model", "target": "index.ts", "engine": "ejs" }
+{ "generate": "{{pascalCase name}}Controller.ts", "select": "$.model.entities[*]" }
+{ "generate": "{{pascalCase name}}Service.ts", "select": "$.model.entities[*]", "engine": "ts" }
+{ "generate": "index.ts", "select": "$.model", "engine": "ejs" }
 \`\`\`
+(The first writes \`UserController.ts\`; add \`"target": "services/"\` to drop output into a subdirectory.)
 
 ### 3. The .clay File
 The \`.clay\` file tracks your project:
@@ -1256,9 +1257,9 @@ Generator steps with \`touch: true\` create files **once** but never overwrite t
 
 \`\`\`json
 {
-  "generate": "templates/service-impl.hbs",
+  "generate": "templates/{{pascalCase name}}Service.ts",
   "select": "$.model.types[*]",
-  "target": "src/services/{{pascalCase name}}Service.ts",
+  "target": "src/services/",
   "touch": true
 }
 \`\`\`
@@ -1591,19 +1592,19 @@ For each repeating file pattern, define a generator step:
 {
   "steps": [
     {
-      "generate": "templates/controller.hbs",
+      "generate": "templates/{{pascalCase name}}Controller.ts",
       "select": "$.model.types[*]",
-      "target": "src/controllers/{{pascalCase name}}Controller.ts"
+      "target": "src/controllers/"
     },
     {
-      "generate": "templates/service.hbs",
+      "generate": "templates/{{pascalCase name}}Service.ts",
       "select": "$.model.types[*]",
-      "target": "src/services/{{pascalCase name}}Service.ts"
+      "target": "src/services/"
     },
     {
-      "generate": "templates/service-impl.hbs",
+      "generate": "templates/{{pascalCase name}}ServiceImpl.ts",
       "select": "$.model.types[*]",
-      "target": "src/services/impl/{{pascalCase name}}ServiceImpl.ts",
+      "target": "src/services/impl/",
       "touch": true
     }
   ]
@@ -1623,8 +1624,8 @@ Generator steps support an optional \`engine\` field. Choose based on complexity
 - **TypeScript** (\`"engine": "ts"\`) — when the file requires real logic: unique imports, cross-entity references, conditional wiring, aggregation
 
 \`\`\`json
-{ "generate": "templates/entity.hbs", "select": "$.model.types[*]", "target": "..." },
-{ "generate": "templates/di-container.ts", "select": "$.model", "target": "...", "engine": "ts" }
+{ "generate": "templates/{{pascalCase name}}.ts", "select": "$.model.types[*]" },
+{ "generate": "templates/di-container.ts", "select": "$.model", "engine": "ts" }
 \`\`\`
 
 ### Step 5: Identify Index/Registry/Wiring Files
@@ -1640,15 +1641,15 @@ These files often need to compute across all entities (unique imports, condition
 
 \`\`\`json
 {
-  "generate": "templates/routes-index.ts",
+  "generate": "templates/index.ts",
   "select": "$.model",
-  "target": "src/routes/index.ts",
+  "target": "src/routes/",
   "engine": "ts"
 }
 \`\`\`
 
 \`\`\`typescript
-// templates/routes-index.ts
+// templates/index.ts
 import { CodeGenerator, type RenderContext } from 'clay-generator/types';
 
 export default class extends CodeGenerator {
@@ -1833,9 +1834,9 @@ Define what data each instance needs:
 {
   "steps": [
     {
-      "generate": "templates/controller.hbs",
+      "generate": "templates/{{pascalCase name}}Controller.ts",
       "select": "$.model.types[*]",
-      "target": "src/controllers/{{pascalCase name}}Controller.ts"
+      "target": "src/controllers/"
     }
   ]
 }
@@ -1854,14 +1855,14 @@ For each file in the set, ask: **"If I regenerate this, will I lose important wo
 {
   "steps": [
     {
-      "generate": "templates/service-interface.hbs",
+      "generate": "templates/I{{pascalCase name}}Service.ts",
       "select": "$.model.types[*]",
-      "target": "src/services/I{{pascalCase name}}Service.ts"
+      "target": "src/services/"
     },
     {
-      "generate": "templates/service-impl.hbs",
+      "generate": "templates/{{pascalCase name}}ServiceImpl.ts",
       "select": "$.model.types[*]",
-      "target": "src/services/{{pascalCase name}}ServiceImpl.ts",
+      "target": "src/services/",
       "touch": true
     }
   ]

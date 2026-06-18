@@ -85,7 +85,7 @@ function executeIncludes(model: any, modelPath: string): void {
         path.join(path.dirname(modelPath), m.include)
       );
       try {
-        const includeData = require(includePath);
+        const includeData = requireNew(includePath);
 
         for (const key in includeData) {
           if (Object.prototype.hasOwnProperty.call(includeData, key)) {
@@ -144,7 +144,7 @@ function executeIncludesWithMap(
         path.join(path.dirname(modelPath), m.include)
       );
       try {
-        const includeData = require(includePath);
+        const includeData = requireNew(includePath);
 
         for (const key in includeData) {
           if (Object.prototype.hasOwnProperty.call(includeData, key)) {

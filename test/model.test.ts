@@ -110,10 +110,14 @@ describe('the model module', () => {
     });
 
     it('will resolve valid includes and skip missing ones', () => {
-      // First type has a valid include that resolves
-      expect(result.model.types[0].events).to.deep.equal([
-        { name: 'ordercreated' },
-      ]);
+      // First type has a valid include that resolves to entities/order.json.
+      // This model has no mixins, so the included data is used verbatim
+      // (events stays the empty array defined in order.json). The include is
+      // loaded fresh per model, so a prior model's mixin mutation does not
+      // leak into it.
+      expect(result.model.types[0].name).to.equal('order');
+      expect(result.model.types[0].events).to.deep.equal([]);
+      expect(result.model.types[0].include).to.equal(undefined);
       // Second type has a missing include - should keep the include reference
       expect(result.model.types[1].include).to.equal('entities/nonexistent.json');
       expect(result.model.types[1].name).to.equal('placeholder');

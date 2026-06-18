@@ -36,6 +36,15 @@ function getJiti(): any {
 }
 
 /**
+ * Reset the jiti instance so edited TypeScript prechecks are re-read on the
+ * next run. Without this the long-running MCP server keeps serving the first
+ * compiled version of a precheck. Called at the start of each generation run.
+ */
+export function clearPrecheckCaches(): void {
+  jitiInstance = null;
+}
+
+/**
  * Thrown when one or more prechecks report violations.
  * Carries every violation so callers (CLI, MCP server) can present
  * the complete picture in one run.

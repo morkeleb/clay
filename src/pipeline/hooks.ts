@@ -27,6 +27,15 @@ function getJiti(): any {
 }
 
 /**
+ * Reset the jiti instance so edited TypeScript hooks are re-read on the next
+ * run. Without this the long-running MCP server keeps serving the first
+ * compiled version of a hook. Called at the start of each generation run.
+ */
+export function clearHookCaches(): void {
+  jitiInstance = null;
+}
+
+/**
  * Execute all post-generation hooks for a generator.
  * Hooks run sequentially. Within a hook that has `select`, per-item
  * calls run in parallel with a concurrency limit.

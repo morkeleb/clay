@@ -27,6 +27,7 @@ import _ from 'lodash';
 import https from 'https';
 import os from 'os';
 import type { ClayFileManager } from './types/clay-file';
+import { requireNew } from './require-helper';
 
 interface GeneratorRegistry {
   generators: {
@@ -160,7 +161,7 @@ export async function loadGeneratorRegistry(): Promise<GeneratorRegistry> {
       );
       if (fs.existsSync(localRegistryPath)) {
         ui.info('Using local registry file');
-        return require(localRegistryPath);
+        return requireNew(localRegistryPath);
       }
     } catch {
       // Ignore
@@ -234,7 +235,7 @@ export function getAllGenerators(clayFile: ClayFileManager): GeneratorInfo[] {
 
   clayFile.models.forEach((model, modelIndex) => {
     try {
-      const modelData = require(path.resolve(model.path));
+      const modelData = requireNew(model.path);
       if (modelData.generators) {
         modelData.generators.forEach((gen: string | { generator: string }) => {
           const genName = typeof gen === 'string' ? gen : gen.generator;
@@ -552,7 +553,7 @@ export async function addGenerator(
   // Load and update the model file
   try {
     const modelPath = path.resolve(selectedModel.path);
-    const modelData = require(modelPath);
+    const modelData = requireNew(modelPath);
 
     // Ensure generators array exists
     if (!modelData.generators) {
@@ -672,7 +673,7 @@ export async function deleteGenerator(
   for (const usage of modelsToRemoveFrom) {
     try {
       const modelPath = path.resolve(usage.modelPath);
-      const modelData = require(modelPath);
+      const modelData = requireNew(modelPath);
 
       if (modelData.generators) {
         modelData.generators = modelData.generators.filter(

@@ -20,19 +20,21 @@ import {
 const concepts = {
   overview: {
     title: 'Clay Overview',
-    content: `Clay is a template-focused code generator that transforms JSON models into code using Handlebars templates.
+    content: `Clay is a template-focused code generator that transforms JSON models into code. Templates can be written in any of three engines (Handlebars, EJS, or TypeScript) — see the 'templates' topic.
 
 **Core Components:**
 1. Models (model.json) - Define your domain structure
 2. Generators (generator.json) - Define transformation steps
-3. Templates - Handlebars files that generate code
-4. .clay file - Tracks generated files for regeneration and cleanup
+3. Templates - Handlebars/EJS/TypeScript files that generate code
+4. Pre-checks (preChecks) - Validators that run against the resolved model BEFORE generation and abort it on any violation (see the 'generators' topic)
+5. .clay file - Tracks generated files for regeneration and cleanup
 
 **Workflow:**
 1. Create a model.json describing your domain
 2. Reference generators in the model
-3. Generators execute steps (generate templates, run commands, copy files)
-4. Clay tracks everything in .clay file for easy regeneration/cleanup`,
+3. On generate, any preChecks validate the model first (a failure aborts before any file is touched)
+4. Generators execute steps (generate templates, run commands, copy files)
+5. Clay tracks everything in .clay file for easy regeneration/cleanup`,
   },
 
   models: {
@@ -118,7 +120,7 @@ const concepts = {
     {
       "generate": "templates/{{pascalCase name}}.java",
       "select": "$.model.types[*]",
-      "target": "src/main/java/{{pascalCase name}}.java"
+      "target": "src/main/java/"
     },
     {
       "copy": "foundation/",
@@ -137,15 +139,15 @@ const concepts = {
 1. **Generate from Template:**
    \`\`\`json
    {
-     "generate": "templates/controller.ts",
+     "generate": "templates/{{kebabCase name}}.controller.ts",
      "select": "$.model.types[*]",
-     "target": "controllers/{{kebabCase name}}.controller.ts",
+     "target": "controllers/",
      "touch": false
    }
    \`\`\`
-   - \`generate\`: Path to Handlebars template
+   - \`generate\`: Path to the template. Its FILENAME (Handlebars-rendered) becomes the output filename — so put the per-entity name and final extension here, e.g. \`{{kebabCase name}}.controller.ts\`. Don't add \`.hbs\`/\`.ejs\` (it's stripped); pick the engine with \`engine\`.
    - \`select\`: JSONPath to filter model (optional)
-   - \`target\`: Output path (supports Handlebars)
+   - \`target\`: Optional output SUBDIRECTORY (supports Handlebars) — a directory prefix, NOT the filename
    - \`touch\`: If true, only create if file doesn't exist
 
 2. **Copy Files:**
@@ -214,7 +216,30 @@ External tools to format generated code (e.g., prettier, eslint --fix)`,
 
   templates: {
     title: 'Writing Templates',
-    content: `Templates use Handlebars syntax with 47+ helpers.
+    content: `Clay supports THREE template engines, selected per generator step via the optional \`engine\` field on a generate step (\`"handlebars"\` is the default). All three have access to Clay's 47+ helpers.
+
+**Choosing an Engine:**
+| Engine | \`engine\` value | Best for | Helper syntax |
+|--------|----------------|----------|---------------|
+| Handlebars (default) | \`"handlebars"\` or omit | Simple substitution, iteration, conditionals | \`{{pascalCase name}}\`, \`{{#each fields}}\` |
+| EJS | \`"ejs"\` | Templates needing a few lines of inline logic (filter, compute, dedupe) | \`<%= helpers.pascalCase(name) %>\`, \`<% if (...) { %>\` |
+| TypeScript | \`"ts"\` | Programmatic generation: cross-entity references, filesystem-aware barrel/registration files, graph traversal | \`CodeGenerator\` class; \`helpers.pascalCase(name)\` |
+
+Rule of thumb: start with Handlebars; switch to EJS when an otherwise template-like file needs a little logic; switch to TypeScript when the file is more code than template (DI wiring, route registration, index/barrel files that aggregate across entities or read the filesystem).
+
+**IMPORTANT — output filename comes from the TEMPLATE filename, not from \`target\`:**
+The generated file is named after the \`generate\` template's own filename, rendered as a Handlebars template. \`target\` is an optional output SUBDIRECTORY, not the output filename. So:
+- Name the template file with the FINAL extension you want, with Handlebars in the name — e.g. \`{{pascalCase name}}Controller.ts\`. Do NOT add \`.hbs\`/\`.ejs\` — that extension would end up on the generated file (a common mistake). Pick the engine with the \`engine\` field, not the file extension.
+- Output path = \`<output dir>/<target>/<rendered template filename>\`.
+
+\`\`\`json
+{ "generate": "templates/{{pascalCase name}}Controller.ts", "select": "$.model.types[*]" },
+{ "generate": "templates/{{pascalCase name}}Service.ts",    "select": "$.model.types[*]", "engine": "ejs" },
+{ "generate": "templates/routes.ts", "select": "$.model", "target": "routes/", "engine": "ts" }
+\`\`\`
+The first step writes \`UserController.ts\`; the third writes \`routes/routes.ts\`.
+
+The examples below use Handlebars (the default). Use \`clay_explain_concepts\` with topic 'generators' for the TypeScript \`CodeGenerator\` API.
 
 **Basic Template:**
 \`\`\`handlebars
@@ -430,9 +455,9 @@ clay_test_path({
 **In Generator Steps:**
 \`\`\`json
 {
-  "generate": "templates/entity.ts",
+  "generate": "templates/{{kebabCase name}}.entity.ts",
   "select": "$.model.types[?(@.category == 'entity')]",
-  "target": "entities/{{kebabCase name}}.entity.ts"
+  "target": "entities/"
 }
 \`\`\`
 

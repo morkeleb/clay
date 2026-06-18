@@ -65,11 +65,11 @@
             "properties": {
               "generate": {
                 "type": "string",
-                "description": "The mustache template or directory of templates to generate the output."
+                "description": "Path (relative to the generator) to the template file or directory of templates. The template's FILENAME becomes the generated file's name, rendered as a Handlebars template (e.g. a template named '{{pascalCase name}}Controller.ts' writes 'UserController.ts'). A trailing .hbs/.ejs extension is stripped from the output name. Choose the engine with the 'engine' field, not the file extension."
               },
               "target": {
                 "type": "string",
-                "description": "The ouput file to generate. Mustache template accessible with selectd data based on the select property"
+                "description": "Optional output SUBDIRECTORY (relative to the model's output dir) to place generated files in; supports Handlebars. This is a directory prefix, NOT the output filename — the filename comes from the template's name (see 'generate')."
               },
               "select": {
                 "type": "string",
@@ -82,10 +82,10 @@
               "engine": {
                 "type": "string",
                 "enum": ["handlebars", "ejs", "ts"],
-                "description": "Template engine to use. 'handlebars' (default) for .hbs templates, 'ejs' for EJS templates, 'ts' for TypeScript/JavaScript CodeGenerator classes."
+                "description": "Template engine to use. 'handlebars' (default), 'ejs' for EJS templates, 'ts' for TypeScript/JavaScript CodeGenerator classes. The engine is selected here, not by the template's file extension."
               }
             },
-            "required": ["generate", "target", "select"]
+            "required": ["generate", "select"]
           }
         ]
       }

@@ -48,9 +48,15 @@ function getEjsFileContent(filePath: string): string {
 
 /**
  * Clear engine caches. Called at the start of each generation run.
+ *
+ * Resets the jiti instance as well so that edited `engine: 'ts'` templates are
+ * re-read from disk on the next run. Without this, the long-running MCP server
+ * keeps serving the first compiled version of a TS template (jiti caches
+ * imported modules on the instance).
  */
 export function clearEngineCaches(): void {
   ejsFileCache.clear();
+  jitiInstance = null;
 }
 
 /**

@@ -34,9 +34,9 @@
   "partials": ["partials/header.hbs"],
   "steps": [
     {
-      "generate": "templates/model.js",
+      "generate": "templates/{{kebabCase name}}.js",
       "select": "$.model.types[*]",
-      "target": "src/models/{{kebabCase name}}.js"
+      "target": "src/models/"
     }
   ],
   "formatters": ["clay-generator-formatter-prettier"]
@@ -55,7 +55,7 @@
         <p>Array of generation steps (run in order):</p>
         <pre><code>"steps": [
   { "runCommand": "mkdir -p src/models" },
-  { "generate": "templates/model.js", "select": "$.model.types[*]" },
+  { "generate": "templates/{{name}}.js", "select": "$.model.types[*]" },
   { "copy": "foundation", "target": "src/foundation" }
 ]</code></pre>
 
@@ -66,26 +66,26 @@
         <h2>Step Types</h2>
 
         <h3>1. Generate (Template)</h3>
-        <p>Generate files from templates. Supports Handlebars (.hbs), EJS (.ejs), and TypeScript (.ts) engines:</p>
+        <p>Generate files from templates. The engine is chosen with the <code>engine</code> field (Handlebars by default), not the file extension. The output file is named after the <strong>template's filename</strong> (rendered as Handlebars); <code>target</code> is an optional output <strong>subdirectory</strong>:</p>
         <pre><code>{
-  "generate": "templates/model.js",
+  "generate": "templates/{{kebabCase name}}.model.js",
   "select": "$.model.types[*]",
-  "target": "src/models/{{kebabCase name}}.model.js",
+  "target": "src/models/",
   "touch": false
 }</code></pre>
 
-        <p>With different template engines:</p>
+        <p>With different template engines (put the per-entity name and final extension in the template filename — don't add <code>.hbs</code>/<code>.ejs</code>, it is stripped):</p>
         <pre><code>// EJS — inline JavaScript logic
-{ "generate": "templates/service.ejs", "select": "$.model.types[*]", "target": "src/{{name}}Service.ts", "engine": "ejs" }
+{ "generate": "templates/{{name}}Service.ts", "select": "$.model.types[*]", "target": "src/", "engine": "ejs" }
 
 // TypeScript — fully programmatic via CodeGenerator class
-{ "generate": "templates/routes.ts", "select": "$.model", "target": "src/routes/index.ts", "engine": "ts" }</code></pre>
+{ "generate": "templates/index.ts", "select": "$.model", "target": "src/routes/", "engine": "ts" }</code></pre>
 
         <p><strong>Parameters:</strong></p>
         <ul>
-          <li><code>generate</code> - Path to template file</li>
+          <li><code>generate</code> - Path to the template; its filename (Handlebars-rendered) becomes the output filename</li>
           <li><code>select</code> - JSONPath to select data (optional)</li>
-          <li><code>target</code> - Output path (can use Handlebars)</li>
+          <li><code>target</code> - Optional output subdirectory (can use Handlebars) — a directory prefix, not the filename</li>
           <li>
             <code>touch</code> - If true, only generate if file doesn't exist
           </li>
@@ -142,23 +142,23 @@
       "runCommand": "mkdir -p src/models src/controllers src/routes"
     },
     {
-      "generate": "templates/model.js",
+      "generate": "templates/{{kebabCase name}}.model.js",
       "select": "$.model.types[*]",
-      "target": "src/models/{{kebabCase name}}.model.js"
+      "target": "src/models/"
     },
     {
-      "generate": "templates/controller.js",
+      "generate": "templates/{{kebabCase name}}.controller.js",
       "select": "$.model.types[*]",
-      "target": "src/controllers/{{kebabCase name}}.controller.js"
+      "target": "src/controllers/"
     },
     {
-      "generate": "templates/routes.js",
+      "generate": "templates/{{kebabCase name}}.routes.js",
       "select": "$.model.types[*]",
-      "target": "src/routes/{{kebabCase name}}.routes.js"
+      "target": "src/routes/"
     },
     {
       "generate": "templates/index.js",
-      "target": "src/index.js",
+      "target": "src/",
       "touch": true
     },
     {
