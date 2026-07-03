@@ -26,6 +26,11 @@ import {
 } from './pipeline/input-hash';
 import { clearHookCaches } from './pipeline/hooks';
 import { clearPrecheckCaches } from './pipeline/prechecks';
+import { validateGeneratorsPreflight } from './pipeline/preflight';
+import {
+  resolveGeneratorPaths,
+  type GeneratorReference,
+} from './generator-resolver';
 import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 
@@ -36,28 +41,6 @@ try {
   clayVersion = pkg.version;
 } catch {
   // Fallback if package.json not found
-}
-
-interface GeneratorReference {
-  generator?: string;
-  output?: string;
-}
-
-function resolveGeneratorPaths(
-  name: string | GeneratorReference,
-  modelDir: string
-): string[] {
-  const generatorName = typeof name === 'string' ? name : name.generator || '';
-  return [
-    generatorName + '.json',
-    path.resolve(generatorName + '.json'),
-    path.resolve(path.join(modelDir, generatorName + '.json')),
-    path.resolve(path.join(modelDir, generatorName, 'generator.json')),
-    path.resolve(path.join('clay', 'generators', generatorName, 'generator.json')),
-    generatorName,
-    path.resolve(generatorName),
-    path.resolve(path.join(modelDir, generatorName)),
-  ].filter(fs.existsSync);
 }
 
 function resolveGenerator(
@@ -130,6 +113,13 @@ export async function generate(
     }
 
     if (!verbose) ui.suppress(true);
+
+    // Pre-flight: fail fast (before spawning workers) if any referenced
+    // generator can't be resolved or any step's template/copy source is
+    // missing. Aggregates every problem into one clear error. Runs over ALL
+    // models regardless of input-hash — the checks are cheap and we want
+    // deterministic fail-fast rather than a mid-flight worker crash.
+    validateGeneratorsPreflight(modelsToExecute);
 
     clearTemplateCache();
     clearEngineCaches();

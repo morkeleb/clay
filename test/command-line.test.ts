@@ -81,7 +81,9 @@ describe('the command line interface', () => {
         await actionResults[1];
         run = true;
       } catch (e) {
-        expect(e).to.match(/.*generator not found.*/g);
+        // Pre-flight validation now catches unresolved generators before any
+        // generation runs, failing fast with an aggregated message.
+        expect(e).to.match(/not found/i);
       }
       expect(run).to.equal(false);
     });
