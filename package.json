@@ -11,7 +11,8 @@
     },
     "./conventions": "./dist/src/conventions.js",
     "./model": "./dist/src/model.js",
-    "./generate-api": "./dist/src/generate-api.js"
+    "./generate-api": "./dist/src/generate-api.js",
+    "./generator-authoring": "./dist/src/generator-authoring.js"
   },
   "scripts": {
     "build": "tsc && cd mcp && npm install && npm run build && cd ..",
