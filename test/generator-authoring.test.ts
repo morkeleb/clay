@@ -92,6 +92,13 @@ describe('addGeneratorStep', () => {
     ).to.throw(GeneratorAuthoringError, /not found/i);
   });
 
+  it('throws when the template escapes the generator directory', () => {
+    makeGenerator('api');
+    expect(() =>
+      addGeneratorStep({ generatorName: 'api', engine: 'handlebars', template: '../escape.hbs' })
+    ).to.throw(GeneratorAuthoringError, /within the generator directory/i);
+  });
+
   it('throws when the template already exists without overwrite', () => {
     makeGenerator('api');
     const dir = path.join(tmp, 'clay', 'generators', 'api');
@@ -108,7 +115,7 @@ describe('addGeneratorStep', () => {
     const res = addGeneratorStep({
       generatorName: 'api', engine: 'handlebars', template: 'dup.hbs', overwrite: true,
     });
-    expect(res.created).to.equal(true);
+    expect(res.created).to.equal(false);
     expect(fs.readFileSync(res.templatePath, 'utf8')).to.include('{{clay_key}}');
   });
 

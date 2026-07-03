@@ -434,7 +434,7 @@ class ClayMCPServer {
           inputSchema: {
             type: 'object',
             properties: {
-              working_directory: { type: 'string', description: 'Directory containing .clay (defaults to current working directory)' },
+              working_directory: { type: 'string', description: 'Directory to resolve clay/generators from (defaults to current working directory)' },
               generator_name: { type: 'string', description: 'Name of the existing generator (e.g. "typescript-api"). Create it first with clay_init.' },
               engine: { type: 'string', enum: ['handlebars', 'ejs', 'ts'], description: 'Template engine: handlebars ({{...}}), ejs (<%= %>), or ts (class extending CodeGenerator).' },
               template: { type: 'string', description: 'Template filename relative to the generator dir, e.g. "entity.ts.hbs".' },
@@ -485,7 +485,7 @@ class ClayMCPServer {
           case 'clay_model_set_schema':
             return await modelSetSchemaTool(args || {});
           case 'clay_generator_add_step':
-            return await generatorAddStepTool(args);
+            return await generatorAddStepTool(args || {});
           default:
             throw new Error(`Unknown tool: ${name}`);
         }

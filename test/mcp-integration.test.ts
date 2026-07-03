@@ -491,5 +491,22 @@ describe('MCP Server Integration', function () {
         select: '$.types[*]',
       });
     });
+
+    it('reports a structured failure when the generator does not exist', async () => {
+      // Note: deliberately do NOT create a generator skeleton in testDir.
+      await startServer();
+
+      const result = await callTool('clay_generator_add_step', {
+        working_directory: testDir,
+        generator_name: 'missing',
+        engine: 'handlebars',
+        template: 'entity.hbs',
+      });
+
+      expect(result.success).to.be.true;
+      expect(result.result).to.have.property('success', false);
+      const r = result.result as { message: string };
+      expect(r.message).to.match(/not found/i);
+    });
   });
 });

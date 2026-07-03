@@ -98,6 +98,12 @@ export function addGeneratorStep(opts: AddStepOptions): {
 
   const generatorDir = path.dirname(generatorJsonPath);
   const templatePath = path.join(generatorDir, opts.template);
+  const rel = path.relative(generatorDir, templatePath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new GeneratorAuthoringError(
+      `Template "${opts.template}" must stay within the generator directory.`
+    );
+  }
   if (fs.existsSync(templatePath) && !opts.overwrite) {
     throw new GeneratorAuthoringError(
       `Template "${opts.template}" already exists at ${templatePath}. ` +
@@ -105,6 +111,7 @@ export function addGeneratorStep(opts: AddStepOptions): {
     );
   }
 
+  const created = !fs.existsSync(templatePath);
   const body = opts.content ?? stubForEngine(opts.engine);
   fs.mkdirSync(path.dirname(templatePath), { recursive: true });
   fs.writeFileSync(templatePath, body);
@@ -120,5 +127,5 @@ export function addGeneratorStep(opts: AddStepOptions): {
   const updated = { ...config, steps: [...steps, step] };
   fs.writeFileSync(generatorJsonPath, `${JSON.stringify(updated, null, 2)}\n`);
 
-  return { generatorJsonPath, templatePath, step, created: true };
+  return { generatorJsonPath, templatePath, step, created };
 }
