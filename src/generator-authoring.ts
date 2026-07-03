@@ -29,8 +29,12 @@ export interface AddStepOptions {
 }
 
 /**
- * Candidate locations for a generator, anchored to `cwd`. Mirrors the canonical
- * locations used by generation (see src/generator-resolver.ts).
+ * Candidate locations for a generator named `name`, anchored to `cwd`. This
+ * resolves generators by name for authoring (create/extend), using the
+ * conventional project locations. It intentionally does NOT perform the
+ * model-relative resolution that src/generator-resolver.ts does during
+ * generation, because add-step has no model context — it is invoked with a
+ * generator name and a working directory only.
  */
 function candidatePaths(name: string, cwd: string): string[] {
   return [
