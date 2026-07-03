@@ -27,6 +27,7 @@ import { modelUpdateTool } from './tools/model-update.js';
 import { modelDeleteTool } from './tools/model-delete.js';
 import { modelRenameTool } from './tools/model-rename.js';
 import { modelSetSchemaTool } from './tools/model-set-schema.js';
+import { generatorAddStepTool } from './tools/generator-add-step.js';
 
 // Import utilities
 import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
@@ -421,6 +422,31 @@ class ClayMCPServer {
             required: ['model_path', 'schema_path'],
           },
         },
+        {
+          name: 'clay_generator_add_step',
+          description:
+            'Add a new file-generating step to an EXISTING Clay generator. Each step renders files from a ' +
+            'template using one of Clay\'s engines (handlebars, ejs, or a TypeScript CodeGenerator class). ' +
+            'Writes an engine-idiomatic starter template into the generator directory and appends the step to ' +
+            'generator.json, leaving the generator immediately runnable. Use AFTER creating a generator with ' +
+            'clay_init; do NOT use it to create a generator (use clay_init) or to run generation (use clay_generate). ' +
+            'Call once per step; call repeatedly to build a multi-step generator.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              working_directory: { type: 'string', description: 'Directory containing .clay (defaults to current working directory)' },
+              generator_name: { type: 'string', description: 'Name of the existing generator (e.g. "typescript-api"). Create it first with clay_init.' },
+              engine: { type: 'string', enum: ['handlebars', 'ejs', 'ts'], description: 'Template engine: handlebars ({{...}}), ejs (<%= %>), or ts (class extending CodeGenerator).' },
+              template: { type: 'string', description: 'Template filename relative to the generator dir, e.g. "entity.ts.hbs".' },
+              select: { type: 'string', description: 'JSONPath of model nodes to run for. Default "$"; "$.types[*]" runs once per type.' },
+              target: { type: 'string', description: 'Output path/pattern; may use Clay context vars like {{clay_key}}.' },
+              touch: { type: 'boolean', description: 'If true, only create output files that do not exist yet.' },
+              content: { type: 'string', description: 'Full template body instead of the engine-idiomatic starter.' },
+              overwrite: { type: 'boolean', description: 'Overwrite the template file if it already exists.' },
+            },
+            required: ['generator_name', 'engine', 'template'],
+          },
+        },
       ],
     }));
 
@@ -458,6 +484,8 @@ class ClayMCPServer {
             return await modelRenameTool(args || {});
           case 'clay_model_set_schema':
             return await modelSetSchemaTool(args || {});
+          case 'clay_generator_add_step':
+            return await generatorAddStepTool(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }

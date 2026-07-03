@@ -141,7 +141,7 @@ describe('MCP Server', function () {
       }
     });
 
-    it('should list 14 Clay tools', (done) => {
+    it('should list 15 Clay tools', (done) => {
       serverProcess = spawn('node', [mcpBin], {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -176,7 +176,7 @@ describe('MCP Server', function () {
 
               const tools = response.result.tools;
               expect(tools).to.be.an('array');
-              expect(tools.length).to.equal(14);
+              expect(tools.length).to.equal(15);
 
               const toolNames = tools.map((t: { name: string }) => t.name);
               expect(toolNames).to.include('clay_generate');
@@ -193,6 +193,7 @@ describe('MCP Server', function () {
               expect(toolNames).to.include('clay_model_delete');
               expect(toolNames).to.include('clay_model_rename');
               expect(toolNames).to.include('clay_model_set_schema');
+              expect(toolNames).to.include('clay_generator_add_step');
 
               done();
               return;

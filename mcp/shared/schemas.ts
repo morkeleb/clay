@@ -401,3 +401,62 @@ export const ModelSetSchemaInputSchema = z
   .describe('Set or update the $schema reference on a model file.');
 
 export type ModelSetSchemaInput = z.infer<typeof ModelSetSchemaInputSchema>;
+
+// ============================================================================
+// clay_generator_add_step schemas
+// ============================================================================
+
+export const GeneratorAddStepInputSchema = z
+  .object({
+    working_directory: WorkingDirectorySchema,
+    generator_name: z
+      .string()
+      .describe(
+        'Name of the EXISTING generator to add the step to (e.g. "typescript-api"). ' +
+          'Resolved like generation resolves generators (e.g. clay/generators/<name>/generator.json). ' +
+          'Create it first with clay_init if it does not exist.'
+      ),
+    engine: z
+      .enum(['handlebars', 'ejs', 'ts'])
+      .describe(
+        'Template engine for this step. handlebars (.hbs, {{...}}), ejs (<%= %>), ' +
+          'or ts (a TypeScript class extending CodeGenerator). Determines the starter content written.'
+      ),
+    template: z
+      .string()
+      .describe(
+        'Filename (relative to the generator directory) for the template this step renders, ' +
+          'e.g. "entity.ts.hbs". Created with an engine-idiomatic starter unless content is provided.'
+      ),
+    select: z
+      .string()
+      .optional()
+      .describe(
+        'JSONPath selecting which model nodes this step runs for. Default "$" (whole model, one output); ' +
+          '"$.types[*]" runs once per type.'
+      ),
+    target: z
+      .string()
+      .optional()
+      .describe(
+        'Output path/pattern for generated files; may use Clay context vars like {{clay_key}}. ' +
+          'Omit to use Clay default targeting.'
+      ),
+    touch: z
+      .boolean()
+      .optional()
+      .describe('If true, only create output files that do not already exist (never overwrite generated output).'),
+    content: z
+      .string()
+      .optional()
+      .describe('Full template body to write instead of the engine-idiomatic starter.'),
+    overwrite: z
+      .boolean()
+      .optional()
+      .describe('If the template file already exists, set true to overwrite it; otherwise the tool errors.'),
+  })
+  .describe(
+    'Add a generate step (with a chosen engine) to an existing Clay generator and write its template stub.'
+  );
+
+export type GeneratorAddStepInput = z.infer<typeof GeneratorAddStepInputSchema>;

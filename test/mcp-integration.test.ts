@@ -454,4 +454,42 @@ describe('MCP Server Integration', function () {
       expect(result.result).to.have.property('success');
     });
   });
+
+  describe('clay_generator_add_step', () => {
+    it('adds a step and writes the stub', async () => {
+      // Arrange: create a generator skeleton in the test workspace
+      const genDir = path.join(testDir, 'clay', 'generators', 'api');
+      await fs.ensureDir(genDir);
+      await fs.writeJson(path.join(genDir, 'generator.json'), {
+        partials: [],
+        formatters: [],
+        steps: [],
+      });
+
+      await startServer();
+
+      // Act
+      const result = await callTool('clay_generator_add_step', {
+        working_directory: testDir,
+        generator_name: 'api',
+        engine: 'handlebars',
+        template: 'entity.hbs',
+        select: '$.types[*]',
+      });
+
+      // Assert
+      expect(result.success).to.be.true;
+      expect(result.result).to.have.property('success', true);
+
+      const templatePath = path.join(genDir, 'entity.hbs');
+      expect(fs.existsSync(templatePath)).to.be.true;
+
+      const generatorJson = await fs.readJson(path.join(genDir, 'generator.json'));
+      expect(generatorJson.steps).to.deep.include({
+        generate: 'entity.hbs',
+        engine: 'handlebars',
+        select: '$.types[*]',
+      });
+    });
+  });
 });
