@@ -63,7 +63,7 @@ describe('the command line interface', () => {
       ).to.equal(true);
     });
 
-    it('will throw exceptions if generator not found', async () => {
+    it('reports (does not throw) when a generator is not found', async () => {
       const cmdln = (await import('../src/command-line')).default;
 
       const args = [
@@ -74,18 +74,30 @@ describe('the command line interface', () => {
         'tmp/output',
       ];
 
-      const result = cmdln.parse(args);
-      let run = false;
+      const originalExitCode = process.exitCode;
+      const originalIsCLI = (process as any).isCLI;
+      process.exitCode = 0;
+      (process as any).isCLI = true;
+      const errors: string[] = [];
+      const originalWarn = console.warn;
+      console.warn = (...a: any[]) => {
+        errors.push(a.map((x) => String(x)).join(' '));
+      };
+
       try {
+        const result = cmdln.parse(args);
         const actionResults = (result as any)._actionResults || [];
-        await actionResults[1];
-        run = true;
-      } catch (e) {
-        // Pre-flight validation now catches unresolved generators before any
-        // generation runs, failing fast with an aggregated message.
-        expect(e).to.match(/not found/i);
+        // The CLI now catches the pre-flight failure and reports it rather
+        // than leaving an unhandled promise rejection — the action resolves.
+        await Promise.all(actionResults);
+
+        expect(process.exitCode, 'exitCode should be non-zero').to.not.equal(0);
+        expect(errors.join('\n')).to.match(/not found/i);
+      } finally {
+        console.warn = originalWarn;
+        process.exitCode = originalExitCode;
+        (process as any).isCLI = originalIsCLI;
       }
-      expect(run).to.equal(false);
     });
 
     it('will supply the generator with a specified output if specified', async () => {
@@ -115,6 +127,47 @@ describe('the command line interface', () => {
         expect(error.message).to.match(
           /This folder has not been initiated with clay/
         );
+      }
+    });
+
+    it('prints a clean aggregated error and sets exitCode on failure (does not throw)', async () => {
+      const cmdln = (await import('../src/command-line')).default;
+
+      const originalExitCode = process.exitCode;
+      const originalIsCLI = (process as any).isCLI;
+      process.exitCode = 0;
+      (process as any).isCLI = true; // enable ui output (as the real CLI does)
+      const errors: string[] = [];
+      const originalWarn = console.warn;
+      console.warn = (...args: any[]) => {
+        errors.push(args.map((a) => String(a)).join(' '));
+      };
+
+      try {
+        const result = cmdln.parse([
+          'node',
+          'clay',
+          'generate',
+          'test/samples/example-unknown-generator.json',
+          'tmp/output',
+        ]);
+
+        // The generate action must resolve (no unhandled rejection) even though
+        // generation failed — the CLI catches and reports it.
+        const actionResults = (result as any)._actionResults || [];
+        await Promise.all(actionResults);
+
+        expect(process.exitCode, 'exitCode should be non-zero on failure').to.not.equal(0);
+
+        const output = errors.join('\n');
+        // Aggregated PreflightError message should be rendered (not a raw stack).
+        expect(output).to.match(/not found/i);
+        expect(output).to.match(/Pre-flight validation failed/);
+        expect(output).to.not.match(/at Object\.<anonymous>/); // no raw stack trace
+      } finally {
+        console.warn = originalWarn;
+        process.exitCode = originalExitCode;
+        (process as any).isCLI = originalIsCLI;
       }
     });
   });

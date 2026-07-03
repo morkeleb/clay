@@ -10,6 +10,7 @@ import path from 'path';
 import handlebars from '../template-engine';
 import { getHelpers } from '../helpers';
 import * as jph from '../jsonpath-helper';
+import { serializeWorkerError, type SerializedWorkerError } from './worker-error';
 
 // Workers are background renderers — suppress console output to avoid
 // interleaving with the main thread's progress display.
@@ -38,7 +39,7 @@ interface RenderResult {
 interface BatchRenderResponse {
   id: number;
   results: RenderResult[];
-  error?: string;
+  error?: SerializedWorkerError;
 }
 
 // Track which partial dirs have been loaded
@@ -189,7 +190,11 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
     const response: BatchRenderResponse = {
       id: msg.id,
       results: [],
-      error: e instanceof Error ? e.message : String(e),
+      error: serializeWorkerError(e, {
+        modelPath: msg.modelPath,
+        templatePath: msg.templatePath,
+        engine: msg.engine ?? 'handlebars',
+      }),
     };
     parentPort!.postMessage(response);
   }

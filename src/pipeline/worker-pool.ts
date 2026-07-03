@@ -5,6 +5,7 @@
 import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
+import { deserializeWorkerError, type SerializedWorkerError } from './worker-error';
 
 interface BatchRenderRequest {
   id: number;
@@ -26,7 +27,7 @@ interface RenderResult {
 interface BatchRenderResponse {
   id: number;
   results: RenderResult[];
-  error?: string;
+  error?: SerializedWorkerError;
 }
 
 interface PendingWork {
@@ -57,7 +58,7 @@ export class RenderWorkerPool {
         this.pending.delete(msg.id);
 
         if (msg.error) {
-          work.reject(new Error(msg.error));
+          work.reject(deserializeWorkerError(msg.error));
         } else {
           work.resolve(msg.results);
         }

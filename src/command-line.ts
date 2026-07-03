@@ -18,6 +18,8 @@ import type { ModelIndex } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 import { updateGitattributes, configureGitMergeDriver } from './gitattributes';
 import { runMergeDriver } from './merge-driver';
+import { PreflightError } from './pipeline/preflight';
+import { PreCheckFailedError } from './pipeline/prechecks';
 
 const commander = new Command();
 
@@ -94,11 +96,40 @@ async function generateCmd(
   options?: { force?: boolean }
 ): Promise<void> {
   const { generate: generateApi } = require('./generate-api');
-  await generateApi('.', {
-    modelPath: model_path,
-    outputPath: output_path,
-    force: options?.force,
-  });
+  try {
+    await generateApi('.', {
+      modelPath: model_path,
+      outputPath: output_path,
+      force: options?.force,
+    });
+  } catch (error) {
+    reportGenerateError(error);
+    // Signal failure without throwing an unhandled promise rejection.
+    process.exitCode = 1;
+  }
+}
+
+/**
+ * Print a clean, actionable error for a failed generation. Aggregated errors
+ * (PreflightError, PreCheckFailedError) already list every individual problem
+ * in their message, so we print that rather than a raw stack. Other errors
+ * print their message, with the stack surfaced only in verbose mode.
+ */
+function reportGenerateError(error: unknown): void {
+  if (error instanceof PreflightError || error instanceof PreCheckFailedError) {
+    ui.warn(error.message);
+    return;
+  }
+
+  if (error instanceof Error) {
+    ui.warn(error.message);
+    if (process.env.VERBOSE && error.stack) {
+      console.error(error.stack);
+    }
+    return;
+  }
+
+  ui.warn(String(error));
 }
 
 const cleanModels = (modelsToExecute: ModelIndex[]): void => {
