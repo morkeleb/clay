@@ -24,7 +24,6 @@
   "author": "Morten Nielsen",
   "license": "ISC",
   "dependencies": {
-    "clay-generator": "file:..",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "ajv": "^8.17.1",
     "jsonpath": "^1.2.1",

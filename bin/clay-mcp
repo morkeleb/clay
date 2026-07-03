@@ -17,6 +17,25 @@ if (isDev) {
   console.error('Starting Clay MCP server in development mode...');
   const mcpPath = path.join(__dirname, '../mcp/index.ts');
 
+  // The MCP source imports the core package by name (`clay-generator/...`).
+  // In production that resolves via the installed node_modules. In dev we run
+  // from the repo, so make the package self-resolvable by ensuring a symlink
+  // mcp/node_modules/clay-generator -> <repo root>. This runs post-install, so
+  // nothing prunes it (unlike a `file:..` dependency, which also recurses into
+  // the parent's build during install).
+  try {
+    const fs = require('fs');
+    const repoRoot = path.join(__dirname, '..');
+    const linkDir = path.join(repoRoot, 'mcp', 'node_modules');
+    const linkPath = path.join(linkDir, 'clay-generator');
+    if (!fs.existsSync(linkPath)) {
+      fs.mkdirSync(linkDir, { recursive: true });
+      fs.symlinkSync(repoRoot, linkPath, 'dir');
+    }
+  } catch (e) {
+    console.error('Warning: could not link clay-generator for dev mode:', e.message);
+  }
+
   // Try tsx first (better ESM support), fall back to requiring build
   const tsxPath = path.join(__dirname, '../mcp/node_modules/.bin/tsx');
   const hasTsx = require('fs').existsSync(tsxPath);
