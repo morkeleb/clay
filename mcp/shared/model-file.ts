@@ -40,7 +40,7 @@ export function readExpandedModel(modelPath: string): {
   mixins?: unknown[];
   model: Record<string, unknown>;
 } {
-  const clayModel = require('../../dist/src/model.js');
+  const clayModel = require('clay-generator/model');
   return clayModel.load(modelPath);
 }
 
@@ -52,7 +52,7 @@ export function readExpandedModelWithIncludeMap(modelPath: string): {
   model: { name: string; generators: string[]; mixins?: unknown[]; model: Record<string, unknown> };
   includeMap: Map<object, string>;
 } {
-  const clayModel = require('../../dist/src/model.js');
+  const clayModel = require('clay-generator/model');
   return clayModel.loadWithIncludeMap(modelPath);
 }
 

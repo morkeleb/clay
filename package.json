@@ -1,6 +1,6 @@
 {
   "name": "clay-generator",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "a model and convention based source code generator",
   "main": "dist/index.js",
   "exports": {
@@ -8,7 +8,10 @@
     "./types": {
       "types": "./dist/src/code-generator.d.ts",
       "default": "./dist/src/code-generator.js"
-    }
+    },
+    "./conventions": "./dist/src/conventions.js",
+    "./model": "./dist/src/model.js",
+    "./generate-api": "./dist/src/generate-api.js"
   },
   "scripts": {
     "build": "tsc && cd mcp && npm install && npm run build && cd ..",
@@ -43,6 +46,8 @@
   "author": "Morten Nielsen",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "ajv": "^8.17.1",
     "chalk": "^4.1.0",
     "chokidar": "^3.5.1",
     "commander": "^7.2.0",

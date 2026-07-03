@@ -8,7 +8,7 @@ import * as path from 'node:path';
 import { readExpandedModel } from './model-file.js';
 
 const require = createRequire(import.meta.url);
-const { loadConventions, runConventions } = require('../../dist/src/conventions.js');
+const { loadConventions, runConventions } = require('clay-generator/conventions');
 
 export interface ConventionViolation {
   generator: string;

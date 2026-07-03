@@ -44,7 +44,7 @@ export async function generateTool(args: unknown) {
     const clayRoot = context.workingDirectory;
 
     // Load the generate API from the main Clay package
-    const { generate } = require('../../dist/src/generate-api');
+    const { generate } = require('clay-generator/generate-api');
 
     if (input.model_path && input.output_path) {
       // Generate specific model
