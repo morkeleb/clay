@@ -30,7 +30,11 @@ import { modelSetSchemaTool } from './tools/model-set-schema.js';
 import { generatorAddStepTool } from './tools/generator-add-step.js';
 
 // Import utilities
-import { isClayAvailable, getClayVersion } from './shared/clay-wrapper.js';
+import {
+  isClayAvailable,
+  getClayVersion,
+  getClayPackageVersion,
+} from './shared/clay-wrapper.js';
 
 /**
  * Main MCP server class
@@ -42,7 +46,7 @@ class ClayMCPServer {
     this.server = new Server(
       {
         name: 'clay-mcp-server',
-        version: '0.1.0',
+        version: getClayPackageVersion(),
       },
       {
         capabilities: {

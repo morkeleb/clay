@@ -1,6 +1,6 @@
 {
   "name": "@clay-generator/mcp-server",
-  "version": "0.1.0",
+  "version": "0.3.3",
   "description": "Model Context Protocol server for Clay code generator",
   "main": "dist/index.js",
   "type": "module",

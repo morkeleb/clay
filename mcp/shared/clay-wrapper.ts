@@ -4,6 +4,7 @@
 import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 export interface CommandResult {
   success: boolean;
@@ -84,6 +85,40 @@ export function getClayVersion(): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Get the version of the parent clay-generator package.
+ *
+ * Walks up from this file's own location looking for the nearest
+ * package.json named "clay-generator" (skipping mcp/package.json, which
+ * describes the MCP server itself, not Clay). This works both in
+ * development, where the server runs from <repo>/mcp/ and the parent
+ * package.json is at <repo>/package.json, and once published, where the
+ * server runs from node_modules/clay-generator/mcp/dist/index.js and the
+ * parent package.json is at node_modules/clay-generator/package.json.
+ */
+export function getClayPackageVersion(): string {
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  let previous: string | null = null;
+
+  while (dir !== previous) {
+    const packagePath = path.join(dir, 'package.json');
+    if (fs.existsSync(packagePath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+        if (pkg.name === 'clay-generator' && typeof pkg.version === 'string') {
+          return pkg.version;
+        }
+      } catch {
+        // Malformed package.json - keep walking up
+      }
+    }
+    previous = dir;
+    dir = path.dirname(dir);
+  }
+
+  return '0.0.0';
 }
 
 /**
