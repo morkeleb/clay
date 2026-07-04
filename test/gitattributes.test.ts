@@ -256,6 +256,40 @@ describe('configureGitMergeDriver', () => {
     expect(driver).to.equal('clay merge-driver %O %A %B');
   });
 
+  it('updateGitattributes installs the merge driver when automerge is enabled', () => {
+    fs.writeJsonSync(path.join(gitDir, '.clay'), {
+      automerge: true,
+      models: [],
+    });
+
+    updateGitattributes(gitDir);
+
+    const driver = execSync('git config merge.clay-generator.driver', {
+      cwd: gitDir,
+      encoding: 'utf8',
+    }).trim();
+    expect(driver).to.equal('clay merge-driver %O %A %B');
+  });
+
+  it('updateGitattributes does not install the driver when automerge is off', () => {
+    fs.writeJsonSync(path.join(gitDir, '.clay'), {
+      gitattributes: true,
+      models: [],
+    });
+
+    updateGitattributes(gitDir);
+
+    try {
+      execSync('git config merge.clay-generator.driver', {
+        cwd: gitDir,
+        stdio: 'pipe',
+      });
+      expect.fail('should have thrown — driver should not be configured');
+    } catch {
+      // Expected: driver is not set when automerge is disabled
+    }
+  });
+
   it('removes merge driver from git config when disabled', () => {
     configureGitMergeDriver(gitDir, true);
     configureGitMergeDriver(gitDir, false);

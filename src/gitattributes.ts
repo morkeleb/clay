@@ -10,6 +10,13 @@ const AUTOMERGE_LINE = '.clay merge=clay-generator';
  * Update .gitattributes with linguist-generated markers for all
  * non-touch generated files tracked in the .clay manifest,
  * and the automerge driver attribute for .clay files.
+ *
+ * When automerge is enabled this also (re)installs the local git merge
+ * driver config. The `.gitattributes` line is committed and shared, but
+ * `git config merge.clay-generator.driver` is per-clone and never shared —
+ * so without this a fresh clone has the attribute but no driver and git
+ * silently falls back to a plain merge, conflicting on .clay. Installing it
+ * here (idempotently) means any clone that runs `clay generate` self-heals.
  */
 export function updateGitattributes(directory: string): void {
   const clayPath = path.join(directory, '.clay');
@@ -18,6 +25,10 @@ export function updateGitattributes(directory: string): void {
   const data: ClayFile = JSON.parse(fs.readFileSync(clayPath, 'utf8'));
 
   if (!data.gitattributes && !data.automerge) return;
+
+  if (data.automerge) {
+    configureGitMergeDriver(directory, true);
+  }
 
   // Collect all generated file paths across models
   const generatedFiles = new Set<string>();
