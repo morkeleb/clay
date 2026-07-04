@@ -46,7 +46,7 @@
   },
   "homepage": "https://morkeleb.github.io/clay/",
   "author": "Morten Nielsen",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "ajv": "^8.17.1",
