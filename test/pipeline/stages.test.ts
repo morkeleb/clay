@@ -149,23 +149,50 @@ describe('pipeline stages', () => {
       expect(results[0].md5).to.have.lengthOf(32);
     });
 
-    it('filters out items whose checksum matches', async () => {
+    it('filters out items whose checksum matches when file exists', async () => {
       const content = 'same content';
       const md5 = crypto.createHash('md5').update(content).digest('hex');
+      const fs = require('fs-extra');
+      const path = require('path');
+      const os = require('os');
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'clay-hash-'));
+      const filename = path.join(dir, 'unchanged.ts');
+      fs.writeFileSync(filename, content);
 
+      try {
+        const items: RenderedItem[] = [
+          {
+            filename,
+            content,
+            step: dummyStep,
+            modelIndex: { ...dummyModelIndex, getFileCheckSum: () => md5 },
+            formatters: [],
+          },
+        ];
+
+        const stage = createHashStage();
+        const results = await collect(stage(fromArray(items)));
+        expect(results).to.have.lengthOf(0);
+      } finally {
+        fs.removeSync(dir);
+      }
+    });
+
+    it('passes through when checksum matches but file is missing', async () => {
+      const content = 'same content';
+      const md5 = crypto.createHash('md5').update(content).digest('hex');
       const items: RenderedItem[] = [
         {
-          filename: '/tmp/test-output/unchanged.ts',
+          filename: '/tmp/clay-hash-definitely-missing-xyz/unchanged.ts',
           content,
           step: dummyStep,
           modelIndex: { ...dummyModelIndex, getFileCheckSum: () => md5 },
           formatters: [],
         },
       ];
-
       const stage = createHashStage();
       const results = await collect(stage(fromArray(items)));
-      expect(results).to.have.lengthOf(0);
+      expect(results).to.have.lengthOf(1);
     });
   });
 });

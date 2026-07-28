@@ -67,7 +67,7 @@ class ClayMCPServer {
         {
           name: 'clay_generate',
           description:
-            'Generate code from Clay models. Call without parameters to regenerate all models tracked in .clay file, or specify model_path and output_path for a specific model.',
+            "Generate code from Clay models. Call without parameters to regenerate all models tracked in .clay, or specify model_path and output_path for a specific model. Also mark-and-sweeps obsolete non-touch files for models that ran: paths in that model's generated_files that are not produced again are removed from the index and (if no other model claims them) deleted from disk. Touch scaffolds still selected, hand-written/untracked files, and other models' outputs are never auto-deleted. Prefer generate after removing entities—clay_clean is not required for ordinary model shrink.",
           inputSchema: {
             type: 'object',
             properties: {
@@ -92,7 +92,7 @@ class ClayMCPServer {
         {
           name: 'clay_clean',
           description:
-            'Clean up generated files tracked in the .clay file. Removes all tracked files or files from a specific model.',
+            'Full wipe of generated files tracked in .clay for all models or a specific model. Use for output-path moves, full resets, or starting over—not for ordinary entity removal (edit the model then clay_generate instead). Only removes tracked non-touch files; never deletes untracked hand-written files.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -665,9 +665,10 @@ Generator steps use the optional \`engine\` field to select the template engine 
 (The first writes \`UserController.ts\`; add \`"target": "services/"\` to drop output into a subdirectory.)
 
 ### 3. The .clay File
-The \`.clay\` file tracks your project:
+The \`.clay\` file is the ownership ledger for your project:
 - All model paths and their associated generators
-- All generated files for cleanup
+- Non-touch \`generated_files\` with content checksums (ownership + incremental generate)
+- Used by generate for orphan cleanup and by clean for full wipes
 - Generated automatically, committed to git
 
 ## Basic Tools
@@ -687,7 +688,7 @@ clay_init({
 \`\`\`
 
 ### clay_generate - Generate Code
-**Purpose:** Transform models into code using generators
+**Purpose:** Transform models into code and reconcile obsolete non-touch outputs
 
 \`\`\`typescript
 // Regenerate ALL models tracked in .clay (recommended)
@@ -701,19 +702,24 @@ clay_generate({
 \`\`\`
 
 **Key Points:**
-- Parameterless \`clay_generate({})\` regenerates everything
-- Updates .clay file to track generated files
+- Parameterless \`clay_generate({})\` regenerates everything that needs it
+- Updates .clay to track generated non-touch files
+- **Orphan cleanup:** after a successful run, obsolete non-touch paths for models that ran are removed from the ledger and (if unclaimed by other models) deleted from disk
+- **Remove an entity → regenerate** is enough; you do **not** need \`clay_clean\` for ordinary model shrink
+- Touch scaffolds still selected, hand-written/untracked files, and other models' files are never auto-deleted
+- Multi-model isolation: one model never sweeps another model's ledger
+- Ledger drift (tracked files missing on disk) forces regenerate even if inputs are unchanged
+- After orphan deletes, models that ran are refreshed once more (without postGenerate hooks) so disk-dependent aggregates recompute
 - Idempotent - safe to run multiple times
-- Generated files should be git-ignored
 
-### clay_clean - Remove Generated Files
-**Purpose:** Clean up all files tracked in .clay
+### clay_clean - Full Wipe of Generated Files
+**Purpose:** Remove *all* tracked generated files for models (full wipe)
 
 \`\`\`typescript
-// Clean ALL generated files
+// Wipe ALL tracked generated files
 clay_clean({})
 
-// Clean files from a specific model
+// Wipe files from a specific model
 clay_clean({
   model_path: 'models/api.model.json',
   output_path: 'output/api'
@@ -721,10 +727,10 @@ clay_clean({
 \`\`\`
 
 **Key Points:**
-- Only removes files tracked in .clay
-- Safe - won't delete untracked files
-- Run before major refactoring
-- Useful when changing generator structure
+- Only removes files tracked in .clay (non-touch)
+- Safe - won't delete untracked hand-written files
+- Use for renaming/moving output paths, full resets, or starting over
+- **Not** required after removing entities — use \`clay_generate\` instead
 
 ## Typical Workflow
 
@@ -773,13 +779,13 @@ This creates files and updates .clay to track them.
 ### 5. Make Changes and Regenerate
 Edit your model or templates, then:
 \`\`\`typescript
-// Regenerate everything
+// Regenerate everything — also drops obsolete non-touch outputs
 clay_generate({})
 \`\`\`
 
-### 6. Clean Up When Needed
+### 6. Full Wipe Only When Needed
 \`\`\`typescript
-// Remove all generated files
+// Full wipe of all tracked generated files (rare)
 clay_clean({})
 \`\`\`
 
@@ -796,10 +802,9 @@ clay_clean({})
    \`\`\`
    But commit \`.clay\` to track what gets generated
 
-3. **Use clay_clean before major changes:**
-   - Changing generator structure
-   - Renaming models
-   - Refactoring output paths
+3. **Prefer generate over clean for model changes:**
+   - Removing entities / shrinking the model → edit model, then \`clay_generate({})\`
+   - Use \`clay_clean\` only for output-path renames, full resets, or starting over
 
 4. **Keep models simple:**
    - Pure data structures
@@ -1047,22 +1052,24 @@ This guide walks through a complete workflow from start to finish.
 4. **Review changes:**
    Generated files are updated automatically.
 
-### Phase 6: Clean Up
+### Phase 6: Remove Obsolete Outputs vs Full Wipe
 
-When you need to remove generated files:
+**Ordinary model shrink (remove an entity, drop a field set, etc.):**
+1. Edit the model (or use \`clay_model_delete\`)
+2. \`clay_generate({})\` — obsolete non-touch files for models that ran are removed automatically
 
-1. **Clean everything:**
-   \`\`\`typescript
-   clay_clean({})
-   \`\`\`
+**Full wipe only when needed:**
+\`\`\`typescript
+// Wipe everything tracked in .clay
+clay_clean({})
 
-2. **Or clean specific model:**
-   \`\`\`typescript
-   clay_clean({
-     model_path: 'models/api.model.json',
-     output_path: 'output/api'
-   })
-   \`\`\`
+// Or wipe a specific model
+clay_clean({
+  model_path: 'models/api.model.json',
+  output_path: 'output/api'
+})
+\`\`\`
+Use clean for renaming/moving output paths or starting over—not for day-to-day entity removal.
 
 ## Real-World Example
 
@@ -1182,7 +1189,7 @@ clay_generate({})  // Regenerates everything
 
 5. **Learn incrementally:** Use \`clay_explain_concepts\` for specific topics
 
-6. **Clean before restructuring:** Run \`clay_clean({})\` before major changes
+6. **Regenerate after model shrink:** Removing entities only needs \`clay_generate({})\` — do not reach for \`clay_clean\` first. Use clean for full wipes or output-path moves.
 
 ## Common Scenarios
 
@@ -1195,8 +1202,13 @@ clay_generate({})  // Regenerates everything
 1. Edit template files
 2. \`clay_generate({})\` to regenerate all models
 
+### Scenario: Removing an Entity (or other model shrink)
+1. Delete/update the entity in the model (or \`clay_model_delete\`)
+2. \`clay_generate({})\` — obsolete non-touch files are dropped automatically
+3. Fill any new touch scaffolds if created
+
 ### Scenario: Renaming Output Directory
-1. \`clay_clean({})\` to remove old files
+1. \`clay_clean({})\` (or clean the specific old model entry) to remove old tracked files
 2. Update model's \`outputPath\`
 3. \`clay_generate({ model_path: '...', output_path: '...' })\`
 
@@ -1257,10 +1269,11 @@ This is the opposite of the typical approach where you copy an existing file and
 
 ### The .clay Inventory File
 
-The \`.clay\` file tracks every generated file with its MD5 checksum. Use it to understand:
-- **Which files are generated** — listed in \`generated_files\` with checksums
+The \`.clay\` file is Clay's ownership ledger for **non-touch** outputs. Use it to understand:
+- **Which files Clay owns** — listed in \`generated_files\` with content checksums
 - **Which models produce which files** — each model entry maps to its outputs
 - **When files were last generated** — \`last_generated\` timestamp
+- **What generate will auto-remove** — paths still listed after a model shrink but not produced again become orphans
 
 \`\`\`json
 {
@@ -1278,6 +1291,8 @@ The \`.clay\` file tracks every generated file with its MD5 checksum. Use it to 
 \`\`\`
 
 **Rule: Never manually edit files tracked in \`.clay\`.** They will be overwritten on the next generation. If you need to change the structure, change the template. If you need to change the data, change the model.
+
+**Orphan cleanup on generate:** After a successful generate for a model, any path still in that entry's \`generated_files\` but not produced this pass is dropped from the ledger and deleted from disk (unless another model still claims it). Touch files are not tracked here and are never auto-deleted.
 
 ### Touch Files — Extension Points
 
@@ -1344,6 +1359,20 @@ clay_model_add({
 clay_generate({})
 
 // 3. Find and fill in touch files (extension points)
+\`\`\`
+
+### Removing From an Existing Model
+
+\`\`\`typescript
+// 1. Delete the entity from the model
+clay_model_delete({
+  model_path: 'clay/model.json',
+  json_path: '$.model.types[?(@.name=="Invoice")]'
+})
+
+// 2. Generate — obsolete non-touch files for that entity are removed
+//    (no clay_clean needed)
+clay_generate({})
 \`\`\`
 
 ### Modifying Generated Structure

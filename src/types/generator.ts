@@ -102,9 +102,25 @@ export interface Generator {
 /**
  * Decorated generator with execution methods
  */
+/** Options for a single DecoratedGenerator.generate() invocation. */
+export interface GeneratePassOptions {
+  /** Mark paths still owned/protected this pass (orphan cleanup). */
+  markOwned?: (filePath: string) => void;
+  /**
+   * Skip postGenerate hooks (used for orphan-refresh second passes so
+   * side-effectful hooks are not duplicated).
+   */
+  skipPostGenerate?: boolean;
+}
+
 export interface DecoratedGenerator extends Generator {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  generate: (model: any, outputDir: string, pipelineRunner?: any) => Promise<WrittenItem[]>;
+  generate: (
+    model: any,
+    outputDir: string,
+    pipelineRunner?: any,
+    options?: GeneratePassOptions | ((filePath: string) => void)
+  ) => Promise<WrittenItem[]>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   clean: (model: any, outputDir: string) => void;
 }

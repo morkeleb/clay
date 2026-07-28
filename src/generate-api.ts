@@ -31,7 +31,12 @@ import {
   resolveGeneratorPaths,
   type GeneratorReference,
 } from './generator-resolver';
-import type { ModelIndex } from './types/clay-file';
+import {
+  hasMissingGeneratedFiles,
+  markOwnedPath,
+  removeOrphanGeneratedFiles,
+} from './orphan-cleanup';
+import type { ModelIndex, ClayModelEntry } from './types/clay-file';
 import type { DecoratedGenerator } from './types/generator';
 
 // Read Clay version for input hash (catches upgrades)
@@ -66,13 +71,29 @@ export interface GenerateResult {
   models: Array<{ modelPath: string; outputPath: string }>;
 }
 
+interface PendingSweep {
+  modelIndex: ClayModelEntry;
+  expected: Set<string>;
+  /** For second pass after orphan disk deletes (disk-dependent templates). */
+  model: any;
+  generators: DecoratedGenerator[];
+}
+
 /**
  * Run code generation for the given directory.
  * This is the core API that both CLI and MCP server use.
  *
  * Input hashing: before running the pipeline, all dependency files
  * (model, includes, generators, templates, partials) are hashed.
- * If the hash matches the stored value, the model is skipped entirely.
+ * If the hash matches the stored value, the model is skipped entirely —
+ * unless tracked generated_files are missing on disk (ledger drift).
+ *
+ * Orphan cleanup runs only after *all* selected models finish successfully
+ * (no concurrent sweeps). The post-sweep ledger is saved before any refresh
+ * second pass so durable unlinks never leave an unsaved .clay.
+ * If any orphans are deleted from disk, *all* models that ran generators are
+ * regenerated once (skipping postGenerate hooks) so filesystem-dependent
+ * templates (e.g. TS engine aggregates) recompute against the cleaned tree.
  */
 export async function generate(
   directory: string,
@@ -133,12 +154,37 @@ export async function generate(
       ?? (process.env.CLAY_WORKERS && parseInt(process.env.CLAY_WORKERS, 10) > 0
         ? parseInt(process.env.CLAY_WORKERS, 10)
         : RenderWorkerPool.defaultPoolSize());
-    workerPool = useWorkers ? new RenderWorkerPool(poolSize) : undefined;
-    const pipelineRunner = buildGeneratePipeline(formatterCache, progressTracker, workerPool);
+    workerPool = useWorkers ? new RenderWorkerPool(poolSize, verbose) : undefined;
+
+    // Per-model expected/protected sets — keyed by modelIndex so parallel
+    // model runs never mix marks (multi-model isolation).
+    const expectedByModel = new WeakMap<ClayModelEntry, Set<string>>();
+    const allModels = indexFile.models;
+    const pendingSweeps: PendingSweep[] = [];
+
+    const buildRunner = (
+      pool: InstanceType<typeof RenderWorkerPool> | undefined
+    ) =>
+      buildGeneratePipeline(
+        formatterCache,
+        progressTracker,
+        pool,
+        (filename, _isTouch, modelIndex) => {
+          const expected = expectedByModel.get(modelIndex);
+          if (!expected) {
+            throw new Error(
+              `orphan mark for unknown modelIndex (${modelIndex.path}); expected set not registered`
+            );
+          }
+          markOwnedPath(expected, filename);
+        }
+      );
+
+    let pipelineRunner = buildRunner(workerPool);
 
     let modelsSkipped = 0;
 
-    await Promise.all(
+    const modelResults = await Promise.allSettled(
       modelsToExecute.map(async (modelIndex) => {
         const modelDir = path.dirname(modelIndex.path);
 
@@ -164,12 +210,22 @@ export async function generate(
         // Always store the hash (even with --force) so the next run can skip
         modelIndex.input_hash = hash;
 
-        if (!force && !changed) {
+        // Missing tracked files are not covered by input_hash (model/templates
+        // unchanged). Force a full pass so inventory/md5 can reconverge.
+        const ledgerDrift = hasMissingGeneratedFiles(modelIndex);
+
+        if (!force && !changed && !ledgerDrift) {
           modelsSkipped++;
           if (verbose) {
             ui.info(`skipping ${modelIndex.path} (unchanged)`);
           }
           return;
+        }
+
+        if (verbose && ledgerDrift && !changed && !force) {
+          ui.info(
+            `regenerating ${modelIndex.path} (tracked generated_files missing on disk)`
+          );
         }
 
         // Check conventions
@@ -202,20 +258,143 @@ export async function generate(
           throw new Error(`Convention violations found:\n${messages.join('\n')}`);
         }
 
-        await Promise.all(
-          model.generators.map((g: string | GeneratorReference) =>
-            resolveGenerator(
-              g,
-              modelDir,
-              modelIndex
-            ).generate(model, modelIndex.output || '', pipelineRunner)
+        // Track expected + protected paths for this model only (incl. hash-skipped & touch).
+        const expected = new Set<string>();
+        expectedByModel.set(modelIndex, expected);
+        const markOwned = (filePath: string) => {
+          markOwnedPath(expected, filePath);
+        };
+
+        // Resolve all generators first. If one is missing we fail before any
+        // worker tasks are posted, so the pool can be terminated cleanly.
+        const generators: DecoratedGenerator[] = model.generators.map((g: string | GeneratorReference) =>
+          resolveGenerator(g, modelDir, modelIndex)
+        );
+
+        // Run all generators and let every one finish before throwing, so that a
+        // single broken generator does not leave unrelated worker tasks in flight.
+        const generatorResults = await Promise.allSettled(
+          generators.map((gen) =>
+            gen.generate(model, modelIndex.output || '', pipelineRunner, { markOwned })
           )
         );
+        const generatorError = generatorResults.find(
+          (r): r is PromiseRejectedResult => r.status === 'rejected'
+        )?.reason;
+        if (generatorError) throw generatorError;
+
+        // Defer orphan sweep until every selected model has finished successfully.
+        pendingSweeps.push({
+          modelIndex,
+          expected,
+          model,
+          generators,
+        });
       })
     );
 
-    indexFile.save();
-    updateGitattributes('.');
+    const firstModelError = modelResults.find(
+      (r): r is PromiseRejectedResult => r.status === 'rejected'
+    )?.reason;
+    if (firstModelError) {
+      // Do not sweep or save: no durable orphan deletes with a stale ledger.
+      throw firstModelError;
+    }
+
+    // Barrier: all models that ran succeeded. Sweep serially.
+    let anyDiskDeletes = false;
+    for (const sweep of pendingSweeps) {
+      const { removedFromIndex, deletedFromDisk } = removeOrphanGeneratedFiles({
+        modelIndex: sweep.modelIndex,
+        expected: sweep.expected,
+        allModels,
+      });
+      if (verbose && (removedFromIndex.length > 0 || deletedFromDisk.length > 0)) {
+        ui.info(
+          `orphan cleanup ${sweep.modelIndex.path}: ` +
+            `${removedFromIndex.length} dropped from index, ` +
+            `${deletedFromDisk.length} deleted from disk`
+        );
+      }
+      if (deletedFromDisk.length > 0) {
+        anyDiskDeletes = true;
+      }
+    }
+
+    // Persist swept ledger *before* refresh so durable unlinks always match .clay
+    // even if the second pass fails.
+    if (pendingSweeps.length > 0) {
+      indexFile.save();
+      updateGitattributes('.');
+    }
+
+    // Filesystem-dependent generators (TS engine aggregates / readdir barrels)
+    // render before orphans are deleted. When *any* model deleted orphans, re-run
+    // *all* models that generated this pass so sibling aggregates also refresh.
+    if (anyDiskDeletes && pendingSweeps.length > 0) {
+      if (verbose) {
+        ui.info(
+          `re-running ${pendingSweeps.length} model(s) after orphan deletes (refresh disk-dependent outputs)`
+        );
+      }
+
+      // Cold caches so TS modules re-import (and workers drop jiti/model caches).
+      clearTemplateCache();
+      clearEngineCaches();
+      clearHookCaches();
+      clearPrecheckCaches();
+      if (workerPool) {
+        await workerPool.restart();
+        pipelineRunner = buildRunner(workerPool);
+      }
+
+      try {
+        for (const sweep of pendingSweeps) {
+          const expected = new Set<string>();
+          expectedByModel.set(sweep.modelIndex, expected);
+          const markOwned = (filePath: string) => {
+            markOwnedPath(expected, filePath);
+          };
+
+          const generatorResults = await Promise.allSettled(
+            sweep.generators.map((gen) =>
+              gen.generate(sweep.model, sweep.modelIndex.output || '', pipelineRunner, {
+                markOwned,
+                skipPostGenerate: true,
+              })
+            )
+          );
+          const generatorError = generatorResults.find(
+            (r): r is PromiseRejectedResult => r.status === 'rejected'
+          )?.reason;
+          if (generatorError) throw generatorError;
+
+          removeOrphanGeneratedFiles({
+            modelIndex: sweep.modelIndex,
+            expected,
+            allModels,
+          });
+        }
+      } catch (secondPassError) {
+        // Ledger already saved post-sweep. Invalidate input_hash so the next
+        // generate cannot skip and freeze stale aggregates.
+        for (const sweep of pendingSweeps) {
+          sweep.modelIndex.input_hash = undefined;
+        }
+        indexFile.save();
+        updateGitattributes('.');
+        throw secondPassError;
+      }
+
+      indexFile.save();
+      updateGitattributes('.');
+    } else if (pendingSweeps.length === 0) {
+      // Only skipped models (or nothing ran) — still save if input_hash updates
+      // were applied on skip path (hashes are stored even when skipping).
+      indexFile.save();
+      updateGitattributes('.');
+    }
+    // else: pendingSweeps non-empty, no disk deletes — already saved after sweep
 
     const models = modelsToExecute.map((m) => ({
       modelPath: m.path,

@@ -23,6 +23,16 @@ function canonicalizePath(p: string | undefined): string {
   return normalized || '.';
 }
 
+/**
+ * Normalize a generated file path for .clay generated_files keys.
+ * Resolves relative inputs, then stores cwd-relative POSIX paths.
+ * Must stay in sync with setFileCheckSum / delFileCheckSum / orphan mark.
+ */
+export function normalizeClayPath(file: string): string {
+  const relFile = path.relative(process.cwd(), path.resolve(file));
+  return relFile.split(path.sep).join('/');
+}
+
 const newModelEntry = (
   modelPath: string,
   outputPath?: string
@@ -68,7 +78,7 @@ function healClayData(data: ClayFile): ClayFile {
     if (existing) {
       // Merge generated_files: keep the entry with more files, union the rest
       for (const [file, entry] of Object.entries(model.generated_files || {})) {
-        const canonicalFile = file.split(path.sep).join('/');
+        const canonicalFile = normalizeClayPath(file);
         const existingEntry = existing.generated_files[canonicalFile];
         if (!existingEntry || (entry.date && (!existingEntry.date || entry.date > existingEntry.date))) {
           existing.generated_files[canonicalFile] = entry;
@@ -86,17 +96,10 @@ function healClayData(data: ClayFile): ClayFile {
       model.path = canonicalizePath(model.path);
       model.output = canonicalizePath(model.output);
 
-      // Convert absolute paths in generated_files to relative
+      // Canonical keys — same form as setFileCheckSum / orphan mark
       const healed: Record<string, { md5: string; date: string }> = {};
       for (const [file, entry] of Object.entries(model.generated_files || {})) {
-        let normalizedFile = file;
-        // Strip absolute paths — convert to relative from cwd
-        if (path.isAbsolute(file)) {
-          normalizedFile = path.relative(process.cwd(), file);
-        }
-        // Normalize to forward slashes
-        normalizedFile = normalizedFile.split(path.sep).join('/');
-        healed[normalizedFile] = entry;
+        healed[normalizeClayPath(file)] = entry;
       }
       model.generated_files = healed;
 
@@ -137,18 +140,13 @@ export function load(directory: string): ClayFileManager {
       model.output = canonicalOutput;
     }
 
-    function normalizeFilePath(file: string): string {
-      const relFile = path.relative(process.cwd(), file);
-      return relFile.split(path.sep).join('/');
-    }
-
     function getFileCheckSum(file: string): string | null {
-      const normalizedPath = normalizeFilePath(file);
+      const normalizedPath = normalizeClayPath(file);
       return _.get(model, "generated_files['" + normalizedPath + "'].md5", null);
     }
 
     function setFileCheckSum(file: string, md5: string): void {
-      const normalizedPath = normalizeFilePath(file);
+      const normalizedPath = normalizeClayPath(file);
       const date = new Date().toISOString();
       _.set(model!, "generated_files['" + normalizedPath + "'].md5", md5);
       _.set(model!, "generated_files['" + normalizedPath + "'].date", date);
@@ -158,7 +156,7 @@ export function load(directory: string): ClayFileManager {
     model.setFileCheckSum = setFileCheckSum;
     model.getFileCheckSum = getFileCheckSum;
     model.delFileCheckSum = (file: string) => {
-      const normalizedPath = normalizeFilePath(file);
+      const normalizedPath = normalizeClayPath(file);
       delete model!.generated_files[normalizedPath];
     };
     model.load = () => require('./model').load(modelPath);

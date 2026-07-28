@@ -15,7 +15,7 @@
     "./generator-authoring": "./dist/src/generator-authoring.js"
   },
   "scripts": {
-    "build": "tsc && cd mcp && npm install && npm run build && cd ..",
+    "build": "tsc && cd mcp && npm install && npm run build && cd .. && node scripts/fix-mcp-imports.js",
     "build:watch": "tsc --watch",
     "dev": "ts-node index.ts",
     "prepare": "npm run build",
@@ -96,5 +96,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
+  },
+  "allowScripts": {
+    "fsevents@2.3.2": true
   }
 }

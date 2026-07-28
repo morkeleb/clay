@@ -117,14 +117,20 @@ class User {
 ## Commands
 
 ```bash
-clay generate [model] [output]  # Generate code
-clay clean [model] [output]     # Remove generated files
+clay generate [model] [output]  # Generate code (+ drop obsolete non-touch files)
+clay clean [model] [output]     # Full wipe of tracked generated files
 clay watch [model] [output]     # Watch and regenerate
 clay test-path <model> <path>   # Test JSONPath expressions
 clay init [type] [name]         # Initialize project or generator
 clay init-claude                # Set up Claude Code hooks for generated file protection
 clay init-mcp                   # Add Clay MCP server (interactive platform selection)
 ```
+
+On `generate`, Clay drops obsolete **non-touch** files for each model that actually ran: paths still listed in that model’s `.clay` `generated_files` but not produced again (including hash-skipped paths) are removed from the index and, when no other model entry claims them, from disk. Touch scaffolds still selected this pass are protected. Hand-written files and other models’ outputs are never auto-deleted.
+
+You do **not** need `clay clean` after removing an entity or shrinking the model — regenerate is enough. Use `clean` for a full wipe, renaming/moving an output directory, or starting over.
+
+Input-hash skip is bypassed when tracked `generated_files` are missing on disk (ledger drift). Orphan deletes run only after all selected models succeed; the swept ledger is saved before any refresh. If any orphans were unlinked, every model that ran is generated once more (without `postGenerate` hooks) so filesystem-dependent templates (e.g. TypeScript engine aggregates such as `root.ts`) recompute against the cleaned tree. Disk inventory in TS templates should be read inside `render()`, not at module load.
 
 ## AI Integration (MCP Server)
 

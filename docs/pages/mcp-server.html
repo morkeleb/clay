@@ -51,8 +51,15 @@
 
         <h3>Project &amp; Generation</h3>
         <ul>
-          <li><code>clay_generate</code> - Generate code from models</li>
-          <li><code>clay_clean</code> - Clean up generated files</li>
+          <li>
+            <code>clay_generate</code> - Generate code from models; also drops
+            obsolete non-touch files tracked in <code>.clay</code> for models
+            that ran
+          </li>
+          <li>
+            <code>clay_clean</code> - Full wipe of tracked generated files
+            (output moves / start over)
+          </li>
           <li><code>clay_test_path</code> - Test JSONPath expressions</li>
           <li><code>clay_init</code> - Initialize projects or generators</li>
           <li><code>clay_list_generators</code> - List all generators</li>

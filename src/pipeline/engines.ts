@@ -47,12 +47,14 @@ function getEjsFileContent(filePath: string): string {
 }
 
 /**
- * Clear engine caches. Called at the start of each generation run.
+ * Clear engine caches. Called at the start of each generation run and before
+ * orphan-refresh second passes.
  *
- * Resets the jiti instance as well so that edited `engine: 'ts'` templates are
- * re-read from disk on the next run. Without this, the long-running MCP server
- * keeps serving the first compiled version of a TS template (jiti caches
- * imported modules on the instance).
+ * Resets the jiti instance so edited `engine: 'ts'` templates are re-read from
+ * disk (important for the long-running MCP server). Also ensures second-pass
+ * refresh after orphan deletes does not freeze a first-pass module snapshot.
+ * Disk inventory in TS templates should still be read inside `render()`, not at
+ * module load.
  */
 export function clearEngineCaches(): void {
   ejsFileCache.clear();
@@ -146,14 +148,19 @@ export async function renderWithEngine(
   templatePath: string,
   modelData: unknown
 ): Promise<string> {
-  switch (engine) {
-    case 'handlebars':
-      return renderHandlebars(templatePath, modelData);
-    case 'ejs':
-      return renderEjs(templatePath, modelData, getHelpers());
-    case 'ts':
-      return renderTs(templatePath, modelData, getHelpers());
-    default:
-      throw new Error(`Unknown template engine: ${engine}`);
+  try {
+    switch (engine) {
+      case 'handlebars':
+        return renderHandlebars(templatePath, modelData);
+      case 'ejs':
+        return renderEjs(templatePath, modelData, getHelpers());
+      case 'ts':
+        return renderTs(templatePath, modelData, getHelpers());
+      default:
+        throw new Error(`Unknown template engine: ${engine}`);
+    }
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    throw new Error(`[${templatePath}] ${message}`);
   }
 }

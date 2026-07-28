@@ -149,12 +149,20 @@ EOF</code></pre>
         <h2>Basic Commands</h2>
 
         <h3>Generate</h3>
-        <p>Generate code from your model:</p>
+        <p>
+          Generate code from your model. Also removes obsolete
+          <strong>non-touch</strong> files tracked in <code>.clay</code> for
+          models that ran (e.g. after you delete an entity and regenerate):
+        </p>
         <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
 clay generate  # Uses .clay file</code></pre>
 
         <h3>Clean</h3>
-        <p>Remove all generated files:</p>
+        <p>
+          Full wipe of tracked generated files. Not required for ordinary model
+          shrink &mdash; use generate for that. Prefer clean when renaming output
+          paths or starting over:
+        </p>
         <pre><code>clay clean &lt;model_path&gt; &lt;output_path&gt;
 clay clean  # Uses .clay file</code></pre>
 

@@ -11,8 +11,8 @@ This MCP server provides a robust interface between AI assistants (Claude, Cline
 ### 14 Core Tools
 
 **Project & Generation:**
-- **`clay_generate`** - Generate code from models (supports parameterless all-model regeneration)
-- **`clay_clean`** - Clean up generated files tracked in .clay
+- **`clay_generate`** - Generate code from models; also drops obsolete non-touch files tracked in `.clay` for models that ran
+- **`clay_clean`** - Full wipe of tracked generated files (output moves / start over)
 - **`clay_init`** - Initialize Clay projects or generators
 - **`clay_list_generators`** - List all generators in project
 - **`clay_get_model_structure`** - Inspect model structure and metadata
@@ -277,7 +277,7 @@ clay_init({
 
 ### `clay_generate`
 
-Generate code from Clay models.
+Generate code from Clay models and reconcile obsolete non-touch outputs.
 
 **Parameters:**
 
@@ -287,18 +287,23 @@ Generate code from Clay models.
 
 **Behavior:**
 
-- No parameters: Regenerates ALL models from .clay file
+- No parameters: Regenerates ALL models from .clay file that need it
 - With model_path: Generates that specific model
+- After success: mark-and-sweeps obsolete non-touch paths for models that ran (ledger + disk if unclaimed by other models)
+- Removing entities only needs generate — not `clay_clean`
+- Touch scaffolds still selected, untracked files, and other models' files are never auto-deleted
 
 ### `clay_clean`
 
-Clean up generated files.
+Full wipe of tracked generated files.
 
 **Parameters:**
 
 - `working_directory` (optional): Directory containing .clay file
 - `model_path` (optional): Clean only this model's files
 - `output_path` (optional): Required if model_path given
+
+**When to use:** Renaming/moving output paths, full resets, or starting over. Not for ordinary model shrink.
 
 ### `clay_test_path`
 

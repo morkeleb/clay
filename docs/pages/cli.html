@@ -91,7 +91,7 @@ Options:
         </p>
 
         <h3>generate</h3>
-        <p>Generate code from your model</p>
+        <p>Generate code from your model and reconcile the output tree</p>
         <pre><code>clay generate &lt;model_path&gt; &lt;output_path&gt;
 clay generate  # Uses .clay file</code></pre>
 
@@ -105,8 +105,46 @@ clay generate
 # Verbose output
 clay generate -v</code></pre>
 
+        <p>
+          After a successful run, Clay mark-and-sweeps <strong>obsolete non-touch</strong>
+          files for each model that actually generated: paths still listed in that
+          model&rsquo;s <code>.clay</code> <code>generated_files</code> but not produced
+          again (including hash-skipped outputs) are dropped from the index and,
+          when no other model entry claims them, deleted from disk.
+        </p>
+        <ul>
+          <li>
+            <strong>Remove an entity and regenerate</strong> &mdash; obsolete
+            non-touch files go away; you do <em>not</em> need
+            <code>clay clean</code> for that.
+          </li>
+          <li>
+            <strong>Touch files</strong> still selected this pass are protected
+            (never auto-deleted).
+          </li>
+          <li>
+            <strong>Hand-written / untracked files</strong> are never auto-deleted.
+          </li>
+          <li>
+            <strong>Multi-model isolation</strong> &mdash; one model never sweeps
+            another&rsquo;s ledger; shared paths stay on disk if another model still
+            claims them.
+          </li>
+          <li>
+            <strong>Ledger drift</strong> &mdash; if tracked files are missing on
+            disk, generate is not input-hash skipped so inventory can reconverge.
+          </li>
+          <li>
+            After orphan deletes, models that ran are regenerated once more
+            (without <code>postGenerate</code> hooks) so filesystem-dependent
+            templates (e.g. TypeScript engine aggregates) refresh.
+          </li>
+        </ul>
+
         <h3>clean</h3>
-        <p>Remove all generated files</p>
+        <p>
+          Full wipe of tracked generated files (not needed for ordinary model shrink)
+        </p>
         <pre><code>clay clean &lt;model_path&gt; &lt;output_path&gt;
 clay clean  # Uses .clay file</code></pre>
 
@@ -117,10 +155,16 @@ clay clean ./clay/model.json ./src
 # Using .clay file
 clay clean</code></pre>
 
+        <p>
+          Use <code>clean</code> for full wipes, renaming/moving an output directory,
+          or starting over. For removing entities or dropping obsolete outputs after
+          a model change, prefer edit model &rarr; <code>clay generate</code>.
+        </p>
+
         <div class="warning">
           <strong>⚠️ Warning:</strong> The clean command permanently deletes
-          generated files. Make sure you've committed any manual changes to
-          version control first!
+          <em>all</em> tracked generated files for the model(s). Make sure you've
+          committed any manual changes to version control first!
         </div>
 
         <h3>watch</h3>
@@ -159,25 +203,33 @@ clay test-path ./clay/model.json "$.model.types[*].fields[?(@.type=='array')]"</
 
         <h2>The .clay File</h2>
         <p>
-          The <code>.clay</code> file tracks generated files and stores
-          configuration. It's created with <code>clay init</code>.
+          The <code>.clay</code> file is the ownership ledger for generated
+          (non-touch) files. It's created with <code>clay init</code>.
         </p>
 
-        <p><strong>Structure:</strong></p>
+        <p><strong>Structure (per model entry):</strong></p>
         <pre><code>{
-  "model": "clay/model.json",
-  "output": ".",
-  "files": [
-    "src/models/user.model.js",
-    "src/models/order.model.js",
-    "src/controllers/user.controller.js"
+  "models": [
+    {
+      "path": "clay/model.json",
+      "output": ".",
+      "generated_files": {
+        "src/models/user.model.js": { "md5": "...", "date": "..." },
+        "src/models/order.model.js": { "md5": "...", "date": "..." }
+      },
+      "input_hash": "..."
+    }
   ]
 }</code></pre>
 
         <p><strong>Benefits:</strong></p>
         <ul>
           <li>Run commands without specifying paths every time</li>
-          <li>Track which files were generated (for clean command)</li>
+          <li>
+            Track which non-touch files Clay owns (for generate orphan cleanup
+            and <code>clean</code>)
+          </li>
+          <li>Content checksums for incremental generate (hash skip)</li>
           <li>Prevent accidental modification of generated files</li>
           <li>Share configuration across team members</li>
         </ul>

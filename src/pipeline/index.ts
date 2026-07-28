@@ -38,6 +38,13 @@ import type { RenderWorkerPool } from './worker-pool';
 import type { GeneratorStepGenerate } from '../types/generator';
 import type { ClayModelEntry } from '../types/clay-file';
 
+/** Called for every rendered path that reaches the hash stage (incl. hash-skipped). */
+export type OwnedPathCallback = (
+  filename: string,
+  isTouch: boolean,
+  modelIndex: ClayModelEntry
+) => void;
+
 /**
  * Build the generate pipeline.
  *
@@ -47,11 +54,17 @@ import type { ClayModelEntry } from '../types/clay-file';
  *
  * Without workers, the full pipeline runs on the main thread:
  * select → render → hash → format → write.
+ *
+ * onOwnedPath is invoked for every file that reaches hashing (including
+ * unchanged hash-skipped files) so callers can build the expected set for
+ * per-model orphan cleanup. Parallel models are safe if the callback keys
+ * by modelIndex.
  */
 export function buildGeneratePipeline(
   formatterCache: FormatterCache,
   progress?: PipelineProgress,
-  workerPool?: RenderWorkerPool
+  workerPool?: RenderWorkerPool,
+  onOwnedPath?: OwnedPathCallback
 ): (
   model: unknown,
   jsonPath: string,
@@ -65,10 +78,11 @@ export function buildGeneratePipeline(
   partials?: readonly string[],
   partialsDir?: string
 ) => Promise<WrittenItem[]> {
+  const onSkip = progress ? (f: string) => progress.onSkip(f) : undefined;
 
   // Post-render pipeline: hash → format → write (shared by both paths)
   const postRenderPipeline = pipeline(
-    createHashStage(progress ? (f) => progress.onSkip(f) : undefined)
+    createHashStage(onSkip, onOwnedPath)
   )
     .pipe(
       createFormatStage(
@@ -89,12 +103,13 @@ export function buildGeneratePipeline(
     concurrent(
       createRenderStage(
         progress ? (f) => progress.onRender(f) : undefined,
-        progress ? (f) => progress.onSkip(f) : undefined
+        progress ? (f) => progress.onSkip(f) : undefined,
+        onOwnedPath
       ),
       { concurrency: 20 }
     )
   )
-    .pipe(createHashStage(progress ? (f) => progress.onSkip(f) : undefined))
+    .pipe(createHashStage(onSkip, onOwnedPath))
     .pipe(
       createFormatStage(
         formatterCache,
@@ -121,7 +136,7 @@ export function buildGeneratePipeline(
 
     // Worker path: batch select+render in a worker thread
     if (workerPool && modelPath) {
-      const rendered = await workerPool.renderBatch(
+      const batch = await workerPool.renderBatch(
         modelPath,
         jsonPath,
         templatePath,
@@ -132,9 +147,15 @@ export function buildGeneratePipeline(
         step.engine
       );
 
+      // Existing touch scaffolds never reach the hash stage — mark them protected.
+      for (const touchFile of batch.skippedTouch) {
+        onOwnedPath?.(touchFile, true, modelIndex);
+        if (progress) progress.onSkip(touchFile);
+      }
+
       // Report progress for worker results
       if (progress) {
-        for (const r of rendered) {
+        for (const r of batch.results) {
           progress.onSelect(r.filename);
           progress.onRender(r.filename);
         }
@@ -142,7 +163,7 @@ export function buildGeneratePipeline(
 
       // Feed worker results into post-render pipeline (hash → format → write)
       async function* workerResults(): AsyncGenerator<RenderedItem> {
-        for (const r of rendered) {
+        for (const r of batch.results) {
           yield {
             filename: r.filename,
             content: r.content,

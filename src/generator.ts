@@ -18,6 +18,7 @@ import jp from 'jsonpath';
 import * as output from './output';
 import { compileTemplate } from './pipeline/template-cache';
 import { executeCommand } from './pipeline/stages/command';
+import { normalizeClayPath } from './clay_file';
 import type { FormatterSpec, WrittenItem } from './pipeline/types';
 import type {
   Generator,
@@ -41,6 +42,24 @@ export type PipelineRunner = (
   partials?: readonly string[],
   partialsDir?: string
 ) => Promise<WrittenItem[]>;
+
+/** Mark a path as still owned/protected this generate pass (for orphan cleanup). */
+export type MarkOwnedPath = (filePath: string) => void;
+
+export interface GeneratePassOptions {
+  markOwned?: MarkOwnedPath;
+  /** Skip postGenerate hooks (orphan-refresh second pass). */
+  skipPostGenerate?: boolean;
+}
+
+function normalizeGenerateOptions(
+  options?: GeneratePassOptions | MarkOwnedPath
+): GeneratePassOptions {
+  if (typeof options === 'function') {
+    return { markOwned: options };
+  }
+  return options || {};
+}
 
 /** Normalize generator's formatter config into FormatterSpec[] */
 export function normalizeFormatters(generator: Generator): FormatterSpec[] {
@@ -189,10 +208,13 @@ function remove_generated_files(modelIndex: ClayModelEntry): void {
   files.forEach((f) => remove_file(modelIndex, f));
 }
 
-function addToIndex(modelIndex: ClayModelEntry, file: string): void {
-  const relFile = path.relative(process.cwd(), file);
-  // Normalize to forward slashes for cross-platform compatibility
-  const normalizedPath = relFile.split(path.sep).join('/');
+function addToIndex(
+  modelIndex: ClayModelEntry,
+  file: string,
+  markOwned?: MarkOwnedPath
+): void {
+  const normalizedPath = normalizeClayPath(file);
+  markOwned?.(normalizedPath);
   if (!modelIndex.generated_files[normalizedPath]) {
     modelIndex.generated_files[normalizedPath] = {
       md5: '',
@@ -216,7 +238,8 @@ function copy(
   model: any,
   outputDir: string,
   dirname: string,
-  modelIndex: ClayModelEntry
+  modelIndex: ClayModelEntry,
+  markOwned?: MarkOwnedPath
 ): void {
   const output_dir = path.resolve(outputDir);
   const source = path.resolve(path.join(dirname, step.copy));
@@ -234,7 +257,7 @@ function copy(
     fs.ensureDirSync(output_dir);
     if (process.env.VERBOSE) ui.copy(source, out);
     fs.copySync(source, out);
-    addToIndex(modelIndex, out);
+    addToIndex(modelIndex, out, markOwned);
   } else {
     const targetTemplate = step.target
       ? compileTemplate(step.target, `copy-target:${step.target}`)
@@ -250,7 +273,7 @@ function copy(
       fs.ensureDirSync(output_dir);
       if (process.env.VERBOSE) ui.copy(source, out);
       fs.copySync(source, out);
-      addToIndex(modelIndex, out);
+      addToIndex(modelIndex, out, markOwned);
 
       const recursiveHandlebars = (p: string): void => {
         fs.readdirSync(p).forEach((f) => {
@@ -267,7 +290,7 @@ function copy(
             const template_path = path.normalize(templateResult);
             if (file !== template_path) {
               fs.moveSync(file, template_path);
-              addToIndex(modelIndex, template_path);
+              addToIndex(modelIndex, template_path, markOwned);
             }
           }
         });
@@ -306,7 +329,13 @@ function decorate_generator(
   const decorated = g as DecoratedGenerator;
   const formatterSpecs = normalizeFormatters(g);
 
-  decorated.generate = async (model: any, outputDir: string, pipelineRunner?: PipelineRunner): Promise<WrittenItem[]> => {
+  decorated.generate = async (
+    model: any,
+    outputDir: string,
+    pipelineRunner?: PipelineRunner,
+    options?: GeneratePassOptions | MarkOwnedPath
+  ): Promise<WrittenItem[]> => {
+    const { markOwned, skipPostGenerate } = normalizeGenerateOptions(options);
     const outputPath = path.join(outputDir, extra_output || '');
     const dirname = path.dirname(p);
 
@@ -374,12 +403,12 @@ function decorate_generator(
           }
         }
       } else if ('copy' in step) {
-        copy(step, model, outputPath, dirname, modelIndex);
+        copy(step, model, outputPath, dirname, modelIndex, markOwned);
       }
     }
 
-    // Run post-generation hooks if defined
-    if (g.postGenerate && g.postGenerate.length > 0) {
+    // Run post-generation hooks if defined (skipped on orphan-refresh second pass)
+    if (!skipPostGenerate && g.postGenerate && g.postGenerate.length > 0) {
       const { executePostGenerateHooks } = require('./pipeline/hooks');
       await executePostGenerateHooks(
         g.postGenerate,

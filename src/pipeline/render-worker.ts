@@ -39,6 +39,8 @@ interface RenderResult {
 interface BatchRenderResponse {
   id: number;
   results: RenderResult[];
+  /** Existing touch scaffolds skipped (not re-rendered). */
+  skippedTouch?: string[];
   error?: SerializedWorkerError;
 }
 
@@ -139,11 +141,13 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
     }
 
     const results: RenderResult[] = [];
+    const skippedTouch: string[] = [];
     for (const item of items) {
       const filename = path.resolve(fileNameTemplate(item));
 
       // Skip touch files that already exist
       if (msg.touch && fs.existsSync(filename)) {
+        skippedTouch.push(filename);
         continue;
       }
 
@@ -184,7 +188,7 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
       results.push({ filename, content });
     }
 
-    const response: BatchRenderResponse = { id: msg.id, results };
+    const response: BatchRenderResponse = { id: msg.id, results, skippedTouch };
     parentPort!.postMessage(response);
   } catch (e) {
     const response: BatchRenderResponse = {

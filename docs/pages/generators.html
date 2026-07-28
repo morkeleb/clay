@@ -359,7 +359,19 @@ export default class extends PostGenerateHook {
         <ul>
           <li>Order steps logically (create directories before files)</li>
           <li>Use <code>select</code> to iterate over model arrays</li>
-          <li>Use <code>touch: true</code> for files users might customize</li>
+          <li>
+            Use <code>touch: true</code> for files users might customize
+            (not tracked in <code>.clay</code>; never auto-deleted by generate)
+          </li>
+          <li>
+            Pure structural outputs should stay non-touch so generate can drop
+            them when the model no longer selects them
+          </li>
+          <li>
+            If a TypeScript engine template lists the output tree (barrels,
+            route indexes), read the filesystem inside <code>render()</code>,
+            not at module load
+          </li>
           <li>Test JSONPath selectors with <code>clay test-path</code></li>
           <li>Use partials for license headers, imports, etc.</li>
           <li>Add formatters for consistent code style</li>
