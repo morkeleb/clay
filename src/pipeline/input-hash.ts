@@ -73,30 +73,62 @@ export function collectModelDependencies(modelPath: string): string[] {
 /**
  * Collect all file paths that a generator depends on:
  * the generator JSON, template files/dirs, partial files, and convention includes.
+ *
+ * For generate: templates, also walks the static relative import graph
+ * (`./`, `../`) so `engine: "ts"` helpers outside the template path still
+ * invalidate input_hash. Stays inside the pack; skips node_modules.
  */
 export function collectGeneratorDependencies(
   generatorPath: string,
   generatorDir: string
 ): string[] {
-  const deps: string[] = [path.resolve(generatorPath)];
+  const deps: string[] = [];
+  const visited = new Set<string>();
 
-  let generatorData: { steps?: unknown[]; partials?: string[]; conventions?: unknown[] };
+  const addPath = (filePath: string): void => {
+    const resolved = path.resolve(filePath);
+    if (visited.has(resolved)) return;
+    visited.add(resolved);
+    deps.push(resolved);
+  };
+
+  addPath(generatorPath);
+
+  let generatorData: {
+    steps?: unknown[];
+    partials?: string[];
+    conventions?: unknown[];
+  };
   try {
     generatorData = JSON.parse(fs.readFileSync(generatorPath, 'utf8'));
   } catch {
     return deps;
   }
 
-  // Collect template and copy source paths from steps
+  const packRoot = path.resolve(generatorDir);
+
   for (const step of generatorData.steps || []) {
     const s = step as Record<string, unknown>;
     if (typeof s.generate === 'string') {
       const templatePath = path.resolve(path.join(generatorDir, s.generate));
-      collectFilesRecursive(templatePath, deps);
+      collectFilesRecursive(templatePath, addPath);
     }
+  }
+
+  // Walk imports from generate: templates (and files those import) before
+  // adding copy sources, so copied JS is not treated as an import root.
+  const generateScripts = deps.filter(
+    (filePath) => isScriptFile(filePath) && isInsidePack(filePath, packRoot)
+  );
+  for (const filePath of generateScripts) {
+    followRelativeImports(filePath, addPath, visited, packRoot);
+  }
+
+  for (const step of generatorData.steps || []) {
+    const s = step as Record<string, unknown>;
     if (typeof s.copy === 'string' && !s.copy.startsWith('git+')) {
       const copyPath = path.resolve(path.join(generatorDir, s.copy));
-      collectFilesRecursive(copyPath, deps);
+      collectFilesRecursive(copyPath, addPath);
     }
   }
 
@@ -104,7 +136,7 @@ export function collectGeneratorDependencies(
   for (const partial of generatorData.partials || []) {
     const partialPath = path.resolve(path.join(generatorDir, partial));
     if (fs.existsSync(partialPath)) {
-      deps.push(partialPath);
+      addPath(partialPath);
     }
   }
 
@@ -114,7 +146,7 @@ export function collectGeneratorDependencies(
     if (typeof c.include === 'string') {
       const convPath = path.resolve(path.join(generatorDir, c.include));
       if (fs.existsSync(convPath)) {
-        deps.push(convPath);
+        addPath(convPath);
       }
     }
   }
@@ -122,16 +154,153 @@ export function collectGeneratorDependencies(
   return deps;
 }
 
-function collectFilesRecursive(filePath: string, deps: string[]): void {
+const SCRIPT_EXTS = new Set([
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+]);
+
+const RESOLVE_EXTS = [
+  '.ts',
+  '.tsx',
+  '.mts',
+  '.cts',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.json',
+];
+
+function isScriptFile(filePath: string): boolean {
+  return SCRIPT_EXTS.has(path.extname(filePath).toLowerCase());
+}
+
+function isInsidePack(filePath: string, packRoot: string): boolean {
+  const rel = path.relative(packRoot, filePath);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) return false;
+  return !rel.split(path.sep).includes('node_modules');
+}
+
+function collectFilesRecursive(
+  filePath: string,
+  addPath: (filePath: string) => void
+): void {
   if (!fs.existsSync(filePath)) return;
 
   const stat = fs.lstatSync(filePath);
   if (stat.isFile()) {
-    deps.push(filePath);
+    addPath(filePath);
   } else if (stat.isDirectory()) {
     for (const entry of fs.readdirSync(filePath)) {
-      collectFilesRecursive(path.join(filePath, entry), deps);
+      collectFilesRecursive(path.join(filePath, entry), addPath);
     }
+  }
+}
+
+/**
+ * Static relative specifiers only (`./`, `../`). Skips bare packages,
+ * path aliases, and `import(variable)`.
+ */
+function extractRelativeSpecifiers(source: string): string[] {
+  const specs: string[] = [];
+  const patterns = [
+    /\bfrom\s+['"](\.\.?\/[^'"]+)['"]/g,
+    /\bimport\s*\(\s*['"](\.\.?\/[^'"]+)['"]/g,
+    /\brequire\s*\(\s*['"](\.\.?\/[^'"]+)['"]/g,
+    /\bimport\s+['"](\.\.?\/[^'"]+)['"]/g,
+  ];
+  for (const re of patterns) {
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(source)) !== null) {
+      specs.push(match[1]);
+    }
+  }
+  return specs;
+}
+
+function specifierCandidates(base: string): string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+  const push = (p: string): void => {
+    if (!seen.has(p)) {
+      seen.add(p);
+      candidates.push(p);
+    }
+  };
+
+  const ext = path.extname(base);
+  push(base);
+
+  // jiti/TS: import './foo.js' often names foo.ts
+  if (ext === '.js') {
+    const stem = base.slice(0, -'.js'.length);
+    push(stem + '.ts');
+    push(stem + '.tsx');
+  } else if (ext === '.mjs') {
+    push(base.slice(0, -'.mjs'.length) + '.mts');
+  } else if (ext === '.cjs') {
+    push(base.slice(0, -'.cjs'.length) + '.cts');
+  } else if (ext === '.jsx') {
+    push(base.slice(0, -'.jsx'.length) + '.tsx');
+  }
+
+  if (!ext) {
+    for (const e of RESOLVE_EXTS) push(base + e);
+  }
+
+  for (const e of RESOLVE_EXTS) {
+    push(path.join(base, 'index' + e));
+  }
+
+  return candidates;
+}
+
+function resolveRelativeSpecifier(
+  fromFile: string,
+  spec: string,
+  packRoot: string
+): string | null {
+  const base = path.resolve(path.dirname(fromFile), spec);
+  for (const candidate of specifierCandidates(base)) {
+    if (!isInsidePack(candidate, packRoot)) continue;
+    try {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+function followRelativeImports(
+  filePath: string,
+  addPath: (filePath: string) => void,
+  visited: Set<string>,
+  packRoot: string
+): void {
+  if (!isScriptFile(filePath)) return;
+
+  let content: string;
+  try {
+    content = fs.readFileSync(filePath, 'utf8');
+  } catch {
+    return;
+  }
+
+  for (const spec of extractRelativeSpecifiers(content)) {
+    const resolved = resolveRelativeSpecifier(filePath, spec, packRoot);
+    if (!resolved) continue;
+    if (visited.has(path.resolve(resolved))) continue;
+    addPath(resolved);
+    followRelativeImports(resolved, addPath, visited, packRoot);
   }
 }
 
@@ -139,7 +308,10 @@ function collectFilesRecursive(filePath: string, deps: string[]): void {
  * Compute a single hash from the contents of all dependency files.
  * Includes the Clay version to invalidate when Clay is upgraded.
  */
-export function computeInputHash(filePaths: string[], clayVersion: string): string {
+export function computeInputHash(
+  filePaths: string[],
+  clayVersion: string
+): string {
   const hash = crypto.createHash('md5');
   hash.update(`clay:${clayVersion}\n`);
 
