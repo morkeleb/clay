@@ -4,6 +4,7 @@ import fs from 'fs';
 import * as ui from '../../output';
 import { compileTemplate } from '../template-cache';
 import { renderWithEngine } from '../engines';
+import { withClayFileTarget } from '../file-target';
 import type { Stage, SelectItem, RenderedItem } from '../types';
 import type { ClayModelEntry } from '../../types/clay-file';
 
@@ -48,7 +49,7 @@ export function createRenderStage(
       const content = await renderWithEngine(
         engine,
         item.templatePath,
-        item.modelData
+        withClayFileTarget(item.modelData, item.outputDir, filename)
       );
 
       onRender?.(filename);

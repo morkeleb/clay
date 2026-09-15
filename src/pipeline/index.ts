@@ -81,9 +81,7 @@ export function buildGeneratePipeline(
   const onSkip = progress ? (f: string) => progress.onSkip(f) : undefined;
 
   // Post-render pipeline: hash → format → write (shared by both paths)
-  const postRenderPipeline = pipeline(
-    createHashStage(onSkip, onOwnedPath)
-  )
+  const postRenderPipeline = pipeline(createHashStage(onSkip, onOwnedPath))
     .pipe(
       createFormatStage(
         formatterCache,
@@ -124,7 +122,19 @@ export function buildGeneratePipeline(
     )
     .build();
 
-  return async (model, jsonPath, templateDir, templateFile, outputDir, modelIndex, step, formatters, modelPath, partials, partialsDir) => {
+  return async (
+    model,
+    jsonPath,
+    templateDir,
+    templateFile,
+    outputDir,
+    modelIndex,
+    step,
+    formatters,
+    modelPath,
+    partials,
+    partialsDir
+  ) => {
     const templatePath = path.join(templateDir, templateFile);
     // The generated file is named after the template's own filename. A trailing
     // template-engine extension (.hbs/.ejs) is stripped from the OUTPUT name so a
@@ -141,6 +151,7 @@ export function buildGeneratePipeline(
         jsonPath,
         templatePath,
         fileNamePattern,
+        outputDir,
         (partials || []) as string[],
         partialsDir || '',
         !!step.touch,

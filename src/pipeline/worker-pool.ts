@@ -6,7 +6,10 @@ import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
-import { deserializeWorkerError, type SerializedWorkerError } from './worker-error';
+import {
+  deserializeWorkerError,
+  type SerializedWorkerError,
+} from './worker-error';
 
 interface BatchRenderRequest {
   id: number;
@@ -14,6 +17,7 @@ interface BatchRenderRequest {
   jsonPath: string;
   templatePath: string;
   fileNamePattern: string;
+  outputDir: string;
   partials: string[];
   partialsDir: string;
   touch: boolean;
@@ -45,7 +49,15 @@ interface PendingWork {
 function resolveWorkerScript(): string {
   const candidates = [
     path.resolve(__dirname, 'render-worker.js'),
-    path.resolve(__dirname, '..', '..', 'dist', 'src', 'pipeline', 'render-worker.js'),
+    path.resolve(
+      __dirname,
+      '..',
+      '..',
+      'dist',
+      'src',
+      'pipeline',
+      'render-worker.js'
+    ),
     path.resolve(__dirname, 'render-worker.ts'),
   ];
   for (const candidate of candidates) {
@@ -70,7 +82,10 @@ export class RenderWorkerPool {
   private readonly execArgv: string[];
   private readonly poolSize: number;
 
-  constructor(poolSize: number, private verbose = false) {
+  constructor(
+    poolSize: number,
+    private verbose = false
+  ) {
     this.poolSize = poolSize;
     this.workerPath = resolveWorkerScript();
     this.execArgv = this.workerPath.endsWith('.ts')
@@ -109,14 +124,19 @@ export class RenderWorkerPool {
     });
 
     worker.on('error', (err) => {
-      console.error(`[worker-pool] Worker error (id=${worker.threadId}):`, err.message);
+      console.error(
+        `[worker-pool] Worker error (id=${worker.threadId}):`,
+        err.message
+      );
       this.rejectForWorker(worker, err);
     });
 
     worker.on('exit', (code) => {
       if (this.terminated || this.restarting) {
         if (this.verbose) {
-          console.error(`[worker-pool] Worker exited (id=${worker.threadId}, code=${code})`);
+          console.error(
+            `[worker-pool] Worker exited (id=${worker.threadId}, code=${code})`
+          );
         }
         return;
       }
@@ -124,7 +144,10 @@ export class RenderWorkerPool {
         `[worker-pool] Worker exited unexpectedly (id=${worker.threadId}, code=${code}). ` +
           'If the worker printed a stack trace above, that is the root cause.'
       );
-      this.rejectForWorker(worker, new Error(`Worker exited unexpectedly with code ${code}`));
+      this.rejectForWorker(
+        worker,
+        new Error(`Worker exited unexpectedly with code ${code}`)
+      );
       if (!this.terminated && !this.restarting) {
         this.replaceWorker(worker);
       }
@@ -186,6 +209,7 @@ export class RenderWorkerPool {
     jsonPath: string,
     templatePath: string,
     fileNamePattern: string,
+    outputDir: string,
     partials: string[],
     partialsDir: string,
     touch: boolean,
@@ -212,6 +236,7 @@ export class RenderWorkerPool {
         jsonPath,
         templatePath,
         fileNamePattern,
+        outputDir,
         partials,
         partialsDir,
         touch,

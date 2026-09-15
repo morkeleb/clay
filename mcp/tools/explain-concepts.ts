@@ -336,6 +336,12 @@ Use \`clay_list_helpers\` tool to get complete list with examples.`,
    Key: {{clay_json_key}}
    \`\`\`
 
+5. **clay_file_target** - Path of the file being generated, relative to the output directory (forward slashes)
+   \`\`\`handlebars
+   {{!-- e.g. shop/components/layouts/index.ts --}}
+   // Generated into {{clay_file_target}}
+   \`\`\`
+
 **Practical Example:**
 
 Model:
@@ -394,6 +400,7 @@ export function createUserHandler() {
 - **clay_model**: Cross-references, lookups, global metadata
 - **clay_parent**: Access parent properties, understand context hierarchy
 - **clay_key**: When iterating over object properties (not arrays)
+- **clay_file_target**: When one template is emitted into several targets and the content must differ per target
 - **Standard context**: Current selected element's properties
 
 **Important Notes:**
