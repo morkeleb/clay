@@ -361,3 +361,25 @@
         grid-template-columns: 1fr;
     }
 }
+
+.clip {
+    margin: 24px 0;
+}
+
+.clip img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--primary-blue);
+    border-radius: 4px;
+    box-shadow: 0 0 24px rgba(0, 217, 255, 0.18);
+    background: #000;
+}
+
+.clip figcaption {
+    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-color);
+    opacity: 0.85;
+}

@@ -13,7 +13,7 @@
 
 # Clay - Template-Focused Code Generator
 
-**📚 [Full Documentation](https://morkeleb.github.io/clay/)** | **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** | **[NPM Package](https://www.npmjs.com/package/clay-generator)**
+**📚 [Full Documentation](https://morkeleb.github.io/clay/)** | **[Getting Started](https://morkeleb.github.io/clay/pages/getting-started.html)** | **[Shelf example](https://morkeleb.github.io/clay/pages/example.html)** | **[NPM Package](https://www.npmjs.com/package/clay-generator)**
 
 Clay is a template-focused code generator that transforms JSON models into actual code using multiple template engines, shell commands, and file operations. Supports Handlebars for simple templates, EJS for inline logic, and TypeScript CodeGenerator classes for fully programmatic generation. Built with TypeScript for type safety and reliability.
 
@@ -38,6 +38,7 @@ clay generate ./clay/model.json ./output
 - ✅ **[Watch Mode](https://morkeleb.github.io/clay/pages/cli.html)** - Auto-regenerate on model changes
 - ✅ **[Git Integration](https://morkeleb.github.io/clay/pages/cli.html)** - Collapsed diffs in PRs, auto-merge for .clay conflicts
 - ✅ **[AI-Powered](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server for Claude & GitHub Copilot
+- ✅ **[Shelf](https://github.com/morkeleb/clay-example)** - A running Note app: one model, generated files, one touch file
 
 **[→ View Full Documentation](https://morkeleb.github.io/clay/)**
 
@@ -50,6 +51,7 @@ clay generate ./clay/model.json ./output
 - **[Templates](https://morkeleb.github.io/clay/pages/templates.html)** - Handlebars, EJS, and TypeScript template engines with 47+ helpers
 - **[AI Integration](https://morkeleb.github.io/clay/pages/mcp-server.html)** - MCP server for Claude & Copilot
 - **[CLI Reference](https://morkeleb.github.io/clay/pages/cli.html)** - Complete command-line guide
+- **[Shelf](https://morkeleb.github.io/clay/pages/example.html)** - A running app, and the repository behind it: [morkeleb/clay-example](https://github.com/morkeleb/clay-example)
 
 ## Features
 
@@ -68,6 +70,55 @@ Automatically regenerate when models or templates change during development.
 ### [AI Integration](https://morkeleb.github.io/clay/pages/mcp-server.html)
 
 MCP server provides type-safe tool calls for Claude and GitHub Copilot, enabling AI-assisted generator development.
+
+## Shelf
+
+[Shelf](https://github.com/morkeleb/clay-example) is a small Clay app you can run. One entity, `Note`. The model is the source. Clay writes the types, the page, the forms, and the handlers. The business rule is written once, in a touch file, and a spec sits next to it.
+
+Hand-written code and LLM-written code both drift. A pagination parameter or an access check comes out slightly differently each time it is written again. Shelf keeps `clay/model.json` as the gauge, and every generated file is checked against it.
+
+```bash
+git clone https://github.com/morkeleb/clay-example.git
+cd clay-example
+npm install
+npm run dev
+```
+
+Open [http://127.0.0.1:4317](http://127.0.0.1:4317). The generated files are already in the repo, so `npm run dev` serves the app after install. The header sends an `x-role` header: a reader can list notes, a reader who submits a form gets HTTP 403, and an editor can create or rename a note.
+
+`clay/model.json` owns the fields, the queries, and the mutations. Clay overwrites `src/generated/`. It writes each file under `src/logic/` once, then leaves it. `src/runtime/` is the server, the store, and the page script, written by hand.
+
+![Shelf is a Note list. Then the tree: clay is the model, src/generated is overwritten, src/logic is the touch file.](docs/gifs/layout.gif)
+
+### One model edit writes the files
+
+Adding `archive` to `clay/model.json` is 15 lines of JSON. Clay writes 58 lines across 7 files: the form, the handler, the page, the route, the type, and the touch file with its spec. You pay an LLM for the 15 lines. Clay writes the 58. That is the token efficiency of this example.
+
+Shelf is one entity, with no relations, in TypeScript. A larger model writes more from the same kind of edit, and a language with more boilerplate writes more still. This diff is the small case. `git diff --stat` in [Shelf](https://github.com/morkeleb/clay-example) is the count.
+
+![Adding archive. 15 lines in the model, 58 lines across 7 files.](docs/gifs/token-efficiency.gif)
+
+Add a field and Clay rewrites the type and the page. The touch file still builds a `Note` without the new field, so `tsc` fails until you update it.
+
+![One field. The type and the page change, then tsc fails in the touch file.](docs/gifs/add-field.gif)
+
+The same move works in a template. One line in the form template adds a Cancel button to every mutation form. Adding a mutation writes the form, the handler, and a touch pair whose spec fails `npm test` until the test is real. Both clips are on the [Shelf page](https://morkeleb.github.io/clay/pages/example.html#one-change).
+
+### Generated files stay closed
+
+`clay init-claude` writes `.claude/settings.json`. Before an Edit or a Write, Claude Code runs `clay check-generated`. A generated path is refused. The touch file under `src/logic/` is allowed, because Clay leaves that file after the first write.
+
+![An agent write to a generated file is blocked. The touch file is allowed.](docs/gifs/blocked-edit.gif)
+
+### The role check lives in the template
+
+The role check is one line in the handler template. Clay copies it into every handler. A reader who calls a mutation gets HTTP 403 from that check.
+
+![One line in the handler template. Every handler checks the role.](docs/gifs/role-check.gif)
+
+Shelf also rejects a model that invents a key. That check is `clay/validate-model.ts` in the example, and it runs before Clay. The allowed keys and the clip are on the [Shelf page](https://morkeleb.github.io/clay/pages/example.html#model-vocabulary).
+
+**[→ Shelf write-up](https://morkeleb.github.io/clay/pages/example.html)** | **[→ Repository](https://github.com/morkeleb/clay-example)**
 
 ## Example
 

@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shelf - Clay Documentation</title>
+    <link rel="stylesheet" href="../css/terminal.css" />
+    <link rel="stylesheet" href="../css/docs.css" />
+  </head>
+  <body>
+    <div class="doc-container">
+      <a href="../index.html" class="back-home">← Back to Home</a>
+
+      <div class="doc-header">
+        <div class="breadcrumb">
+          <a href="../index.html">Home</a>
+          <span>›</span>
+          <span>Shelf</span>
+        </div>
+        <h1>Shelf</h1>
+        <div class="subtitle">
+          A running Clay app: one model, the files Clay writes, and the touch
+          file you keep
+        </div>
+      </div>
+
+      <div class="doc-content">
+        <h2 id="why-shelf">Why this example</h2>
+        <p>
+          Hand-written code and LLM-written code both drift. A pagination
+          parameter or an access check comes out slightly differently each time
+          a person or a model writes it again. Shelf keeps
+          <code>clay/model.json</code> as the gauge, and every generated file
+          is checked against it. A master gauge did this job in 19th-century
+          interchangeable-parts manufacturing: a part passed when it matched.
+        </p>
+        <p>
+          Shelf is a small app you can run and share. One entity,
+          <code>Note</code>. The model is the source. Clay writes the types,
+          the page, the forms, and the handlers. You write the business rule
+          once, in a touch file, and a spec sits next to it. The repository is
+          <a href="https://github.com/morkeleb/clay-example" target="_blank"
+            >morkeleb/clay-example</a
+          >.
+        </p>
+        <pre><code>git clone https://github.com/morkeleb/clay-example.git
+cd clay-example
+npm install
+npm run dev</code></pre>
+        <p>
+          Open
+          <a href="http://127.0.0.1:4317" target="_blank"
+            >http://127.0.0.1:4317</a
+          >. The header has a role control. It sends the
+          <code>x-role</code> header. A reader can list notes. A reader who
+          submits a form gets HTTP 403. An editor can create a note and rename
+          a note. The store is in memory and starts with two notes.
+          <code>npm run dev</code> works after install, because the generated
+          files are already in the project.
+        </p>
+
+        <h2 id="how-it-is-set-up">How Clay is set up</h2>
+        <p>
+          <code>clay/model.json</code> owns the fields, the queries, and the
+          mutations. Six generators sit under <code>clay/generators/</code>,
+          one folder each, created with <code>clay init generator</code>. Clay
+          overwrites <code>src/generated/</code>. It writes each file under
+          <code>src/logic/</code> once, then leaves it.
+          <code>src/runtime/</code> is the server, the store, and the page
+          script, written by hand.
+        </p>
+
+        <figure class="clip">
+          <img
+            src="../gifs/layout.gif"
+            alt="Shelf is a Note list. Then the tree: clay is the model, src/generated is overwritten, src/logic is the touch file."
+          />
+          <figcaption>
+            Shelf is a Note list. Then the tree: clay is the model,
+            src/generated is overwritten, src/logic is the touch file.
+          </figcaption>
+        </figure>
+
+        <p>The index page shows the note list and the selected note.</p>
+        <ol>
+          <li>The list calls the generated <code>list</code> query.</li>
+          <li>
+            A click calls the generated <code>get</code> query and shows that
+            note.
+          </li>
+          <li>The note has one button for each mutation.</li>
+          <li>The button opens the form for that mutation.</li>
+          <li>The form sends JSON to the generated handler.</li>
+          <li>
+            The handler checks the caller role against the mutation
+            <code>permission</code>.
+          </li>
+          <li>The handler calls the touch file in <code>src/logic</code>.</li>
+          <li>
+            The spec next to that file must be a real test.
+            <code>npm test</code> fails while the spec still contains
+            <code>implement this test</code>.
+          </li>
+        </ol>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Generator</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>types</code></td>
+              <td>
+                <code>src/generated/types.ts</code>,
+                <code>src/generated/identity.ts</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>queries</code></td>
+              <td><code>list</code> and <code>get</code></td>
+            </tr>
+            <tr>
+              <td><code>handlers</code></td>
+              <td>
+                mutation handlers and <code>src/generated/routes.ts</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>forms</code></td>
+              <td>one HTML form per mutation</td>
+            </tr>
+            <tr>
+              <td><code>pages</code></td>
+              <td><code>src/generated/page.html</code></td>
+            </tr>
+            <tr>
+              <td><code>logic</code></td>
+              <td><code>touch: true</code> rule and spec</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="what-generation-buys">What generation buys you</h2>
+        <p>
+          You pay the model edit. Clay writes the files. The clips type the
+          edit in <code>vi</code>, then show <code>git diff</code>.
+        </p>
+
+        <h3 id="model-edit">The model edit is the whole change</h3>
+        <p>
+          Adding <code>archive</code> to <code>clay/model.json</code> is 15
+          lines of JSON. Clay writes 58 lines across 7 files: the form, the
+          handler, the page, the route, the type, and the touch file with its
+          spec. <code>git diff --stat</code> is that count. You pay an LLM for
+          the 15 lines. Clay writes the 58. That is the token efficiency of
+          this example.
+        </p>
+        <p>
+          Shelf is one entity, with no relations, in TypeScript. A larger model
+          writes more from the same kind of edit, and a language with more
+          boilerplate writes more still. This diff is the small case.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/token-efficiency.gif"
+            alt="Adding archive. 15 lines in the model, 58 lines across 7 files."
+          />
+          <figcaption>
+            Adding archive. 15 lines in the model, 58 lines across 7 files.
+          </figcaption>
+        </figure>
+
+        <h3 id="one-change">One change, the files that use it</h3>
+        <p>
+          Add a field. Clay rewrites the type and the page. Handlers and
+          queries stay as they are. The touch file still builds a
+          <code>Note</code> without the new field, so <code>tsc</code> fails
+          until you update that file.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/add-field.gif"
+            alt="One field. Only the type and the page change, then tsc fails in the touch file."
+          />
+          <figcaption>
+            One field. The type and the page change, then tsc fails in the
+            touch file.
+          </figcaption>
+        </figure>
+
+        <p>
+          Add a mutation. Clay writes the form, the handler, and the touch
+          pair. The new spec is a scaffold. <code>npm test</code> fails until
+          that test is a real test.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/add-mutation.gif"
+            alt="One mutation. Clay writes the form, the handler, and the touch files."
+          />
+          <figcaption>
+            One mutation. Clay writes the form, the handler, and the touch
+            files.
+          </figcaption>
+        </figure>
+
+        <p>
+          The same move works in a template. One line in the form template adds
+          a Cancel button to every mutation form.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/cancel-button.gif"
+            alt="One line in the form template. Every form gets a Cancel button."
+          />
+          <figcaption>
+            One line in the form template. Every form gets a Cancel button.
+          </figcaption>
+        </figure>
+
+        <h3 id="model-vocabulary">The model names its own keys</h3>
+        <p>
+          <code>clay/validate-model.ts</code> checks
+          <code>clay/model.json</code> before Clay runs. This check belongs to
+          Shelf. An unknown key fails, and the error names the allowed keys.
+          The mutation list is <code>mutations</code>. The check makes the
+          model a fixed reference. Every generated file is checked against that
+          source.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/reject-unknown-key.gif"
+            alt="An unknown key. The validator names the allowed keys."
+          />
+          <figcaption>
+            An unknown key. The validator names the allowed keys.
+          </figcaption>
+        </figure>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Place</th>
+              <th>Allowed keys</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>file</td>
+              <td><code>name</code>, <code>generators</code>, <code>model</code></td>
+            </tr>
+            <tr>
+              <td><code>model</code></td>
+              <td><code>identity</code>, <code>types</code></td>
+            </tr>
+            <tr>
+              <td>role</td>
+              <td><code>name</code>, <code>permissions</code></td>
+            </tr>
+            <tr>
+              <td>type</td>
+              <td>
+                <code>name</code>, <code>category</code>, <code>fields</code>,
+                <code>queries</code>, <code>mutations</code>
+              </td>
+            </tr>
+            <tr>
+              <td>field</td>
+              <td>
+                <code>name</code>, <code>type</code>, <code>required</code>,
+                <code>primary</code>, <code>description</code>
+              </td>
+            </tr>
+            <tr>
+              <td>query</td>
+              <td>
+                <code>name</code>, <code>permission</code>,
+                <code>description</code>
+              </td>
+            </tr>
+            <tr>
+              <td>mutation</td>
+              <td>
+                <code>name</code>, <code>permission</code>,
+                <code>description</code>, <code>input</code>
+              </td>
+            </tr>
+            <tr>
+              <td><code>input</code></td>
+              <td><code>fields</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          <code>category</code> is <code>entity</code>. A field
+          <code>type</code> is <code>uuid</code>, <code>string</code>, or
+          <code>boolean</code>. A query <code>name</code> is
+          <code>list</code> or <code>get</code>. The entity has one primary
+          field, and its name is <code>id</code>. Each
+          <code>permission</code> appears on a role. <code>get</code> takes
+          that id. <code>list</code> takes no input. A mutation other than
+          <code>create</code> takes an <code>id</code> input.
+          <code>create</code> does not take <code>id</code>.
+        </p>
+
+        <h3 id="generated-files-stay-closed">Generated files stay closed</h3>
+        <p>
+          <code>clay init-claude</code> writes
+          <code>.claude/settings.json</code>. Before an Edit or a Write, Claude
+          Code runs <code>clay check-generated</code>. A generated path is
+          refused. The touch file under <code>src/logic/</code> is allowed,
+          because Clay leaves it after the first write. That file is where the
+          business rule lives, so the types and the tests matter there. The
+          clip is a small agent transcript. The refusal is the hook. See
+          <a href="mcp-server.html">AI Integration</a> and
+          <a href="cli.html#check-generated">check-generated</a>.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/blocked-edit.gif"
+            alt="An agent write to a generated file is blocked. The touch file is allowed."
+          />
+          <figcaption>
+            An agent write to a generated file is blocked. The touch file is
+            allowed.
+          </figcaption>
+        </figure>
+
+        <h3 id="security-in-the-template">The role check lives in the template</h3>
+        <p>
+          The role check is one line in the handler template. Clay copies it
+          into every handler. A reader who calls a mutation gets HTTP 403 from
+          that check. A handler carries the check because the template carries
+          it.
+        </p>
+        <figure class="clip">
+          <img
+            src="../gifs/role-check.gif"
+            alt="One line in the handler template. Every handler checks the role."
+          />
+          <figcaption>
+            One line in the handler template. Every handler checks the role.
+          </figcaption>
+        </figure>
+
+        <h2 id="commands">Commands</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>npm run dev</code></td>
+              <td>Serve the page on port 4317</td>
+            </tr>
+            <tr>
+              <td><code>npm run validate</code></td>
+              <td>
+                Reject a model that renames a concept or adds an unknown key
+              </td>
+            </tr>
+            <tr>
+              <td><code>npm run generate</code></td>
+              <td>Validate the model, then run Clay</td>
+            </tr>
+            <tr>
+              <td><code>npm run typecheck</code></td>
+              <td>Run <code>tsc</code></td>
+            </tr>
+            <tr>
+              <td><code>npm test</code></td>
+              <td>
+                Require a real spec for each touch file, then run the tests
+              </td>
+            </tr>
+            <tr>
+              <td><code>npm run check</code></td>
+              <td>Validate, typecheck, and test</td>
+            </tr>
+            <tr>
+              <td><code>npm run gifs</code></td>
+              <td>Record the clips above</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Record the clips again with
+          <a href="https://github.com/charmbracelet/vhs" target="_blank">VHS</a>
+          on your <code>PATH</code>:
+        </p>
+        <pre><code>npm run gifs</code></pre>
+        <p>
+          The script returns the model to the baseline when it finishes. The
+          baseline has no <code>pinned</code> field and no
+          <code>archive</code> mutation.
+        </p>
+
+        <h2 id="local-clay">Local Clay checkout</h2>
+        <p>
+          The dependency is the published <code>clay-generator</code> package.
+          To use a sibling checkout at <code>../clay</code> instead:
+        </p>
+        <pre><code>cd ../clay
+npm link
+cd ../clay-example
+npm link clay-generator</code></pre>
+      </div>
+
+      <div class="doc-nav">
+        <a href="../index.html" class="doc-nav-item">
+          <div class="nav-label">← Previous</div>
+          <div class="nav-title">Home</div>
+        </a>
+        <a href="getting-started.html" class="doc-nav-item">
+          <div class="nav-label">Next →</div>
+          <div class="nav-title">Getting Started</div>
+        </a>
+      </div>
+    </div>
+
+    <script src="../js/terminal.js"></script>
+  </body>
+</html>
