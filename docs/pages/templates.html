@@ -104,6 +104,14 @@ class {{pascalCase name}} {
         <p>The JSON property name of the current element:</p>
         <pre><code>&lt;p&gt;Current property: {{clay_key}}&lt;/p&gt;</code></pre>
 
+        <h3>clay_file_target</h3>
+        <p>
+          The path of the file being generated, relative to the output directory,
+          with forward slashes. Use it when one template is emitted into several
+          targets and the content must differ per target:
+        </p>
+        <pre><code>// Generated into {{clay_file_target}}</code></pre>
+
         <h2>String Helpers</h2>
         <p>Clay provides extensive string manipulation helpers:</p>
 

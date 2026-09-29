@@ -14,6 +14,7 @@ export interface ClayTemplateContext {
   clay_parent?: any;
   clay_key?: string;
   clay_json_key?: string;
+  clay_file_target?: string;
   json_path?: string;
   [key: string]: any;
 }

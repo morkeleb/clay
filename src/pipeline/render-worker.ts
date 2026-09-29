@@ -10,7 +10,11 @@ import path from 'path';
 import handlebars from '../template-engine';
 import { getHelpers } from '../helpers';
 import * as jph from '../jsonpath-helper';
-import { serializeWorkerError, type SerializedWorkerError } from './worker-error';
+import { withClayFileTarget } from './file-target';
+import {
+  serializeWorkerError,
+  type SerializedWorkerError,
+} from './worker-error';
 
 // Workers are background renderers — suppress console output to avoid
 // interleaving with the main thread's progress display.
@@ -25,6 +29,7 @@ interface BatchRenderRequest {
   jsonPath: string;
   templatePath: string;
   fileNamePattern: string;
+  outputDir: string;
   partials: string[];
   partialsDir: string;
   touch: boolean;
@@ -60,7 +65,9 @@ function getEjs(): any {
     try {
       ejs = require('ejs');
     } catch {
-      throw new Error("EJS engine requires the 'ejs' package. Install it with: npm install ejs");
+      throw new Error(
+        "EJS engine requires the 'ejs' package. Install it with: npm install ejs"
+      );
     }
   }
   return ejs;
@@ -104,7 +111,11 @@ function getEjsFileContent(filePath: string): string {
 parentPort!.on('message', async (msg: BatchRenderRequest) => {
   try {
     // Load partials if not already loaded for this directory
-    if (msg.partials.length > 0 && msg.partialsDir && !loadedPartialDirs.has(msg.partialsDir)) {
+    if (
+      msg.partials.length > 0 &&
+      msg.partialsDir &&
+      !loadedPartialDirs.has(msg.partialsDir)
+    ) {
       handlebars.load_partials(msg.partials, msg.partialsDir);
       loadedPartialDirs.add(msg.partialsDir);
     }
@@ -136,7 +147,9 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
       const mod = await jiti.import(msg.templatePath);
       TsGeneratorClass = (mod as any).default ?? mod;
       if (typeof TsGeneratorClass !== 'function') {
-        throw new Error(`Template ${msg.templatePath} must export a default class with a render() method`);
+        throw new Error(
+          `Template ${msg.templatePath} must export a default class with a render() method`
+        );
       }
     }
 
@@ -151,32 +164,44 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
         continue;
       }
 
+      const data = withClayFileTarget(item, msg.outputDir, filename) as any;
+
       let content: string;
       switch (engine) {
         case 'handlebars':
-          content = hbsTemplate!(item);
+          content = hbsTemplate!(data);
           break;
         case 'ejs': {
           const ejsMod = getEjs();
-          content = ejsMod.render(ejsContent!, { ...item, helpers }, { filename: msg.templatePath });
+          content = ejsMod.render(
+            ejsContent!,
+            { ...data, helpers },
+            { filename: msg.templatePath }
+          );
           break;
         }
         case 'ts': {
           const instance = new TsGeneratorClass();
           if (typeof instance.render !== 'function') {
-            throw new Error(`Template ${msg.templatePath} must export a class extending CodeGenerator with a render(context: RenderContext) method`);
+            throw new Error(
+              `Template ${msg.templatePath} must export a class extending CodeGenerator with a render(context: RenderContext) method`
+            );
           }
           if (instance.render.length < 1) {
-            throw new Error(`Template ${msg.templatePath} render() must accept a RenderContext argument`);
+            throw new Error(
+              `Template ${msg.templatePath} render() must accept a RenderContext argument`
+            );
           }
           const result = await instance.render({
-            data: item,
+            data,
             helpers: helpers!,
-            model: item.clay_model ?? {},
-            parent: item.clay_parent,
+            model: data.clay_model ?? {},
+            parent: data.clay_parent,
           });
           if (typeof result !== 'string') {
-            throw new Error(`Template ${msg.templatePath} render() must return a string, got ${typeof result}`);
+            throw new Error(
+              `Template ${msg.templatePath} render() must return a string, got ${typeof result}`
+            );
           }
           content = result;
           break;

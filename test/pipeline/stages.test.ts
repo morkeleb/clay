@@ -79,6 +79,27 @@ describe('pipeline stages', () => {
       expect(results[0].content).to.equal('export class User {}');
     });
 
+    it('exposes clay_file_target relative to the output directory', async () => {
+      const templatePath = path.resolve(
+        'test/samples/templates/file-target.hbs'
+      );
+      const items: SelectItem[] = [
+        {
+          modelData: { name: 'User' },
+          templatePath,
+          fileNamePattern: 'src/shop/{{name}}.ts',
+          outputDir: 'src/',
+          step: dummyStep,
+          modelIndex: dummyModelIndex,
+          formatters: [],
+        },
+      ];
+
+      const stage = createRenderStage();
+      const results = await collect(stage(fromArray(items)));
+      expect(results[0].content).to.equal('// shop/User.ts');
+    });
+
     it('renders EJS template when engine is ejs', async () => {
       const templatePath = path.resolve('test/samples/templates/simple.ejs');
       const ejsStep: GeneratorStepGenerate = {
@@ -105,7 +126,9 @@ describe('pipeline stages', () => {
     });
 
     it('renders TypeScript CodeGenerator when engine is ts', async () => {
-      const templatePath = path.resolve('test/samples/templates/simple-generator.ts');
+      const templatePath = path.resolve(
+        'test/samples/templates/simple-generator.ts'
+      );
       const tsStep: GeneratorStepGenerate = {
         generate: 'simple-generator.ts',
         select: '$.entities[*]',
