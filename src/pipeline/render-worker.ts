@@ -10,6 +10,7 @@ import path from 'path';
 import handlebars from '../template-engine';
 import { getHelpers } from '../helpers';
 import * as jph from '../jsonpath-helper';
+import { toRenderContext } from '../code-generator';
 import { withClayFileTarget } from './file-target';
 import {
   serializeWorkerError,
@@ -192,12 +193,9 @@ parentPort!.on('message', async (msg: BatchRenderRequest) => {
               `Template ${msg.templatePath} render() must accept a RenderContext argument`
             );
           }
-          const result = await instance.render({
-            data,
-            helpers: helpers!,
-            model: data.clay_model ?? {},
-            parent: data.clay_parent,
-          });
+          const result = await instance.render(
+            toRenderContext(data, helpers!)
+          );
           if (typeof result !== 'string') {
             throw new Error(
               `Template ${msg.templatePath} render() must return a string, got ${typeof result}`

@@ -17,6 +17,32 @@ export interface RenderContext {
   model: Record<string, any>;
   /** Parent object in the JSON hierarchy (equivalent to clay_parent) */
   parent?: Record<string, any>;
+  /**
+   * Path of the file being generated, relative to the output directory,
+   * with forward slashes (equivalent to clay_file_target). Absent when the
+   * selected value is a primitive or an array.
+   */
+  fileTarget?: string;
+}
+
+/**
+ * Build the RenderContext for a CodeGenerator from template data.
+ * clay_file_target is copied to fileTarget so it is a named field.
+ */
+export function toRenderContext(
+  data: Record<string, any>,
+  helpers: ClayHelpers
+): RenderContext {
+  return {
+    data,
+    helpers,
+    model: data.clay_model ?? {},
+    parent: data.clay_parent,
+    fileTarget:
+      typeof data.clay_file_target === 'string'
+        ? data.clay_file_target
+        : undefined,
+  };
 }
 
 /**

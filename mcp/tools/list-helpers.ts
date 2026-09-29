@@ -503,6 +503,12 @@ export async function listHelpers(
         description: 'Alternative reference to JSON property name',
         example: '{{clay_json_key}}',
       },
+      {
+        name: 'clay_file_target',
+        description:
+          'Path of the file being generated, relative to the output directory, with forward slashes. Available in every engine. Omitted when the selected value is a primitive or an array.',
+        example: '{{clay_file_target}}',
+      },
     ],
   };
 }

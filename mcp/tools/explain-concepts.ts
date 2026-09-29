@@ -227,6 +227,8 @@ External tools to format generated code (e.g., prettier, eslint --fix)`,
 
 Rule of thumb: start with Handlebars; switch to EJS when an otherwise template-like file needs a little logic; switch to TypeScript when the file is more code than template (DI wiring, route registration, index/barrel files that aggregate across entities or read the filesystem).
 
+Every generate step can read the path of the file it is writing, relative to the output directory, with forward slashes. Handlebars and EJS use \`clay_file_target\`. TypeScript uses \`fileTarget\` on \`RenderContext\`. See topic \`context-variables\`.
+
 **IMPORTANT — output filename comes from the TEMPLATE filename, not from \`target\`:**
 The generated file is named after the \`generate\` template's own filename, rendered as a Handlebars template. \`target\` is an optional output SUBDIRECTORY, not the output filename. So:
 - Name the template file with the FINAL extension you want, with Handlebars in the name — e.g. \`{{pascalCase name}}Controller.ts\`. Do NOT add \`.hbs\`/\`.ejs\` — that extension would end up on the generated file (a common mistake). Pick the engine with the \`engine\` field, not the file extension.
@@ -341,6 +343,7 @@ Use \`clay_list_helpers\` tool to get complete list with examples.`,
    {{!-- e.g. shop/components/layouts/index.ts --}}
    // Generated into {{clay_file_target}}
    \`\`\`
+   Handlebars and EJS read \`clay_file_target\`. A TypeScript CodeGenerator reads \`fileTarget\` on RenderContext (\`data.clay_file_target\` is the same string). It is omitted when the selected value is a primitive or an array.
 
 **Practical Example:**
 

@@ -358,7 +358,7 @@ List all available Handlebars helpers for templates. Essential for LLMs when cre
 - Complete list of 47+ Handlebars helpers
 - Syntax and descriptions for each helper
 - Available categories
-- Clay-specific context variables (clay_model, clay_parent, clay_key, clay_json_key)
+- Clay-specific context variables (clay_model, clay_parent, clay_key, clay_json_key, clay_file_target)
 
 **Example Use Cases:**
 

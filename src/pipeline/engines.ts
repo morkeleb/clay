@@ -7,7 +7,7 @@
 import fs from 'fs';
 import { getCompiledTemplate } from './template-cache';
 import { getHelpers } from '../helpers';
-import type { ClayHelpers } from '../code-generator';
+import { toRenderContext, type ClayHelpers } from '../code-generator';
 
 // Lazy-loaded EJS module
 let ejs: typeof import('ejs') | null = null;
@@ -124,12 +124,7 @@ async function renderTs(
   }
 
   const data = modelData as Record<string, any>;
-  const result = await instance.render({
-    data,
-    helpers,
-    model: data.clay_model ?? {},
-    parent: data.clay_parent,
-  });
+  const result = await instance.render(toRenderContext(data, helpers));
 
   if (typeof result !== 'string') {
     throw new Error(

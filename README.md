@@ -57,7 +57,7 @@ clay generate ./clay/model.json ./output
 
 ### [Template-Based Generation](https://morkeleb.github.io/clay/pages/templates.html)
 
-Generate files using three template engines: **Handlebars** for simple substitution, **EJS** for inline JavaScript logic, and **TypeScript CodeGenerator** classes for fully programmatic generation. All engines share 47+ built-in helpers and work in parallel via worker threads.
+Generate files using three template engines: **Handlebars** for simple substitution, **EJS** for inline JavaScript logic, and **TypeScript CodeGenerator** classes for fully programmatic generation. All engines share 47+ built-in helpers and work in parallel via worker threads. A template can read `clay_file_target`, the path of the file being written relative to the output directory (`fileTarget` on a TypeScript `RenderContext`).
 
 ### [JSONPath Selectors](https://morkeleb.github.io/clay/pages/models.html)
 

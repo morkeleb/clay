@@ -909,7 +909,7 @@ export default class extends CodeGenerator {
 ## Next Steps
 
 Once comfortable with basics, explore:
-- **Context Variables:** \`clay_key\`, \`clay_parent\`, \`clay_index\` (use \`clay_explain_concepts\`)
+- **Context Variables:** \`clay_model\`, \`clay_parent\`, \`clay_key\`, \`clay_json_key\`, \`clay_file_target\` (use \`clay_explain_concepts\`)
 - **JSONPath Selectors:** Complex data queries (use \`clay_test_path\` to experiment)
 - **Mixins:** Transform models before generation
 - **Template Helpers:** 47+ helpers for string manipulation, logic, etc. (available in all engines)
@@ -1221,7 +1221,7 @@ clay_generate({})  // Regenerates everything
 ## Advanced Topics
 
 For more advanced usage, explore:
-- **Context variables** (\`clay_key\`, \`clay_parent\`, etc.)
+- **Context variables** (\`clay_key\`, \`clay_parent\`, \`clay_file_target\`, etc.)
 - **Mixins** for model transformations
 - **Partials** for template reuse
 - **Conditional generation** with helpers
@@ -1401,11 +1401,12 @@ TypeScript templates use the \`CodeGenerator\` base class. All available data is
 import { CodeGenerator, type RenderContext } from 'clay-generator/types';
 
 export default class extends CodeGenerator {
-  render({ data, helpers, model, parent }: RenderContext): string {
+  render({ data, helpers, model, parent, fileTarget }: RenderContext): string {
     // data: the selected model item
     // helpers: all Clay helpers (pascalCase, camelCase, pluralize, etc.)
     // model: the full root model for cross-entity references
     // parent: parent object in the JSON hierarchy
+    // fileTarget: path being written, relative to the output directory (clay_file_target)
     return \\\`...\\\`;
   }
 }
@@ -1953,7 +1954,7 @@ Use \`clay_list_helpers()\` for the complete list. The most commonly needed ones
 - **Pluralization:** \`pluralize\`, \`singularize\`
 - **Conditionals:** \`eq\`, \`ne\`, \`propertyExists\`, \`and\`, \`or\`
 - **Iteration:** \`eachUnique\`, \`times\`, \`group\`
-- **Context:** \`clay_model\` (full model), \`clay_parent\` (parent object), \`clay_key\` (current key)`,
+- **Context:** \`clay_model\` (full model), \`clay_parent\` (parent object), \`clay_key\` (current key), \`clay_file_target\` (output path relative to the output directory)`,
                 },
               },
             ],

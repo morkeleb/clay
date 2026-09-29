@@ -100,6 +100,32 @@ describe('pipeline stages', () => {
       expect(results[0].content).to.equal('// shop/User.ts');
     });
 
+    it('passes clay_file_target to a TypeScript CodeGenerator as fileTarget', async () => {
+      const templatePath = path.resolve(
+        'test/samples/templates/file-target-generator.ts'
+      );
+      const tsStep: GeneratorStepGenerate = {
+        generate: 'file-target-generator.ts',
+        select: '$.entities[*]',
+        engine: 'ts',
+      };
+      const items: SelectItem[] = [
+        {
+          modelData: { name: 'User' },
+          templatePath,
+          fileNamePattern: 'src/shop/{{name}}.ts',
+          outputDir: 'src/',
+          step: tsStep,
+          modelIndex: dummyModelIndex,
+          formatters: [],
+        },
+      ];
+
+      const stage = createRenderStage();
+      const results = await collect(stage(fromArray(items)));
+      expect(results[0].content).to.equal('// shop/User.ts');
+    });
+
     it('renders EJS template when engine is ejs', async () => {
       const templatePath = path.resolve('test/samples/templates/simple.ejs');
       const ejsStep: GeneratorStepGenerate = {

@@ -108,7 +108,11 @@ class {{pascalCase name}} {
         <p>
           The path of the file being generated, relative to the output directory,
           with forward slashes. Use it when one template is emitted into several
-          targets and the content must differ per target:
+          targets and the content must differ per target. Handlebars and EJS
+          read <code>clay_file_target</code>. A TypeScript
+          <code>CodeGenerator</code> reads <code>fileTarget</code> on
+          <code>RenderContext</code>. It is omitted when the selected value is
+          a primitive or an array.
         </p>
         <pre><code>// Generated into {{clay_file_target}}</code></pre>
 
@@ -596,6 +600,15 @@ export default class extends CodeGenerator {
               <td><code>parent</code></td>
               <td><code>Record&lt;string, any&gt;</code></td>
               <td>Parent object in the JSON hierarchy (equivalent to <code>clay_parent</code>)</td>
+            </tr>
+            <tr>
+              <td><code>fileTarget</code></td>
+              <td><code>string</code></td>
+              <td>
+                Path of the file being generated, relative to the output
+                directory (equivalent to <code>clay_file_target</code>). Absent
+                when the selected value is a primitive or an array.
+              </td>
             </tr>
           </tbody>
         </table>
