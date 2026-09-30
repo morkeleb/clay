@@ -64,7 +64,9 @@ describe('format stage', () => {
 
   it('throws with diagnostic message when formatter fails', async () => {
     const cache = new FormatterCache(() => ({
-      apply: () => { throw new Error('prettier crashed'); },
+      apply: () => {
+        throw new Error('prettier crashed');
+      },
     }));
 
     const modelIndex = makeModelIndex();
@@ -89,12 +91,65 @@ describe('format stage', () => {
     }
   });
 
+  it('applies a formatter when a hidden directory is in the output path', async () => {
+    const cache = new FormatterCache(() => ({
+      extensions: ['**/*.ts', '**/*.tsx'],
+      apply: (_file: string, content: string) => content.toUpperCase(),
+    }));
+
+    const items: ChangedItem[] = [
+      {
+        filename: '/repo/.worktrees/feature/generated/test.ts',
+        content: 'hello world',
+        md5: 'abc',
+        step: dummyStep,
+        modelIndex: makeModelIndex(),
+        formatters: [{ pkg: 'my-formatter', options: {}, isNew: false }],
+      },
+    ];
+
+    const stage = createFormatStage(cache);
+    const results = await collect(stage(fromArray(items)));
+    expect(results[0].content).to.equal('HELLO WORLD');
+  });
+
+  it('skips a formatter whose extensions do not cover the file', async () => {
+    const cache = new FormatterCache(() => ({
+      extensions: ['**/*.md'],
+      apply: (_file: string, content: string) => content.toUpperCase(),
+    }));
+
+    const items: ChangedItem[] = [
+      {
+        filename: '/repo/generated/test.ts',
+        content: 'hello world',
+        md5: 'abc',
+        step: dummyStep,
+        modelIndex: makeModelIndex(),
+        formatters: [{ pkg: 'my-formatter', options: {}, isNew: false }],
+      },
+    ];
+
+    const stage = createFormatStage(cache);
+    const results = await collect(stage(fromArray(items)));
+    expect(results[0].content).to.equal('hello world');
+  });
+
   it('passes through unchanged when no formatters', async () => {
-    const cache = new FormatterCache(() => ({ apply: (_f: string, c: string) => c }));
+    const cache = new FormatterCache(() => ({
+      apply: (_f: string, c: string) => c,
+    }));
     const modelIndex = makeModelIndex();
 
     const items: ChangedItem[] = [
-      { filename: '/tmp/test.ts', content: 'hello', md5: 'abc', step: dummyStep, modelIndex, formatters: [] },
+      {
+        filename: '/tmp/test.ts',
+        content: 'hello',
+        md5: 'abc',
+        step: dummyStep,
+        modelIndex,
+        formatters: [],
+      },
     ];
 
     const stage = createFormatStage(cache);
@@ -127,7 +182,13 @@ describe('write stage', () => {
 
     const filename = path.join(testDir, 'output', 'test.ts');
     const items: FormattedItem[] = [
-      { filename, content: 'generated code', md5: 'abc123', step: dummyStep, modelIndex },
+      {
+        filename,
+        content: 'generated code',
+        md5: 'abc123',
+        step: dummyStep,
+        modelIndex,
+      },
     ];
 
     const stage = createWriteStage();
