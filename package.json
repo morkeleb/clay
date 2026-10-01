@@ -15,7 +15,7 @@
     "./generator-authoring": "./dist/src/generator-authoring.js"
   },
   "scripts": {
-    "build": "tsc && cd mcp && npm install && npm run build && cd .. && node scripts/fix-mcp-imports.js",
+    "build": "tsc && cd mcp && npm install && cd .. && node scripts/link-mcp-clay.js && cd mcp && npm run build && cd .. && node scripts/fix-mcp-imports.js",
     "build:watch": "tsc --watch",
     "dev": "ts-node index.ts",
     "prepare": "npm run build",
