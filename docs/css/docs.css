@@ -71,6 +71,16 @@
     margin-top: 0;
 }
 
+.release-meta {
+    margin-left: 12px;
+    color: var(--text-color);
+    font-size: 14px;
+    font-weight: normal;
+    letter-spacing: 0;
+    text-shadow: none;
+    opacity: 0.75;
+}
+
 .doc-content h3 {
     color: var(--glow-blue);
     font-size: 18px;
