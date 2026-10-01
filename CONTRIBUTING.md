@@ -10,6 +10,7 @@ Thank you for your interest in contributing to Clay! This document provides guid
 - [Code Style](#code-style)
 - [Testing](#testing)
 - [Pull Request Process](#pull-request-process)
+- [Releasing](#releasing)
 - [Project Architecture](#project-architecture)
 
 ## Getting Started
@@ -242,17 +243,18 @@ npm run build
 
 ```bash
 git add .
-git commit -m "feat: add amazing feature"
+git commit -m "feat: expose clay_file_target to templates"
 ```
 
-Use conventional commit messages:
+The subject line is the release note. Use the imperative, name the behavior a user sees, and leave off the trailing period.
 
-- `feat:` - New feature
-- `fix:` - Bug fix
-- `docs:` - Documentation changes
-- `test:` - Test changes
-- `refactor:` - Code refactoring
-- `chore:` - Build/tooling changes
+- `feat:` — Added. New behavior.
+- `fix:` — Fixed. A correction to existing behavior.
+- `docs:` — Docs. README, the docs site, or other user-facing documentation.
+- `perf:` — Changed. A speed change with the same behavior.
+- `refactor:`, `test:`, and `chore:` stay out of the release notes. Version bumps are `chore: bump version to x.y.z`.
+
+On the 0.3 line, a `feat` ships in the next patch. Opening a new minor is a maintainer decision. The published baseline is the `v0.3.3` tag.
 
 ### Submitting the PR
 
@@ -269,6 +271,16 @@ Use conventional commit messages:
 - No TypeScript compilation errors
 - Documentation updated if needed
 - Clear description of changes
+
+## Releasing
+
+Set the version in `package.json`, commit it, and push `master`. From a clean tree that matches `origin/master`, on Node 24:
+
+```bash
+npm publish
+```
+
+That command runs lint, the build, and the test suite before the package is uploaded. It creates the annotated tag `vX.Y.Z` and pushes it only after npm has accepted that version.
 
 ## Project Architecture
 
