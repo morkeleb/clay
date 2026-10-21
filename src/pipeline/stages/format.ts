@@ -21,15 +21,25 @@ export function createFormatStage(
       for (const spec of item.formatters) {
         const formatter = cache.get(spec.pkg);
 
+        // dot: true, because the output path is absolute and a hidden directory
+        // anywhere in it otherwise stops '**' matching, which silently skips
+        // every formatter.
         const shouldApply = Array.isArray(formatter.extensions)
-          ? formatter.extensions.some((ext) => minimatch(item.filename, ext))
+          ? formatter.extensions.some((ext) =>
+              minimatch(item.filename, ext, { dot: true })
+            )
           : true;
 
         if (!shouldApply) continue;
 
         try {
           if (spec.isNew) {
-            content = await formatter.apply(item.filename, content, spec.options, item.step);
+            content = await formatter.apply(
+              item.filename,
+              content,
+              spec.options,
+              item.step
+            );
           } else {
             content = await formatter.apply(item.filename, content);
           }
