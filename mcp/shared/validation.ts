@@ -16,7 +16,7 @@ export function validateInput<T>(
     return { success: true, data: result.data };
   }
 
-  const errorMessages = result.error.errors
+  const errorMessages = result.error.issues
     .map((err) => {
       const path = err.path.join('.');
       return `${path}: ${err.message}`;

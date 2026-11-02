@@ -352,7 +352,7 @@ export const ModelUpdateInputSchema = z
     working_directory: WorkingDirectorySchema,
     model_path: ModelPathSchema,
     json_path: z.string().describe('JSONPath expression matching items to update'),
-    fields: z.record(z.any()).describe('Fields to merge into each matched item'),
+    fields: z.record(z.string(), z.any()).describe('Fields to merge into each matched item'),
   })
   .describe('Update fields on all items matched by JSONPath.');
 

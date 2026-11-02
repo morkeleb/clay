@@ -90,7 +90,7 @@ const SelectSchema = z
   .superRefine((jsonPath, ctx) => {
     if (jsonPath && !isValidJsonPath(jsonPath).valid) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: 'custom',
         message: `Invalid JSONPath in 'select': ${jsonPath}`,
       });
     }
@@ -169,7 +169,7 @@ const GeneratorSchema = z.object({
         z.string(),
         z.object({
           package: z.string(),
-          options: z.record(z.any()).optional(),
+          options: z.record(z.string(), z.any()).optional(),
         }),
       ])
     )
