@@ -1,5 +1,5 @@
 // src/pipeline/stages/format.ts
-import minimatch from 'minimatch';
+import { minimatch } from 'minimatch';
 import * as ui from '../../output';
 import type { Stage, ChangedItem, FormattedItem } from '../types';
 import type { FormatterCache } from '../formatter-cache';
